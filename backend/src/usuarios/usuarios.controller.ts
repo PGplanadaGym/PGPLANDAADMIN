@@ -1,0 +1,93 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { CheckPermissions } from '../common/decorators/permissions.decorator';
+import {
+  CurrentUser,
+  type RequestUser,
+} from '../common/decorators/current-user.decorator';
+import { UsuariosService } from './usuarios.service';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { UpdatePerfilDto } from './dto/update-perfil.dto';
+import { CambiarPasswordDto } from './dto/cambiar-password.dto';
+import { AsignarRolesDto } from './dto/asignar-roles.dto';
+import { AsignarSucursalDto } from './dto/asignar-sucursal.dto';
+
+@ApiTags('usuarios')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Controller('usuarios')
+export class UsuariosController {
+  constructor(private readonly usuariosService: UsuariosService) {}
+
+  @CheckPermissions('usuarios.leer')
+  @Get()
+  findAll(@CurrentUser() user: RequestUser) {
+    return this.usuariosService.findAll(user.empresaId);
+  }
+
+  // Sin @CheckPermissions: cualquier usuario autenticado puede ver/editar su propio perfil.
+  @Get('me')
+  findSelf(@CurrentUser() user: RequestUser) {
+    return this.usuariosService.findOne(user.empresaId, user.id);
+  }
+
+  @Patch('me')
+  updateSelf(@CurrentUser() user: RequestUser, @Body() dto: UpdatePerfilDto) {
+    return this.usuariosService.updateSelf(user.id, dto);
+  }
+
+  @Patch('me/password')
+  cambiarPassword(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: CambiarPasswordDto,
+  ) {
+    return this.usuariosService.cambiarPassword(user.id, dto);
+  }
+
+  @CheckPermissions('usuarios.leer')
+  @Get(':id')
+  findOne(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.usuariosService.findOne(user.empresaId, id);
+  }
+
+  @CheckPermissions('usuarios.crear')
+  @Post()
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateUsuarioDto) {
+    return this.usuariosService.create(user.empresaId, user.id, dto);
+  }
+
+  @CheckPermissions('usuarios.actualizar')
+  @Patch(':id/roles')
+  asignarRoles(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: AsignarRolesDto,
+  ) {
+    return this.usuariosService.asignarRoles(user.empresaId, user.id, id, dto);
+  }
+
+  @CheckPermissions('usuarios.actualizar')
+  @Patch(':id/sucursal')
+  asignarSucursal(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: AsignarSucursalDto,
+  ) {
+    return this.usuariosService.asignarSucursal(
+      user.empresaId,
+      user.id,
+      id,
+      dto.sucursalId ?? null,
+    );
+  }
+}

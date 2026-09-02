@@ -1,0 +1,25 @@
+# Credenciales de bases de datos por cliente (generadas por scripts/provision-cliente.ts)
+/clientes/
+
+# Node
+node_modules/
+
+# Variables de entorno (contienen credenciales reales: DATABASE_URL, JWT_SECRET, etc.)
+.env
+.env.*
+!.env.example
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
