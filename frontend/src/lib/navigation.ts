@@ -22,6 +22,7 @@ import {
   Store,
   Wallet2,
   BarChart3,
+  Database,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -94,6 +95,7 @@ export const NAV_ITEMS: NavItem[] = [
     modulo: 'asistencia',
   },
   { to: '/modulos', label: 'Módulos', resource: 'modulos', icon: Blocks },
+  { to: '/entidades', label: 'Entidades dinámicas', resource: 'entidades', icon: Database },
   { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
 ]

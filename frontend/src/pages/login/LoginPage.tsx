@@ -7,6 +7,7 @@ import { API_URL } from '../../lib/axios'
 import { usePublicBranding } from '../../hooks/usePublicBranding'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { ThemeToggle } from '../../components/ui/ThemeToggle'
+import { PasswordInput } from '../../components/ui/PasswordInput'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -61,11 +62,7 @@ export function LoginPage() {
             <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Contraseña
             </label>
-            <input
-              type="password"
-              {...register('password')}
-              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-            />
+            <PasswordInput {...register('password')} />
             {errors.password && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.password.message}

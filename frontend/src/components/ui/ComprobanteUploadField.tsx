@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
+import { mensajeError } from '../../lib/errores'
 
 interface Props {
   value?: string | null
@@ -24,8 +25,8 @@ export function ComprobanteUploadField({ value, onChange }: Props) {
       )
       onChange(data.url)
       toast.success('Comprobante adjuntado')
-    } catch {
-      toast.error('No se pudo subir el archivo (máx. 5MB, imagen o PDF)')
+    } catch (error) {
+      toast.error(mensajeError(error, 'No se pudo subir el archivo (máx. 5MB, imagen o PDF)'))
     } finally {
       setSubiendo(false)
       e.target.value = ''

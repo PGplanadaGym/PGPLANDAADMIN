@@ -20,6 +20,7 @@ import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClientesCreatePage } from './pages/clientes/ClientesCreatePage'
 import { ModulosPage } from './pages/modulos/ModulosPage'
 import { EntidadDinamicaPage } from './pages/entidades/EntidadDinamicaPage'
+import { EntidadesAdminPage } from './pages/entidades/EntidadesAdminPage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
 import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
@@ -89,6 +90,11 @@ function App() {
           name: 'modulos',
           list: '/modulos',
           meta: { label: 'Módulos' },
+        },
+        {
+          name: 'entidades',
+          list: '/entidades',
+          meta: { label: 'Entidades dinámicas' },
         },
         {
           name: 'empresas',
@@ -187,6 +193,7 @@ function App() {
           <Route path="/clientes" element={<ClientesListPage />} />
           <Route path="/clientes/nuevo" element={<ClientesCreatePage />} />
           <Route path="/modulos" element={<ModulosPage />} />
+          <Route path="/entidades" element={<EntidadesAdminPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />

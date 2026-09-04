@@ -6,10 +6,10 @@ export class UpdatePerfilDto {
   @IsString()
   nombre!: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsUrl()
-  fotoUrl?: string;
+  fotoUrl?: string | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

@@ -248,6 +248,8 @@ export class UsuariosService {
       }),
     ]);
 
+    await this.emailService.enviarAvisoCambioPassword(usuario.email, usuario.nombre);
+
     return { success: true };
   }
 }

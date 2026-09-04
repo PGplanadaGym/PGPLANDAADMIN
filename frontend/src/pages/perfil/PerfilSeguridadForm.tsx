@@ -4,12 +4,14 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { PasswordInput } from '../../components/ui/PasswordInput'
+import { PasswordStrengthMeter } from '../../components/ui/PasswordStrengthMeter'
 
 const schema = z
   .object({
     passwordActual: z.string().min(1, 'Requerido'),
-    passwordNueva: z.string().min(6, 'Mínimo 6 caracteres'),
-    confirmar: z.string().min(6, 'Mínimo 6 caracteres'),
+    passwordNueva: z.string().min(8, 'Mínimo 8 caracteres'),
+    confirmar: z.string().min(8, 'Mínimo 8 caracteres'),
   })
   .refine((values) => values.passwordNueva === values.confirmar, {
     message: 'Las contraseñas no coinciden',
@@ -23,6 +25,7 @@ export function PerfilSeguridadForm() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
@@ -48,11 +51,7 @@ export function PerfilSeguridadForm() {
         <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
           Contraseña actual
         </label>
-        <input
-          type="password"
-          {...register('passwordActual')}
-          className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-        />
+        <PasswordInput {...register('passwordActual')} />
         {errors.passwordActual && (
           <p className="mt-1 text-xs text-red-600">{errors.passwordActual.message}</p>
         )}
@@ -62,13 +61,13 @@ export function PerfilSeguridadForm() {
         <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
           Contraseña nueva
         </label>
-        <input
-          type="password"
-          {...register('passwordNueva')}
-          className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-        />
+        <PasswordInput {...register('passwordNueva')} />
+        <PasswordStrengthMeter password={watch('passwordNueva') ?? ''} />
         {errors.passwordNueva && (
           <p className="mt-1 text-xs text-red-600">{errors.passwordNueva.message}</p>
+        )}
+        {!errors.passwordNueva && (
+          <p className="mt-1 text-xs text-[var(--color-text-faint)]">Mínimo 8 caracteres</p>
         )}
       </div>
 
@@ -76,11 +75,7 @@ export function PerfilSeguridadForm() {
         <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
           Confirmar contraseña nueva
         </label>
-        <input
-          type="password"
-          {...register('confirmar')}
-          className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-        />
+        <PasswordInput {...register('confirmar')} />
         {errors.confirmar && (
           <p className="mt-1 text-xs text-red-600">{errors.confirmar.message}</p>
         )}

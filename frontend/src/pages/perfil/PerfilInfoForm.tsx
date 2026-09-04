@@ -37,7 +37,10 @@ export function PerfilInfoForm({ valoresIniciales, onGuardado }: Props) {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await axiosInstance.patch('/usuarios/me', values)
+      await axiosInstance.patch('/usuarios/me', {
+        ...values,
+        fotoUrl: values.fotoUrl || null,
+      })
       toast.success('Perfil actualizado')
       onGuardado()
     } catch {

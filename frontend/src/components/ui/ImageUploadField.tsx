@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
+import { mensajeError } from '../../lib/errores'
 
 interface Props {
   label: string
@@ -26,8 +27,8 @@ export function ImageUploadField({ label, value, onChange, rounded }: Props) {
       )
       onChange(data.url)
       toast.success('Imagen subida')
-    } catch {
-      toast.error('No se pudo subir la imagen (máx. 5MB)')
+    } catch (error) {
+      toast.error(mensajeError(error, 'No se pudo subir la imagen (máx. 5MB, formato imagen)'))
     } finally {
       setSubiendo(false)
       e.target.value = ''
@@ -50,7 +51,7 @@ export function ImageUploadField({ label, value, onChange, rounded }: Props) {
           />
         )}
         <label className="cursor-pointer rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]">
-          {subiendo ? 'Subiendo…' : 'Subir imagen'}
+          {subiendo ? 'Subiendo…' : value ? 'Cambiar imagen' : 'Subir imagen'}
           <input
             type="file"
             accept="image/*"
@@ -59,6 +60,16 @@ export function ImageUploadField({ label, value, onChange, rounded }: Props) {
             onChange={handleFile}
           />
         </label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            disabled={subiendo}
+            className="text-xs text-red-600 hover:underline disabled:opacity-40"
+          >
+            Quitar
+          </button>
+        )}
       </div>
     </div>
   )

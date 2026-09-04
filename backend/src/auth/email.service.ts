@@ -42,6 +42,19 @@ export class EmailService {
     );
   }
 
+  async enviarAvisoCambioPassword(email: string, nombre: string) {
+    await this.enviar(
+      email,
+      'Tu contraseña cambió',
+      `
+        <p>Hola ${nombre},</p>
+        <p>Te confirmamos que la contraseña de tu cuenta acaba de cambiar.</p>
+        <p>Si no fuiste tú, contacta a un administrador de tu empresa de inmediato.</p>
+      `,
+      `aviso de cambio de contraseña para ${email}`,
+    );
+  }
+
   async enviarRecordatorioCita(
     email: string,
     nombreCliente: string,

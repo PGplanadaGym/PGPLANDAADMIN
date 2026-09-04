@@ -206,6 +206,7 @@ export class AuthService {
     const tokenHash = hashToken(tokenPlano);
     const registro = await this.prisma.passwordResetToken.findUnique({
       where: { tokenHash },
+      include: { usuario: true },
     });
 
     if (!registro || registro.usado || registro.expiraEn < new Date()) {
@@ -230,5 +231,10 @@ export class AuthService {
         data: { revocado: true },
       }),
     ]);
+
+    await this.emailService.enviarAvisoCambioPassword(
+      registro.usuario.email,
+      registro.usuario.nombre,
+    );
   }
 }

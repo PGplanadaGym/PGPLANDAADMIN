@@ -17,6 +17,8 @@ export const CATALOGO_PERMISOS = [
   { clave: 'clientes.crear', etiqueta: 'Crear clientes' },
   { clave: 'entidades.leer', etiqueta: 'Ver entidades dinámicas' },
   { clave: 'entidades.crear', etiqueta: 'Crear entidades dinámicas' },
+  { clave: 'entidades.actualizar', etiqueta: 'Editar entidades dinámicas' },
+  { clave: 'entidades.eliminar', etiqueta: 'Eliminar entidades dinámicas' },
   { clave: 'entidades.registros.leer', etiqueta: 'Ver registros de entidades dinámicas' },
   { clave: 'entidades.registros.crear', etiqueta: 'Crear registros de entidades dinámicas' },
   { clave: 'entidades.registros.actualizar', etiqueta: 'Editar registros de entidades dinámicas' },

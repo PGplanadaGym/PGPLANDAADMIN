@@ -5,11 +5,13 @@ import { toast } from 'sonner'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { PasswordInput } from '../../components/ui/PasswordInput'
+import { PasswordStrengthMeter } from '../../components/ui/PasswordStrengthMeter'
 
 const schema = z
   .object({
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
-    confirmar: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
+    confirmar: z.string().min(8, 'Mínimo 8 caracteres'),
   })
   .refine((values) => values.password === values.confirmar, {
     message: 'Las contraseñas no coinciden',
@@ -26,6 +28,7 @@ export function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
@@ -72,13 +75,13 @@ export function ResetPasswordPage() {
             <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Contraseña nueva
             </label>
-            <input
-              type="password"
-              {...register('password')}
-              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-            />
+            <PasswordInput {...register('password')} />
+            <PasswordStrengthMeter password={watch('password') ?? ''} />
             {errors.password && (
               <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+            )}
+            {!errors.password && (
+              <p className="mt-1 text-xs text-[var(--color-text-faint)]">Mínimo 8 caracteres</p>
             )}
           </div>
 
@@ -86,11 +89,7 @@ export function ResetPasswordPage() {
             <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Confirmar contraseña
             </label>
-            <input
-              type="password"
-              {...register('confirmar')}
-              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-            />
+            <PasswordInput {...register('confirmar')} />
             {errors.confirmar && (
               <p className="mt-1 text-xs text-red-600">{errors.confirmar.message}</p>
             )}

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
@@ -9,6 +18,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { EntidadesDinamicasService } from './entidades-dinamicas.service';
 import { CreateEntidadDinamicaDto } from './dto/create-entidad-dinamica.dto';
+import { UpdateEntidadDinamicaDto } from './dto/update-entidad-dinamica.dto';
 
 @ApiTags('entidades-dinamicas')
 @ApiBearerAuth()
@@ -31,6 +41,22 @@ export class EntidadesDinamicasController {
     @CurrentUser() user: RequestUser,
     @Body() dto: CreateEntidadDinamicaDto,
   ) {
-    return this.entidadesDinamicasService.create(user.empresaId, dto);
+    return this.entidadesDinamicasService.create(user.empresaId, user.id, dto);
+  }
+
+  @CheckPermissions('entidades.actualizar')
+  @Patch(':clave')
+  update(
+    @CurrentUser() user: RequestUser,
+    @Param('clave') clave: string,
+    @Body() dto: UpdateEntidadDinamicaDto,
+  ) {
+    return this.entidadesDinamicasService.update(user.empresaId, user.id, clave, dto);
+  }
+
+  @CheckPermissions('entidades.eliminar')
+  @Delete(':clave')
+  remove(@CurrentUser() user: RequestUser, @Param('clave') clave: string) {
+    return this.entidadesDinamicasService.remove(user.empresaId, user.id, clave);
   }
 }
