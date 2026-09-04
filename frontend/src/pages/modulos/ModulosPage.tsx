@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { useModulos } from '../../providers/modulosContext'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 export function ModulosPage() {
   const { modulos, loading, refetch } = useModulos()
@@ -29,7 +30,7 @@ export function ModulosPage() {
       </p>
 
       <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-4">
-        {loading && <p className="text-sm text-[var(--color-text-faint)]">Cargando…</p>}
+        {loading && <CargandoPantalla minHeight={80} />}
 
         {!loading && modulos.length === 0 && (
           <p className="text-sm text-[var(--color-text-faint)]">No hay módulos en el catálogo.</p>

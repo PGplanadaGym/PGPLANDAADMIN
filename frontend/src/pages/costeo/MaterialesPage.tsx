@@ -4,6 +4,7 @@ import { CanAccess } from '@refinedev/core'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Material {
   id: string
@@ -154,7 +155,7 @@ export function MaterialesPage() {
             {materiales.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin materiales todavía'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin materiales todavía'}
                 </td>
               </tr>
             )}

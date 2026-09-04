@@ -14,6 +14,7 @@ import { buildAbility } from '../../ability/ability'
 import { useModulos } from '../../providers/modulosContext'
 import { NAV_ITEMS } from '../../lib/navigation'
 import { axiosInstance } from '../../lib/axios'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 function saludo() {
   const hora = new Date().getHours()
@@ -64,8 +65,9 @@ function TarjetaMetrica({
 
 export function DashboardPage() {
   const { data: identity } = useGetIdentity<Identity>()
-  const { modulos } = useModulos()
+  const { modulos, loading: cargandoModulos } = useModulos()
   const [datos, setDatos] = useState<Metricas | null>(null)
+  const [cargandoDatos, setCargandoDatos] = useState(true)
 
   useEffect(() => {
     axiosInstance
@@ -74,6 +76,7 @@ export function DashboardPage() {
       .catch(() => {
         /* si falla, simplemente no se muestran métricas */
       })
+      .finally(() => setCargandoDatos(false))
   }, [])
 
   const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
@@ -90,16 +93,22 @@ export function DashboardPage() {
 
   const m = datos?.metricas ?? {}
 
+  if (!identity || cargandoModulos) {
+    return <CargandoPantalla minHeight={400} />
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">
-        {saludo()}{identity?.nombre ? `, ${identity.nombre.split(' ')[0]}` : ''}
+        {saludo()}{identity.nombre ? `, ${identity.nombre.split(' ')[0]}` : ''}
       </h1>
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-        Esto es lo que tienes activo en {identity?.empresa.nombre ?? 'tu empresa'}.
+        Esto es lo que tienes activo en {identity.empresa.nombre ?? 'tu empresa'}.
       </p>
 
-      {datos && (
+      {cargandoDatos && <CargandoPantalla minHeight={160} />}
+
+      {!cargandoDatos && datos && (
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {datos.modulosActivos.includes('citas') && puedeVer('citas') && (
             <TarjetaMetrica
@@ -152,7 +161,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      {datos && datos.proximasCitas.length > 0 && puedeVer('citas') && (
+      {!cargandoDatos && datos && datos.proximasCitas.length > 0 && puedeVer('citas') && (
         <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
           <h2 className="text-sm font-semibold text-[var(--color-text)]">Próximas citas</h2>
           <div className="mt-2 flex flex-col gap-2">

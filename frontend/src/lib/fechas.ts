@@ -23,3 +23,19 @@ export function finDiaLocalISO(fechaYMD: string): string {
   const [y, m, d] = partes(fechaYMD)
   return new Date(y, m, d, 23, 59, 59, 999).toISOString()
 }
+
+/** "hace 5 min", "ayer", "hace 3 d"… y una fecha corta para lo más viejo que una semana. */
+export function tiempoRelativo(fechaISO: string): string {
+  const diffSeg = Math.round((Date.now() - new Date(fechaISO).getTime()) / 1000)
+
+  if (diffSeg < 60) return 'hace un momento'
+  const diffMin = Math.round(diffSeg / 60)
+  if (diffMin < 60) return `hace ${diffMin} min`
+  const diffHoras = Math.round(diffMin / 60)
+  if (diffHoras < 24) return `hace ${diffHoras} h`
+  const diffDias = Math.round(diffHoras / 24)
+  if (diffDias === 1) return 'ayer'
+  if (diffDias < 7) return `hace ${diffDias} d`
+
+  return new Date(fechaISO).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}

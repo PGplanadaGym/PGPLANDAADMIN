@@ -4,6 +4,7 @@ import { Trash2, ShoppingCart, Plus, Minus } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Producto {
   id: string
@@ -189,12 +190,7 @@ export function VentasPage() {
   }
 
   if (cargando) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-        <Spinner size={16} />
-        Cargando…
-      </div>
-    )
+    return <CargandoPantalla minHeight={300} />
   }
 
   return (

@@ -24,6 +24,7 @@ const USUARIO_SELECT = {
   cargo: true,
   bio: true,
   activo: true,
+  passwordConfigurada: true,
   creadoEn: true,
   sucursal: { select: { id: true, nombre: true } },
   roles: { select: { rol: { select: { id: true, nombre: true } } } },
@@ -81,6 +82,7 @@ export class UsuariosService {
         nombre: dto.nombre,
         email: dto.email,
         passwordHash,
+        passwordConfigurada: false,
       },
     });
 
@@ -90,21 +92,7 @@ export class UsuariosService {
       });
     }
 
-    const tokenPlano = generarTokenPlano(32);
-    await this.prisma.passwordResetToken.create({
-      data: {
-        usuarioId: usuario.id,
-        tokenHash: hashToken(tokenPlano),
-        expiraEn: new Date(Date.now() + INVITACION_TTL_MS),
-      },
-    });
-
-    const activarUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/reset-password?token=${tokenPlano}`;
-    await this.emailService.enviarInvitacion(
-      usuario.email,
-      usuario.nombre,
-      activarUrl,
-    );
+    await this.enviarInvitacion(usuario.id, usuario.nombre, usuario.email);
 
     await this.auditoriaService.registrar({
       empresaId,
@@ -116,6 +104,113 @@ export class UsuariosService {
     });
 
     return this.findOne(empresaId, usuario.id);
+  }
+
+  private async enviarInvitacion(usuarioId: string, nombre: string, email: string) {
+    const tokenPlano = generarTokenPlano(32);
+    await this.prisma.passwordResetToken.create({
+      data: {
+        usuarioId,
+        tokenHash: hashToken(tokenPlano),
+        expiraEn: new Date(Date.now() + INVITACION_TTL_MS),
+      },
+    });
+
+    const activarUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/reset-password?token=${tokenPlano}`;
+    await this.emailService.enviarInvitacion(email, nombre, activarUrl);
+  }
+
+  /** Solo tiene sentido si el usuario todavía no configuró su propia contraseña. */
+  async reenviarInvitacion(empresaId: string, actorId: string, usuarioId: string) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioId, empresaId },
+    });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    if (usuario.passwordConfigurada) {
+      throw new BadRequestException('Este usuario ya configuró su contraseña');
+    }
+
+    await this.enviarInvitacion(usuario.id, usuario.nombre, usuario.email);
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: 'actualizar',
+      entidad: 'usuario',
+      entidadId: usuario.id,
+      detalle: { accion: 'reenviar_invitacion' },
+    });
+
+    return { success: true };
+  }
+
+  /** Activa o desactiva el acceso de un usuario. Desactivar revoca de inmediato sus
+   * sesiones (refresh tokens) — no basta con bloquear logins futuros. */
+  async cambiarActivo(
+    empresaId: string,
+    actorId: string,
+    usuarioId: string,
+    activo: boolean,
+  ) {
+    if (usuarioId === actorId) {
+      throw new BadRequestException('No puedes desactivar tu propia cuenta');
+    }
+
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioId, empresaId },
+    });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.usuario.update({ where: { id: usuarioId }, data: { activo } }),
+      ...(activo
+        ? []
+        : [
+            this.prisma.refreshToken.updateMany({
+              where: { usuarioId },
+              data: { revocado: true },
+            }),
+          ]),
+    ]);
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: activo ? 'activar' : 'desactivar',
+      entidad: 'usuario',
+      entidadId: usuarioId,
+      detalle: { nombre: usuario.nombre },
+    });
+
+    return this.findOne(empresaId, usuarioId);
+  }
+
+  async perfilCompleto(empresaId: string, id: string) {
+    const usuario = await this.findOne(empresaId, id);
+
+    const [activosAsignados, marcaciones, pagosNomina] = await Promise.all([
+      this.prisma.asignacionActivo.findMany({
+        where: { empresaId, usuarioId: id, fechaDevolucion: null },
+        include: { activo: { select: { id: true, nombre: true } } },
+        orderBy: { fechaAsignacion: 'desc' },
+      }),
+      this.prisma.marcacion.findMany({
+        where: { empresaId, usuarioId: id },
+        orderBy: { creadoEn: 'desc' },
+        take: 10,
+      }),
+      this.prisma.pagoNomina.findMany({
+        where: { empresaId, empleadoId: id },
+        orderBy: { fechaPago: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    return { usuario, activosAsignados, marcaciones, pagosNomina };
   }
 
   async updateSelf(usuarioId: string, dto: UpdatePerfilDto) {

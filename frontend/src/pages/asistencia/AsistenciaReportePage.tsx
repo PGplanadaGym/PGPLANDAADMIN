@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { inicioDiaLocalISO, finDiaLocalISO } from '../../lib/fechas'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
-import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
 
 const ETIQUETAS_TIPO: Record<string, string> = {
@@ -212,9 +212,7 @@ export function AsistenciaReportePage() {
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
                   {cargando ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Spinner size={16} /> Cargando…
-                    </span>
+                    <CargandoPantalla minHeight={80} />
                   ) : (
                     'Sin marcaciones en este rango'
                   )}

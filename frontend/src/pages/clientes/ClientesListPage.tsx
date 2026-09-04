@@ -5,6 +5,7 @@ import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { PrimaryLinkButton } from '../../components/ui/PrimaryButton'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Cliente {
   id: string
@@ -74,11 +75,13 @@ export function ClientesListPage() {
             {pageItems.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {tableQuery.isLoading
-                    ? 'Cargando…'
-                    : query
-                      ? 'Sin resultados para tu búsqueda'
-                      : 'Sin clientes todavía'}
+                  {tableQuery.isLoading ? (
+                    <CargandoPantalla minHeight={80} />
+                  ) : query ? (
+                    'Sin resultados para tu búsqueda'
+                  ) : (
+                    'Sin clientes todavía'
+                  )}
                 </td>
               </tr>
             )}

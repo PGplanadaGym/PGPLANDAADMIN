@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
+import { PAISES, banderaDesdeIso, combinarTelefono, separarTelefono } from '../../lib/paises'
 import { ImageUploadField } from '../../components/ui/ImageUploadField'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 
@@ -32,6 +34,25 @@ export function PerfilInfoForm({ valoresIniciales, onGuardado }: Props) {
     resolver: zodResolver(perfilSchema),
     values: valoresIniciales,
   })
+
+  const [isoTelefono, setIsoTelefono] = useState(
+    () => separarTelefono(valoresIniciales.telefono).iso,
+  )
+  const [numeroTelefono, setNumeroTelefono] = useState(
+    () => separarTelefono(valoresIniciales.telefono).numero,
+  )
+
+  useEffect(() => {
+    const { iso, numero } = separarTelefono(valoresIniciales.telefono)
+    setIsoTelefono(iso)
+    setNumeroTelefono(numero)
+  }, [valoresIniciales.telefono])
+
+  const actualizarTelefono = (iso: string, numero: string) => {
+    setIsoTelefono(iso)
+    setNumeroTelefono(numero)
+    setValue('telefono', combinarTelefono(iso, numero), { shouldDirty: true })
+  }
 
   const bio = watch('bio') ?? ''
 
@@ -82,11 +103,28 @@ export function PerfilInfoForm({ valoresIniciales, onGuardado }: Props) {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Teléfono</label>
-          <input
-            {...register('telefono')}
-            placeholder="+593 99 999 9999"
-            className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-          />
+          <div className="flex gap-2">
+            <select
+              value={isoTelefono}
+              onChange={(e) => actualizarTelefono(e.target.value, numeroTelefono)}
+              className="w-24 shrink-0 rounded-lg border border-[var(--color-border)] px-1.5 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            >
+              {PAISES.map((pais) => (
+                <option key={pais.iso} value={pais.iso}>
+                  {banderaDesdeIso(pais.iso)} {pais.codigo}
+                </option>
+              ))}
+            </select>
+            <input
+              value={numeroTelefono}
+              onChange={(e) => actualizarTelefono(isoTelefono, e.target.value)}
+              placeholder="99 999 9999"
+              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            />
+          </div>
+          {errors.telefono && (
+            <p className="mt-1 text-xs text-red-600">{errors.telefono.message}</p>
+          )}
         </div>
       </div>
 

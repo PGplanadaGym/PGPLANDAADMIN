@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { CanAccess } from '@refinedev/core'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const TIPOS_RECURSO = [
   { value: 'persona', label: 'Persona' },
@@ -238,7 +239,7 @@ export function RecursosPage() {
                   colSpan={sucursales.length > 0 ? 5 : 4}
                   className="px-4 py-6 text-center text-[var(--color-text-faint)]"
                 >
-                  {loading ? 'Cargando…' : 'Sin recursos todavía'}
+                  {loading ? <CargandoPantalla minHeight={80} /> : 'Sin recursos todavía'}
                 </td>
               </tr>
             )}

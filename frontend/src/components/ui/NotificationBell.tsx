@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, CalendarClock, PackageX } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
+import { tiempoRelativo } from '../../lib/fechas'
+import { CargandoPantalla } from './CargandoPantalla'
 
 interface Notificacion {
   id: string
@@ -15,10 +17,32 @@ interface Notificacion {
 
 const INTERVALO_MS = 30000
 
+const ESTILO_POR_TIPO: Record<string, { icon: typeof Bell; className: string }> = {
+  stock_bajo: { icon: PackageX, className: 'bg-red-100 text-red-600' },
+  cita_asignada: {
+    icon: CalendarClock,
+    className: 'bg-[var(--color-primario-suave)] text-[var(--color-primario-legible)]',
+  },
+}
+const ESTILO_DEFECTO = {
+  icon: Bell,
+  className: 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]',
+}
+
+function IconoNotificacion({ tipo }: { tipo: string }) {
+  const { icon: Icono, className } = ESTILO_POR_TIPO[tipo] ?? ESTILO_DEFECTO
+  return (
+    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${className}`}>
+      <Icono className="h-4 w-4" strokeWidth={2} />
+    </div>
+  )
+}
+
 export function NotificationBell() {
   const navigate = useNavigate()
   const [abierto, setAbierto] = useState(false)
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
+  const [cargandoLista, setCargandoLista] = useState(true)
   const [contador, setContador] = useState(0)
   const contenedorRef = useRef<HTMLDivElement>(null)
 
@@ -32,12 +56,14 @@ export function NotificationBell() {
   }
 
   const cargarNotificaciones = () => {
+    setCargandoLista(true)
     axiosInstance
       .get<Notificacion[]>('/notificaciones')
       .then(({ data }) => setNotificaciones(data))
       .catch(() => {
         /* silencioso */
       })
+      .finally(() => setCargandoLista(false))
   }
 
   useEffect(() => {
@@ -119,27 +145,33 @@ export function NotificationBell() {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {notificaciones.length === 0 && (
+            {cargandoLista && <CargandoPantalla minHeight={140} />}
+
+            {!cargandoLista && notificaciones.length === 0 && (
               <p className="px-4 py-6 text-center text-sm text-[var(--color-text-faint)]">
                 Sin notificaciones
               </p>
             )}
-            {notificaciones.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => abrirNotificacion(n)}
-                className={`block w-full border-b border-[var(--color-border)] px-4 py-3 text-left text-sm last:border-b-0 hover:bg-[var(--color-bg-hover)] ${
-                  n.leida ? '' : 'bg-[var(--color-primario-suave)]/40'
-                }`}
-              >
-                <p className="font-medium text-[var(--color-text)]">{n.titulo}</p>
-                <p className="mt-0.5 text-[var(--color-text-muted)]">{n.mensaje}</p>
-                <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-                  {new Date(n.creadoEn).toLocaleString()}
-                </p>
-              </button>
-            ))}
+            {!cargandoLista &&
+              notificaciones.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => abrirNotificacion(n)}
+                  className={`flex w-full items-start gap-3 border-b border-[var(--color-border)] px-4 py-3 text-left text-sm last:border-b-0 hover:bg-[var(--color-bg-hover)] ${
+                    n.leida ? '' : 'bg-[var(--color-primario-suave)]/40'
+                  }`}
+                >
+                  <IconoNotificacion tipo={n.tipo} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-[var(--color-text)]">{n.titulo}</span>
+                    <span className="block text-[var(--color-text-muted)]">{n.mensaje}</span>
+                    <span className="mt-1 block text-xs text-[var(--color-text-faint)]">
+                      {tiempoRelativo(n.creadoEn)}
+                    </span>
+                  </span>
+                </button>
+              ))}
           </div>
         </div>
       )}

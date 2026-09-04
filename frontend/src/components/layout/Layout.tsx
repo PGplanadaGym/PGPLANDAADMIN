@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { CanAccess, useGetIdentity, useLogout } from '@refinedev/core'
+import { CanAccess, useGetIdentity } from '@refinedev/core'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Menu, Search, LogOut } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { aplicarColorPrimario } from '../../lib/theme'
 import { ModulosProvider, useModulos } from '../../providers/modulosContext'
 import { EntidadesProvider, useEntidades } from '../../providers/entidadesContext'
-import { Avatar } from '../ui/Avatar'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { NotificationBell } from '../ui/NotificationBell'
 import { CommandPalette } from '../ui/CommandPalette'
+import { UserMenu } from '../ui/UserMenu'
 import { NAV_ITEMS } from '../../lib/navigation'
 
 interface SidebarProps {
@@ -121,7 +121,6 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
 
 export function Layout() {
   const { data: identity } = useGetIdentity<Identity>()
-  const { mutate: logout } = useLogout()
   const [sidebarAbierto, setSidebarAbierto] = useState(false)
   const [paletaAbierta, setPaletaAbierta] = useState(false)
   const location = useLocation()
@@ -158,19 +157,18 @@ export function Layout() {
                   <Menu className="h-5 w-5" />
                 </button>
 
-                <Link
-                  to="/perfil"
-                  className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)]"
-                >
-                  <Avatar nombre={identity?.nombre} fotoUrl={identity?.fotoUrl} size={28} />
-                  <span className="truncate">
-                    <span className="font-medium text-[var(--color-text)]">{identity?.nombre}</span>
-                    <span className="hidden sm:inline"> · {identity?.email}</span>
-                  </span>
-                </Link>
+                <UserMenu />
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaletaAbierta(true)}
+                  aria-label="Buscar"
+                  className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] sm:hidden"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
                 <button
                   type="button"
                   onClick={() => setPaletaAbierta(true)}
@@ -184,14 +182,6 @@ export function Layout() {
                 </button>
                 <NotificationBell />
                 <ThemeToggle />
-                <button
-                  type="button"
-                  onClick={() => logout()}
-                  className="flex items-center gap-2 rounded-lg bg-[var(--color-bg-muted)] px-3 py-1.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-border)]"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Cerrar sesión</span>
-                </button>
               </div>
             </header>
 

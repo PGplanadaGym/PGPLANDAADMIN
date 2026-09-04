@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { axiosInstance } from '../../lib/axios'
-import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const COLORES_CATEGORICOS = [
   'var(--color-cat-1)',
@@ -65,12 +65,7 @@ export function ReportesPage() {
   }, [])
 
   if (cargando) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-        <Spinner size={16} />
-        Cargando…
-      </div>
-    )
+    return <CargandoPantalla minHeight={300} />
   }
 
   const egresosPorCategoria = (resumen?.porCategoria ?? [])

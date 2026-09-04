@@ -16,6 +16,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
 import { ComprobanteUploadField } from '../../components/ui/ComprobanteUploadField'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 
 const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'yape/plin', 'otro']
@@ -594,7 +595,7 @@ export function CuentasPage() {
             {movimientos.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin movimientos en este rango'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin movimientos en este rango'}
                 </td>
               </tr>
             )}

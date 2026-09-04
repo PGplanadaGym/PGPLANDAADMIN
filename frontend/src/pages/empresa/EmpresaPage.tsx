@@ -9,6 +9,7 @@ import { aplicarColorPrimario } from '../../lib/theme'
 import type { Identity } from '../../lib/identity'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { ImageUploadField } from '../../components/ui/ImageUploadField'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const empresaSchema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres'),
@@ -68,7 +69,7 @@ export function EmpresaPage() {
   })
 
   if (cargando) {
-    return <p className="text-sm text-[var(--color-text-faint)]">Cargando…</p>
+    return <CargandoPantalla minHeight={300} />
   }
 
   return (

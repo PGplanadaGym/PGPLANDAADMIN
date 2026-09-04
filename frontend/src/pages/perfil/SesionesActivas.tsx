@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Sesion {
   id: string
@@ -44,6 +45,7 @@ export function SesionesActivas() {
       sesion.esActual
         ? 'Esta es tu sesión actual. Se cerrará y tendrás que iniciar sesión de nuevo.'
         : '¿Cerrar esta sesión en el otro dispositivo?',
+      'Cerrar sesión',
     )
     if (!confirmado) return
 
@@ -64,6 +66,7 @@ export function SesionesActivas() {
     const confirmado = await confirmar(
       'Cerrar otras sesiones',
       'Se cerrará tu sesión en todos los demás dispositivos, menos este.',
+      'Cerrar sesiones',
     )
     if (!confirmado) return
 
@@ -93,7 +96,7 @@ export function SesionesActivas() {
       </div>
 
       <div className="mt-3 flex flex-col gap-2">
-        {cargando && <p className="text-sm text-[var(--color-text-faint)]">Cargando…</p>}
+        {cargando && <CargandoPantalla minHeight={120} />}
 
         {!cargando &&
           sesiones.map((sesion) => (

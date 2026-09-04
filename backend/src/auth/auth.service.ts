@@ -102,6 +102,15 @@ export class AuthService {
       );
     }
 
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: registro.usuarioId },
+    });
+    if (!usuario || !usuario.activo) {
+      throw new UnauthorizedException(
+        'Sesión inválida, inicia sesión de nuevo',
+      );
+    }
+
     await this.prisma.refreshToken.update({
       where: { id: registro.id },
       data: { revocado: true },
@@ -220,7 +229,7 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.usuario.update({
         where: { id: registro.usuarioId },
-        data: { passwordHash },
+        data: { passwordHash, passwordConfigurada: true },
       }),
       this.prisma.passwordResetToken.update({
         where: { id: registro.id },

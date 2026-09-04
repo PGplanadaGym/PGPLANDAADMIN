@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { axiosInstance } from '../../lib/axios'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface RegistroAuditoria {
   id: string
@@ -86,7 +87,7 @@ export function AuditoriaPage() {
             {registros.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin actividad registrada todavía'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin actividad registrada todavía'}
                 </td>
               </tr>
             )}

@@ -16,6 +16,7 @@ import { ResetPasswordPage } from './pages/login/ResetPasswordPage'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { UsuariosListPage } from './pages/usuarios/UsuariosListPage'
 import { UsuariosCreatePage } from './pages/usuarios/UsuariosCreatePage'
+import { UsuarioPerfilPage } from './pages/usuarios/UsuarioPerfilPage'
 import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClientesCreatePage } from './pages/clientes/ClientesCreatePage'
 import { ModulosPage } from './pages/modulos/ModulosPage'
@@ -184,6 +185,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="/usuarios" element={<UsuariosListPage />} />
           <Route path="/usuarios/nuevo" element={<UsuariosCreatePage />} />
+          <Route path="/usuarios/:id" element={<UsuarioPerfilPage />} />
           <Route path="/roles" element={<RolesPermisosPage />} />
           <Route path="/cuentas" element={<CuentasPage />} />
           <Route path="/materiales" element={<MaterialesPage />} />

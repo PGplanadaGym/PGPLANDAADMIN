@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Sucursal {
   id: string
@@ -143,7 +144,7 @@ export function SucursalesPage() {
             {sucursales.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin sucursales todavía'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin sucursales todavía'}
                 </td>
               </tr>
             )}

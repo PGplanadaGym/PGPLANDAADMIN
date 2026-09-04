@@ -10,6 +10,7 @@ import { SearchInput } from '../ui/SearchInput'
 import { Pagination } from '../ui/Pagination'
 import { PrimaryButton } from '../ui/PrimaryButton'
 import { ExportarCSVButton } from '../ui/ExportarCSVButton'
+import { CargandoPantalla } from '../ui/CargandoPantalla'
 import { buildEntidadSchema } from './schema'
 
 interface Registro {
@@ -99,7 +100,7 @@ export function EntidadCRUD({ entidadClave }: Props) {
   }
 
   if (cargandoMeta) {
-    return <p className="text-sm text-[var(--color-text-faint)]">Cargando…</p>
+    return <CargandoPantalla minHeight={300} />
   }
 
   if (!entidad) {
@@ -224,11 +225,13 @@ export function EntidadCRUD({ entidadClave }: Props) {
                   colSpan={campos.length + 1}
                   className="px-4 py-6 text-center text-[var(--color-text-faint)]"
                 >
-                  {cargandoRegistros
-                    ? 'Cargando…'
-                    : query
-                      ? 'Sin resultados para tu búsqueda'
-                      : 'Sin registros todavía'}
+                  {cargandoRegistros ? (
+                    <CargandoPantalla minHeight={80} />
+                  ) : query ? (
+                    'Sin resultados para tu búsqueda'
+                  ) : (
+                    'Sin registros todavía'
+                  )}
                 </td>
               </tr>
             )}

@@ -8,6 +8,7 @@ import { useEntidades, type TipoCampo } from '../../providers/entidadesContext'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const TIPOS_CAMPO: { value: TipoCampo; label: string }[] = [
   { value: 'texto', label: 'Texto' },
@@ -433,7 +434,7 @@ export function EntidadesAdminPage() {
             {entidades.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin entidades todavía'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin entidades todavía'}
                 </td>
               </tr>
             )}

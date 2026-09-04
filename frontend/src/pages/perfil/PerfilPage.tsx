@@ -3,6 +3,7 @@ import { useGetIdentity } from '@refinedev/core'
 import { axiosInstance } from '../../lib/axios'
 import type { Identity } from '../../lib/identity'
 import { Avatar } from '../../components/ui/Avatar'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { PerfilInfoForm, type PerfilValues } from './PerfilInfoForm'
 import { PerfilSeguridadForm } from './PerfilSeguridadForm'
 import { SesionesActivas } from './SesionesActivas'
@@ -33,7 +34,7 @@ export function PerfilPage() {
   }, [])
 
   if (!perfil) {
-    return <p className="text-sm text-[var(--color-text-faint)]">Cargando…</p>
+    return <CargandoPantalla minHeight={400} />
   }
 
   const miembroDesde = new Date(perfil.creadoEn).toLocaleDateString('es', {

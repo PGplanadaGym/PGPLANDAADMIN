@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const ETIQUETAS_TIPO: Record<string, string> = {
   entrada: 'Marcar entrada',
@@ -111,12 +112,7 @@ export function AsistenciaPage() {
       </p>
 
       <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-6">
-        {cargando && (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <Spinner size={16} />
-            Cargando…
-          </div>
-        )}
+        {cargando && <CargandoPantalla minHeight={100} />}
 
         {!cargando && estado && (
           <>

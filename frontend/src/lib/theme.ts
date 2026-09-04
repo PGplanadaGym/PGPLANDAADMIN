@@ -21,21 +21,38 @@ export function aplicarColorPrimario(color?: string | null) {
 
 const TEMA_KEY = 'backoffice_tema'
 
-export type Tema = 'light' | 'dark'
+export type Tema = 'light' | 'dark' | 'system'
 
-export function obtenerTemaGuardado(): Tema | null {
+const mediaOscuro = () => window.matchMedia('(prefers-color-scheme: dark)')
+
+export function obtenerTemaGuardado(): Tema {
   const guardado = localStorage.getItem(TEMA_KEY)
-  return guardado === 'light' || guardado === 'dark' ? guardado : null
+  return guardado === 'light' || guardado === 'dark' || guardado === 'system'
+    ? guardado
+    : 'system'
 }
 
-export function obtenerTemaPreferido(): Tema {
-  return (
-    obtenerTemaGuardado() ??
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-  )
+function resolverOscuro(tema: Tema): boolean {
+  return tema === 'dark' || (tema === 'system' && mediaOscuro().matches)
 }
 
 export function aplicarTema(tema: Tema) {
-  document.documentElement.classList.toggle('dark', tema === 'dark')
+  document.documentElement.classList.toggle('dark', resolverOscuro(tema))
   localStorage.setItem(TEMA_KEY, tema)
+}
+
+/**
+ * Llamar una sola vez al iniciar la app. Además de aplicar el tema guardado (el
+ * flash inicial ya lo evita el script inline en index.html), deja el modo "Sistema"
+ * escuchando cambios en vivo del SO — así si el usuario cambia de claro a oscuro en
+ * Windows/macOS mientras la pestaña sigue abierta, la app se actualiza sola.
+ */
+export function inicializarTema() {
+  aplicarTema(obtenerTemaGuardado())
+
+  mediaOscuro().addEventListener('change', (e) => {
+    if (obtenerTemaGuardado() === 'system') {
+      document.documentElement.classList.toggle('dark', e.matches)
+    }
+  })
 }

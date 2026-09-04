@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 const TIPOS_MOVIMIENTO = [
   { value: 'entrada', label: 'Entrada (compra/reposición)' },
@@ -276,7 +277,7 @@ export function ProductosPage() {
             {productos.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin productos todavía'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin productos todavía'}
                 </td>
               </tr>
             )}
@@ -365,12 +366,7 @@ export function ProductosPage() {
             </h2>
 
             <div className="mt-4 max-h-96 overflow-y-auto">
-              {cargandoHistorial && (
-                <div className="flex items-center gap-2 py-4 text-sm text-[var(--color-text-muted)]">
-                  <Spinner size={16} />
-                  Cargando…
-                </div>
-              )}
+              {cargandoHistorial && <CargandoPantalla minHeight={100} />}
               {!cargandoHistorial && historial.length === 0 && (
                 <p className="py-4 text-sm text-[var(--color-text-faint)]">Sin movimientos todavía</p>
               )}

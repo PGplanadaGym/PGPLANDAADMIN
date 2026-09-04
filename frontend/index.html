@@ -15,9 +15,10 @@
       (function () {
         try {
           var guardado = localStorage.getItem('backoffice_tema')
+          var sigueSistema = !guardado || guardado === 'system'
           var oscuro =
             guardado === 'dark' ||
-            (!guardado && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            (sigueSistema && window.matchMedia('(prefers-color-scheme: dark)').matches)
           if (oscuro) document.documentElement.classList.add('dark')
         } catch (e) {}
       })()

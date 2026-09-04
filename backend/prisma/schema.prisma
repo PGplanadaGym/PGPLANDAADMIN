@@ -74,6 +74,10 @@ model Usuario {
   cargo        String?
   bio          String?
   activo       Boolean   @default(true)
+  // false = todavía usa la contraseña aleatoria de la invitación (no puede iniciar sesión
+  // hasta que la reemplace vía /reset-password). true por defecto porque los usuarios
+  // sembrados o creados con una contraseña real ya la tienen "configurada" desde el inicio.
+  passwordConfigurada Boolean @default(true)
   sucursalId   String?
   sucursal     Sucursal? @relation(fields: [sucursalId], references: [id])
   creadoEn     DateTime  @default(now())

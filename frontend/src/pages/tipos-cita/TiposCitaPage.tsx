@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { CanAccess } from '@refinedev/core'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface TipoCita {
   id: string
@@ -152,7 +153,7 @@ export function TiposCitaPage() {
             {tipos.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {loading ? 'Cargando…' : 'Sin tipos de cita todavía'}
+                  {loading ? <CargandoPantalla minHeight={80} /> : 'Sin tipos de cita todavía'}
                 </td>
               </tr>
             )}

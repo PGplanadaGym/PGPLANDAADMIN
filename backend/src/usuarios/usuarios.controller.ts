@@ -21,6 +21,7 @@ import { UpdatePerfilDto } from './dto/update-perfil.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { AsignarRolesDto } from './dto/asignar-roles.dto';
 import { AsignarSucursalDto } from './dto/asignar-sucursal.dto';
+import { CambiarActivoDto } from './dto/cambiar-activo.dto';
 
 @ApiTags('usuarios')
 @ApiBearerAuth()
@@ -60,6 +61,12 @@ export class UsuariosController {
     return this.usuariosService.findOne(user.empresaId, id);
   }
 
+  @CheckPermissions('usuarios.leer')
+  @Get(':id/perfil')
+  perfilCompleto(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.usuariosService.perfilCompleto(user.empresaId, id);
+  }
+
   @CheckPermissions('usuarios.crear')
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateUsuarioDto) {
@@ -89,5 +96,21 @@ export class UsuariosController {
       id,
       dto.sucursalId ?? null,
     );
+  }
+
+  @CheckPermissions('usuarios.actualizar')
+  @Patch(':id/activo')
+  cambiarActivo(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: CambiarActivoDto,
+  ) {
+    return this.usuariosService.cambiarActivo(user.empresaId, user.id, id, dto.activo);
+  }
+
+  @CheckPermissions('usuarios.actualizar')
+  @Post(':id/reenviar-invitacion')
+  reenviarInvitacion(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.usuariosService.reenviarInvitacion(user.empresaId, user.id, id);
   }
 }

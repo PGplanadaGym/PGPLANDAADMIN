@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 interface Permiso {
   id: string
@@ -169,9 +170,7 @@ export function RolesPermisosPage() {
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-2">
-          {cargando && (
-            <p className="p-2 text-sm text-[var(--color-text-faint)]">Cargando…</p>
-          )}
+          {cargando && <CargandoPantalla minHeight={80} />}
           {!cargando && roles.length === 0 && (
             <p className="p-2 text-sm text-[var(--color-text-faint)]">Sin roles todavía</p>
           )}

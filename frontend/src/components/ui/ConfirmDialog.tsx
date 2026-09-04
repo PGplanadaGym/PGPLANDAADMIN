@@ -3,17 +3,21 @@ import { useCallback, useState } from 'react'
 interface ConfirmState {
   titulo: string
   mensaje: string
+  textoConfirmar: string
   resolver: (confirmado: boolean) => void
 }
 
 export function useConfirm() {
   const [estado, setEstado] = useState<ConfirmState | null>(null)
 
-  const confirmar = useCallback((titulo: string, mensaje: string) => {
-    return new Promise<boolean>((resolve) => {
-      setEstado({ titulo, mensaje, resolver: resolve })
-    })
-  }, [])
+  const confirmar = useCallback(
+    (titulo: string, mensaje: string, textoConfirmar = 'Eliminar') => {
+      return new Promise<boolean>((resolve) => {
+        setEstado({ titulo, mensaje, textoConfirmar, resolver: resolve })
+      })
+    },
+    [],
+  )
 
   const dialog = estado ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -39,7 +43,7 @@ export function useConfirm() {
             }}
             className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
           >
-            Eliminar
+            {estado.textoConfirmar}
           </button>
         </div>
       </div>

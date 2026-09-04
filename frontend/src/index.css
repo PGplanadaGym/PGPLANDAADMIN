@@ -91,6 +91,13 @@ textarea::placeholder {
   color: var(--color-text-faint);
 }
 
+/* Edge/Chrome agregan su propio ícono de "revelar contraseña" dentro del input,
+   que se solapa con nuestro botón de ojito — lo ocultamos para que quede uno solo. */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear {
+  display: none;
+}
+
 ::selection {
   background-color: var(--color-primario);
   color: white;
@@ -274,6 +281,17 @@ textarea::placeholder {
 }
 
 /* Leaflet (mapa de marcaciones) */
+
+/* Leaflet usa z-index internos de hasta 1000 (sus controles de zoom/atribución) y su
+   contenedor no crea contexto de apilamiento propio, así que esos valores se "escapan"
+   y terminan por encima de cualquier modal/dropdown de la app (buscador, notificaciones,
+   menú de usuario…), que usan z-index mucho más bajos. `isolation: isolate` obliga al
+   mapa a apilarse dentro de su propia burbuja, sin tocar los z-index de Leaflet ni los
+   del resto de la UI. */
+.leaflet-container {
+  isolation: isolate;
+}
+
 .leaflet-bar a,
 .leaflet-control-attribution {
   background: var(--color-bg-card);

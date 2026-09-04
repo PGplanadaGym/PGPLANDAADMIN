@@ -1,47 +1,82 @@
-import { useEffect, useState } from 'react'
-import { aplicarTema, obtenerTemaPreferido, type Tema } from '../../lib/theme'
+import { useEffect, useRef, useState } from 'react'
+import { Monitor, Moon, Sun } from 'lucide-react'
+import { aplicarTema, obtenerTemaGuardado, type Tema } from '../../lib/theme'
 
-function IconoSol() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-      <circle cx="12" cy="12" r="4" />
-      <path
-        strokeLinecap="round"
-        d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-      />
-    </svg>
-  )
-}
-
-function IconoLuna() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-    </svg>
-  )
-}
+const OPCIONES: { value: Tema; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Claro', icon: Sun },
+  { value: 'dark', label: 'Oscuro', icon: Moon },
+  { value: 'system', label: 'Sistema', icon: Monitor },
+]
 
 export function ThemeToggle() {
-  const [tema, setTema] = useState<Tema>('light')
+  const [tema, setTema] = useState<Tema>('system')
+  const [abierto, setAbierto] = useState(false)
+  const contenedorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setTema(obtenerTemaPreferido())
+    setTema(obtenerTemaGuardado())
   }, [])
 
-  const alternar = () => {
-    const nuevo: Tema = tema === 'dark' ? 'light' : 'dark'
+  useEffect(() => {
+    const alHacerClicFuera = (e: MouseEvent) => {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', alHacerClicFuera)
+    return () => document.removeEventListener('mousedown', alHacerClicFuera)
+  }, [])
+
+  const elegir = (nuevo: Tema) => {
     setTema(nuevo)
     aplicarTema(nuevo)
+    setAbierto(false)
   }
 
+  const opcionActual = OPCIONES.find((o) => o.value === tema) ?? OPCIONES[2]
+  const IconoActual = opcionActual.icon
+
   return (
-    <button
-      type="button"
-      onClick={alternar}
-      aria-label="Cambiar tema"
-      className="rounded p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg)]"
-    >
-      {tema === 'dark' ? <IconoSol /> : <IconoLuna />}
-    </button>
+    <div ref={contenedorRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-label="Cambiar tema"
+        aria-haspopup="menu"
+        aria-expanded={abierto}
+        className="rounded p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg)]"
+      >
+        <IconoActual className="h-5 w-5" strokeWidth={2} />
+      </button>
+
+      {abierto && (
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-36 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1 shadow-[var(--sombra-lg)]"
+        >
+          {OPCIONES.map((opcion) => {
+            const Icono = opcion.icon
+            const activa = tema === opcion.value
+            return (
+              <button
+                key={opcion.value}
+                type="button"
+                role="menuitemradio"
+                aria-checked={activa}
+                onClick={() => elegir(opcion.value)}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                  activa
+                    ? 'bg-[var(--color-primario-suave)] text-[var(--color-primario-legible)]'
+                    : 'text-[var(--color-text)] hover:bg-[var(--color-bg-hover)]'
+                }`}
+              >
+                <Icono className="h-4 w-4" strokeWidth={2} />
+                {opcion.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }

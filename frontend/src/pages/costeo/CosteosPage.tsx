@@ -4,6 +4,7 @@ import { CanAccess } from '@refinedev/core'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
 type Periodo = 'mes' | 'anio' | 'todo'
 
@@ -130,7 +131,7 @@ export function CosteosPage() {
             {proyectosFiltrados.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {cargando ? 'Cargando…' : 'Sin costeos en este período'}
+                  {cargando ? <CargandoPantalla minHeight={80} /> : 'Sin costeos en este período'}
                 </td>
               </tr>
             )}
