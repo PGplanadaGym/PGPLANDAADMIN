@@ -74,7 +74,9 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
         </div>
 
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
-          {NAV_ITEMS.filter((item) => moduloActivo(item.modulo)).map((item) => {
+          {NAV_ITEMS.filter(
+            (item) => moduloActivo(item.modulo) && (!item.superAdminOnly || identity?.esSuperAdmin),
+          ).map((item) => {
             const Icono = item.icon
             const activo = esRutaActiva(location.pathname, item.to)
             const enlace = (

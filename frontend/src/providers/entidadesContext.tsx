@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { axiosInstance } from '../lib/axios'
 
-export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'select'
+export type TipoCampo = 'texto' | 'numero' | 'fecha' | 'booleano' | 'select' | 'relacion' | 'imagen'
 
 export interface CampoDinamico {
   clave: string
@@ -16,6 +16,7 @@ export interface CampoDinamico {
   tipo: TipoCampo
   requerido: boolean
   opciones?: string[] | null
+  relacionCon?: string | null
   orden: number
 }
 

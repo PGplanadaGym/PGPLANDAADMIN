@@ -23,6 +23,7 @@ import {
   Wallet2,
   BarChart3,
   Database,
+  Network,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -35,6 +36,9 @@ export interface NavItem {
   // sin exigir un permiso granular. Úsalo para acciones de autoservicio
   // (ej. marcar tu propia asistencia), no para listados administrativos.
   sinPermiso?: boolean
+  // true = visible solo para el super-admin (dueño de la plataforma),
+  // sin importar los permisos del usuario dentro de su propia empresa.
+  superAdminOnly?: boolean
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -98,4 +102,12 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/entidades', label: 'Entidades dinámicas', resource: 'entidades', icon: Database },
   { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
+  {
+    to: '/plataforma/empresas',
+    label: 'Empresas (plataforma)',
+    resource: 'empresas-todas',
+    icon: Network,
+    sinPermiso: true,
+    superAdminOnly: true,
+  },
 ]

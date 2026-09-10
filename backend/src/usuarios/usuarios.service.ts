@@ -12,6 +12,7 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdatePerfilDto } from './dto/update-perfil.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { AsignarRolesDto } from './dto/asignar-roles.dto';
+import { UpdateUsuarioAdminDto } from './dto/update-usuario-admin.dto';
 
 const INVITACION_TTL_MS = 60 * 60 * 1000; // 1 hora
 
@@ -106,7 +107,11 @@ export class UsuariosService {
     return this.findOne(empresaId, usuario.id);
   }
 
-  private async enviarInvitacion(usuarioId: string, nombre: string, email: string) {
+  private async enviarInvitacion(
+    usuarioId: string,
+    nombre: string,
+    email: string,
+  ) {
     const tokenPlano = generarTokenPlano(32);
     await this.prisma.passwordResetToken.create({
       data: {
@@ -118,10 +123,15 @@ export class UsuariosService {
 
     const activarUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/reset-password?token=${tokenPlano}`;
     await this.emailService.enviarInvitacion(email, nombre, activarUrl);
+    return activarUrl;
   }
 
   /** Solo tiene sentido si el usuario todavía no configuró su propia contraseña. */
-  async reenviarInvitacion(empresaId: string, actorId: string, usuarioId: string) {
+  async reenviarInvitacion(
+    empresaId: string,
+    actorId: string,
+    usuarioId: string,
+  ) {
     const usuario = await this.prisma.usuario.findFirst({
       where: { id: usuarioId, empresaId },
     });
@@ -132,7 +142,11 @@ export class UsuariosService {
       throw new BadRequestException('Este usuario ya configuró su contraseña');
     }
 
-    await this.enviarInvitacion(usuario.id, usuario.nombre, usuario.email);
+    const activarUrl = await this.enviarInvitacion(
+      usuario.id,
+      usuario.nombre,
+      usuario.email,
+    );
 
     await this.auditoriaService.registrar({
       empresaId,
@@ -143,7 +157,9 @@ export class UsuariosService {
       detalle: { accion: 'reenviar_invitacion' },
     });
 
-    return { success: true };
+    // Se devuelve el link también para que el admin pueda copiarlo y compartirlo a mano
+    // (ej. por WhatsApp) si el correo no llega o queda en spam.
+    return { success: true, activarUrl };
   }
 
   /** Activa o desactiva el acceso de un usuario. Desactivar revoca de inmediato sus
@@ -166,7 +182,10 @@ export class UsuariosService {
     }
 
     await this.prisma.$transaction([
-      this.prisma.usuario.update({ where: { id: usuarioId }, data: { activo } }),
+      this.prisma.usuario.update({
+        where: { id: usuarioId },
+        data: { activo },
+      }),
       ...(activo
         ? []
         : [
@@ -189,10 +208,26 @@ export class UsuariosService {
     return this.findOne(empresaId, usuarioId);
   }
 
-  async perfilCompleto(empresaId: string, id: string) {
+  /**
+   * `permisosVisor` son los permisos de quien hace la petición (no del usuario consultado):
+   * - `pagosNomina` trae sueldos, así que solo se incluye si el visor tiene `nomina.leer` —
+   *   de lo contrario cualquier rol con `usuarios.leer` (ej. "ver directorio de empleados")
+   *   podría ver el historial salarial de todos sin tener permiso de Nómina.
+   * - `accionesRecientes` viene del mismo log que la página de Auditoría, así que se protege
+   *   igual: solo si el visor tiene `auditoria.leer`.
+   */
+  async perfilCompleto(empresaId: string, id: string, permisosVisor: string[]) {
     const usuario = await this.findOne(empresaId, id);
+    const puedeVerNomina = permisosVisor.includes('nomina.leer');
+    const puedeVerAuditoria = permisosVisor.includes('auditoria.leer');
 
-    const [activosAsignados, marcaciones, pagosNomina] = await Promise.all([
+    const [
+      activosAsignados,
+      marcaciones,
+      pagosNomina,
+      ultimaSesion,
+      accionesRecientes,
+    ] = await Promise.all([
       this.prisma.asignacionActivo.findMany({
         where: { empresaId, usuarioId: id, fechaDevolucion: null },
         include: { activo: { select: { id: true, nombre: true } } },
@@ -203,14 +238,75 @@ export class UsuariosService {
         orderBy: { creadoEn: 'desc' },
         take: 10,
       }),
-      this.prisma.pagoNomina.findMany({
-        where: { empresaId, empleadoId: id },
-        orderBy: { fechaPago: 'desc' },
-        take: 10,
+      puedeVerNomina
+        ? this.prisma.pagoNomina.findMany({
+            where: { empresaId, empleadoId: id },
+            orderBy: { fechaPago: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve([]),
+      this.prisma.refreshToken.findFirst({
+        where: { usuarioId: id },
+        orderBy: { inicioSesionEn: 'desc' },
+        select: { inicioSesionEn: true },
       }),
+      puedeVerAuditoria
+        ? this.prisma.registroAuditoria.findMany({
+            where: { empresaId, usuarioId: id },
+            orderBy: { creadoEn: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve([]),
     ]);
 
-    return { usuario, activosAsignados, marcaciones, pagosNomina };
+    return {
+      usuario,
+      activosAsignados,
+      marcaciones,
+      pagosNomina,
+      ultimoInicioSesion: ultimaSesion?.inicioSesionEn ?? null,
+      accionesRecientes,
+    };
+  }
+
+  /** Edición de datos básicos de un empleado hecha por un administrador. */
+  async updateAdmin(
+    empresaId: string,
+    actorId: string,
+    usuarioId: string,
+    dto: UpdateUsuarioAdminDto,
+  ) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioId, empresaId },
+    });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        nombre: dto.nombre,
+        cargo: dto.cargo,
+        telefono: dto.telefono,
+        bio: dto.bio,
+      },
+    });
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: 'actualizar',
+      entidad: 'usuario',
+      entidadId: usuarioId,
+      detalle: {
+        camposEditados: Object.entries(dto)
+          .filter(([, valor]) => valor !== undefined)
+          .map(([clave]) => clave),
+      },
+    });
+
+    return this.findOne(empresaId, usuarioId);
   }
 
   async updateSelf(usuarioId: string, dto: UpdatePerfilDto) {
@@ -343,7 +439,10 @@ export class UsuariosService {
       }),
     ]);
 
-    await this.emailService.enviarAvisoCambioPassword(usuario.email, usuario.nombre);
+    await this.emailService.enviarAvisoCambioPassword(
+      usuario.email,
+      usuario.nombre,
+    );
 
     return { success: true };
   }

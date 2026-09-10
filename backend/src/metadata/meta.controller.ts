@@ -31,6 +31,7 @@ export class MetaController {
         tipo: campo.tipo,
         requerido: campo.requerido,
         opciones: campo.opciones,
+        relacionCon: campo.relacionCon,
         orden: campo.orden,
       })),
     }));

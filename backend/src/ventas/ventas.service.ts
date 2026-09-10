@@ -5,10 +5,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { subMonths } from 'date-fns';
+import type { Prisma, ProductoServicio } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { CreateOrdenDto } from './dto/create-orden.dto';
+import { ConfirmarOrdenDto } from './dto/confirmar-orden.dto';
+
+interface InfoPago {
+  clienteId?: string;
+  metodoPago?: string;
+  numeroComprobante?: string;
+  comprobanteUrl?: string;
+}
 
 const TOP_PRODUCTOS_LIMITE = 8;
 
@@ -20,6 +29,10 @@ const INCLUDE_ORDEN = {
       producto: { select: { id: true, nombre: true, sku: true, tipo: true } },
     },
   },
+  movimientosCuenta: {
+    select: { metodoPago: true, numeroComprobante: true },
+    take: 1,
+  },
 };
 
 @Injectable()
@@ -30,9 +43,19 @@ export class VentasService {
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
-  findAll(empresaId: string) {
+  findAll(empresaId: string, desde?: string, hasta?: string) {
     return this.prisma.orden.findMany({
-      where: { empresaId },
+      where: {
+        empresaId,
+        ...(desde || hasta
+          ? {
+              creadoEn: {
+                ...(desde ? { gte: new Date(desde) } : {}),
+                ...(hasta ? { lte: new Date(hasta) } : {}),
+              },
+            }
+          : {}),
+      },
       include: INCLUDE_ORDEN,
       orderBy: { creadoEn: 'desc' },
     });
@@ -51,6 +74,102 @@ export class VentasService {
     return orden;
   }
 
+  private validarStockSuficiente(
+    items: { productoId: string; cantidad: number }[],
+    productoPorId: Map<string, ProductoServicio>,
+  ) {
+    for (const item of items) {
+      const producto = productoPorId.get(item.productoId)!;
+      if (producto.tipo === 'producto') {
+        const stockActual = producto.stock ?? 0;
+        if (item.cantidad > stockActual) {
+          throw new ConflictException(
+            `Stock insuficiente para "${producto.nombre}": hay ${stockActual} y se intentan vender ${item.cantidad}`,
+          );
+        }
+      }
+    }
+  }
+
+  private async resolverCategoriaIngreso(empresaId: string, categoriaIngresoId?: string) {
+    if (!categoriaIngresoId) return null;
+
+    const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
+      where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
+    });
+    if (!moduloCuentasActivo) return null;
+
+    const categoria = await this.prisma.categoriaMovimiento.findFirst({
+      where: { id: categoriaIngresoId, empresaId, tipo: 'ingreso' },
+    });
+    if (!categoria) {
+      throw new BadRequestException('Categoría de ingreso no encontrada');
+    }
+    return categoria;
+  }
+
+  private async aplicarStockYCategoria(
+    tx: Prisma.TransactionClient,
+    empresaId: string,
+    actorId: string,
+    items: { productoId: string; cantidad: number }[],
+    productoPorId: Map<string, ProductoServicio>,
+    categoria: { id: string } | null,
+    pago: InfoPago,
+    ordenId: string,
+    total: number,
+  ) {
+    for (const item of items) {
+      const producto = productoPorId.get(item.productoId)!;
+      if (producto.tipo !== 'producto') continue;
+
+      const nuevoStock = (producto.stock ?? 0) - item.cantidad;
+      await tx.movimientoStock.create({
+        data: {
+          empresaId,
+          productoId: item.productoId,
+          tipo: 'salida',
+          cantidad: -item.cantidad,
+          motivo: 'Venta',
+          usuarioId: actorId,
+        },
+      });
+      await tx.productoServicio.update({
+        where: { id: item.productoId },
+        data: { stock: nuevoStock },
+      });
+
+      if (producto.stockMinimo != null && nuevoStock <= producto.stockMinimo) {
+        await this.notificacionesService.crear({
+          empresaId,
+          tipo: 'stock_bajo',
+          titulo: 'Stock bajo',
+          mensaje: `"${producto.nombre}" quedó con ${nuevoStock} unidades (mínimo ${producto.stockMinimo})`,
+          enlace: '/productos',
+        });
+      }
+    }
+
+    if (categoria) {
+      await tx.movimientoCuenta.create({
+        data: {
+          empresaId,
+          tipo: 'ingreso',
+          categoriaId: categoria.id,
+          monto: total,
+          fecha: new Date(),
+          descripcion: `Venta #${ordenId.slice(0, 8)}`,
+          clienteId: pago.clienteId,
+          usuarioId: actorId,
+          ordenId,
+          metodoPago: pago.metodoPago,
+          numeroComprobante: pago.numeroComprobante,
+          comprobanteUrl: pago.comprobanteUrl,
+        },
+      });
+    }
+  }
+
   async create(empresaId: string, actorId: string, dto: CreateOrdenDto) {
     const productoIds = [...new Set(dto.items.map((item) => item.productoId))];
     const productos = await this.prisma.productoServicio.findMany({
@@ -66,37 +185,23 @@ export class VentasService {
       productos.map((producto) => [producto.id, producto]),
     );
 
-    for (const item of dto.items) {
-      const producto = productoPorId.get(item.productoId)!;
-      if (producto.tipo === 'producto') {
-        const stockActual = producto.stock ?? 0;
-        if (item.cantidad > stockActual) {
-          throw new ConflictException(
-            `Stock insuficiente para "${producto.nombre}": hay ${stockActual} y se intentan vender ${item.cantidad}`,
-          );
-        }
-      }
+    // Una venta "en espera" todavía no compromete stock ni dinero: se guarda tal cual para
+    // retomarla después, y toda la validación de stock/ingreso ocurre recién al confirmarla.
+    const enEspera = dto.enEspera ?? false;
+    if (!enEspera) {
+      this.validarStockSuficiente(dto.items, productoPorId);
     }
 
-    let categoria: { id: string } | null = null;
-    if (dto.categoriaIngresoId) {
-      const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-        where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
-      });
-      if (moduloCuentasActivo) {
-        categoria = await this.prisma.categoriaMovimiento.findFirst({
-          where: { id: dto.categoriaIngresoId, empresaId, tipo: 'ingreso' },
-        });
-        if (!categoria) {
-          throw new BadRequestException('Categoría de ingreso no encontrada');
-        }
-      }
-    }
+    const categoria = enEspera
+      ? null
+      : await this.resolverCategoriaIngreso(empresaId, dto.categoriaIngresoId);
 
-    const total = dto.items.reduce((suma, item) => {
+    const subtotal = dto.items.reduce((suma, item) => {
       const producto = productoPorId.get(item.productoId)!;
       return suma + Number(producto.precio) * item.cantidad;
     }, 0);
+    const descuento = Math.min(Math.max(dto.descuento ?? 0, 0), subtotal);
+    const total = subtotal - descuento;
 
     const ordenId = await this.prisma.$transaction(async (tx) => {
       const orden = await tx.orden.create({
@@ -105,13 +210,14 @@ export class VentasService {
           clienteId: dto.clienteId,
           usuarioId: actorId,
           notas: dto.notas,
+          estado: enEspera ? 'pendiente' : 'completada',
           total,
+          descuento,
         },
       });
 
       for (const item of dto.items) {
         const producto = productoPorId.get(item.productoId)!;
-
         await tx.ordenItem.create({
           data: {
             ordenId: orden.id,
@@ -120,53 +226,25 @@ export class VentasService {
             precioUnit: producto.precio,
           },
         });
-
-        if (producto.tipo === 'producto') {
-          const nuevoStock = (producto.stock ?? 0) - item.cantidad;
-          await tx.movimientoStock.create({
-            data: {
-              empresaId,
-              productoId: item.productoId,
-              tipo: 'salida',
-              cantidad: -item.cantidad,
-              motivo: 'Venta',
-              usuarioId: actorId,
-            },
-          });
-          await tx.productoServicio.update({
-            where: { id: item.productoId },
-            data: { stock: nuevoStock },
-          });
-
-          if (
-            producto.stockMinimo != null &&
-            nuevoStock <= producto.stockMinimo
-          ) {
-            await this.notificacionesService.crear({
-              empresaId,
-              tipo: 'stock_bajo',
-              titulo: 'Stock bajo',
-              mensaje: `"${producto.nombre}" quedó con ${nuevoStock} unidades (mínimo ${producto.stockMinimo})`,
-              enlace: '/productos',
-            });
-          }
-        }
       }
 
-      if (categoria) {
-        await tx.movimientoCuenta.create({
-          data: {
-            empresaId,
-            tipo: 'ingreso',
-            categoriaId: categoria.id,
-            monto: total,
-            fecha: new Date(),
-            descripcion: `Venta #${orden.id.slice(0, 8)}`,
+      if (!enEspera) {
+        await this.aplicarStockYCategoria(
+          tx,
+          empresaId,
+          actorId,
+          dto.items,
+          productoPorId,
+          categoria,
+          {
             clienteId: dto.clienteId,
-            usuarioId: actorId,
-            ordenId: orden.id,
+            metodoPago: dto.metodoPago,
+            numeroComprobante: dto.numeroComprobante,
+            comprobanteUrl: dto.comprobanteUrl,
           },
-        });
+          orden.id,
+          total,
+        );
       }
 
       return orden.id;
@@ -178,10 +256,67 @@ export class VentasService {
       accion: 'crear',
       entidad: 'venta',
       entidadId: ordenId,
-      detalle: { total },
+      detalle: { total, enEspera },
     });
 
     return this.findOne(empresaId, ordenId);
+  }
+
+  async confirmar(empresaId: string, actorId: string, id: string, dto: ConfirmarOrdenDto) {
+    const orden = await this.prisma.orden.findFirst({
+      where: { id, empresaId },
+      include: { items: true },
+    });
+    if (!orden) {
+      throw new NotFoundException('Venta no encontrada');
+    }
+    if (orden.estado !== 'pendiente') {
+      throw new ConflictException('Esta venta ya fue confirmada');
+    }
+
+    const productoIds = [...new Set(orden.items.map((item) => item.productoId))];
+    const productos = await this.prisma.productoServicio.findMany({
+      where: { id: { in: productoIds }, empresaId },
+    });
+    const productoPorId = new Map(productos.map((producto) => [producto.id, producto]));
+
+    // El stock pudo haber cambiado desde que se dejó la venta en espera — se revalida ahora,
+    // que es cuando de verdad se va a descontar.
+    this.validarStockSuficiente(orden.items, productoPorId);
+
+    const categoria = await this.resolverCategoriaIngreso(empresaId, dto.categoriaIngresoId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.aplicarStockYCategoria(
+        tx,
+        empresaId,
+        actorId,
+        orden.items,
+        productoPorId,
+        categoria,
+        {
+          clienteId: orden.clienteId ?? undefined,
+          metodoPago: dto.metodoPago,
+          numeroComprobante: dto.numeroComprobante,
+          comprobanteUrl: dto.comprobanteUrl,
+        },
+        orden.id,
+        Number(orden.total),
+      );
+
+      await tx.orden.update({ where: { id }, data: { estado: 'completada' } });
+    });
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: 'actualizar',
+      entidad: 'venta',
+      entidadId: id,
+      detalle: { confirmada: true },
+    });
+
+    return this.findOne(empresaId, id);
   }
 
   async remove(empresaId: string, actorId: string, id: string) {
@@ -195,22 +330,26 @@ export class VentasService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      for (const item of orden.items) {
-        if (item.producto.tipo === 'producto') {
-          await tx.movimientoStock.create({
-            data: {
-              empresaId,
-              productoId: item.productoId,
-              tipo: 'entrada',
-              cantidad: item.cantidad,
-              motivo: 'Reversión por eliminación de venta',
-              usuarioId: actorId,
-            },
-          });
-          await tx.productoServicio.update({
-            where: { id: item.productoId },
-            data: { stock: (item.producto.stock ?? 0) + item.cantidad },
-          });
+      // Una venta "en espera" nunca descontó stock, así que al eliminarla no hay nada que
+      // revertir — solo se borra el registro.
+      if (orden.estado !== 'pendiente') {
+        for (const item of orden.items) {
+          if (item.producto.tipo === 'producto') {
+            await tx.movimientoStock.create({
+              data: {
+                empresaId,
+                productoId: item.productoId,
+                tipo: 'entrada',
+                cantidad: item.cantidad,
+                motivo: 'Reversión por eliminación de venta',
+                usuarioId: actorId,
+              },
+            });
+            await tx.productoServicio.update({
+              where: { id: item.productoId },
+              data: { stock: (item.producto.stock ?? 0) + item.cantidad },
+            });
+          }
         }
       }
 

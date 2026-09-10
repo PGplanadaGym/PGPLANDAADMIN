@@ -6,10 +6,15 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreatePagoNominaDto } from './dto/create-pago-nomina.dto';
+import { UpdatePagoNominaDto } from './dto/update-pago-nomina.dto';
 
 const INCLUDE_PAGO = {
   empleado: { select: { id: true, nombre: true, email: true, cargo: true } },
   registradoPor: { select: { id: true, nombre: true } },
+  movimientosCuenta: {
+    select: { id: true, metodoPago: true, numeroComprobante: true },
+    take: 1,
+  },
 };
 
 @Injectable()
@@ -93,6 +98,9 @@ export class NominaService {
             descripcion: `Nómina ${dto.periodo}: ${empleado.nombre}`,
             usuarioId: actorId,
             pagoNominaId: pago.id,
+            metodoPago: dto.metodoPago,
+            numeroComprobante: dto.numeroComprobante,
+            comprobanteUrl: dto.comprobanteUrl,
           },
         });
       }
@@ -114,6 +122,54 @@ export class NominaService {
     });
 
     return this.findOne(empresaId, pagoId);
+  }
+
+  async update(empresaId: string, actorId: string, id: string, dto: UpdatePagoNominaDto) {
+    const pago = await this.prisma.pagoNomina.findFirst({ where: { id, empresaId } });
+    if (!pago) {
+      throw new NotFoundException('Pago de nómina no encontrado');
+    }
+
+    const sueldoBase = dto.sueldoBase ?? Number(pago.sueldoBase);
+    const bonos = dto.bonos ?? Number(pago.bonos);
+    const descuentos = dto.descuentos ?? Number(pago.descuentos);
+    const totalPagado = sueldoBase + bonos - descuentos;
+    const fechaPago = dto.fechaPago ? new Date(dto.fechaPago) : pago.fechaPago;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.pagoNomina.update({
+        where: { id },
+        data: {
+          sueldoBase,
+          bonos,
+          descuentos,
+          totalPagado,
+          fechaPago,
+          notas: dto.notas === undefined ? undefined : dto.notas || null,
+        },
+      });
+
+      // Si este pago tiene un gasto vinculado en Cuentas, se mantiene sincronizado con el
+      // nuevo monto y fecha — de lo contrario el gasto quedaría mostrando un valor viejo.
+      const movimiento = await tx.movimientoCuenta.findFirst({ where: { pagoNominaId: id } });
+      if (movimiento) {
+        await tx.movimientoCuenta.update({
+          where: { id: movimiento.id },
+          data: { monto: totalPagado, fecha: fechaPago },
+        });
+      }
+    });
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: 'actualizar',
+      entidad: 'pago-nomina',
+      entidadId: id,
+      detalle: { totalPagado },
+    });
+
+    return this.findOne(empresaId, id);
   }
 
   async remove(empresaId: string, actorId: string, id: string) {

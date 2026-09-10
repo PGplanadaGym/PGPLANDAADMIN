@@ -14,6 +14,8 @@ export const TIPOS_CAMPO = [
   'fecha',
   'booleano',
   'select',
+  'relacion',
+  'imagen',
 ] as const;
 
 export class CreateCampoDinamicoDto {
@@ -43,4 +45,12 @@ export class CreateCampoDinamicoDto {
   @IsOptional()
   @IsInt()
   orden?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Solo si tipo="relacion": "cliente" o "entidad:<clave>"',
+  })
+  @IsOptional()
+  @IsString()
+  relacionCon?: string;
 }

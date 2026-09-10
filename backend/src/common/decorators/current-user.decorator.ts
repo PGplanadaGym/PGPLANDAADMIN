@@ -2,8 +2,12 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export interface EmpresaBranding {
   nombre: string;
+  razonSocial: string | null;
   logoUrl: string | null;
   colorPrimario: string | null;
+  ruc: string | null;
+  direccion: string | null;
+  telefono: string | null;
 }
 
 export interface RequestUser {
@@ -14,6 +18,7 @@ export interface RequestUser {
   fotoUrl: string | null;
   permisos: string[];
   empresa: EmpresaBranding;
+  esSuperAdmin: boolean;
 }
 
 export const CurrentUser = createParamDecorator(

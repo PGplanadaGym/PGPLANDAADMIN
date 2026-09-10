@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -17,6 +18,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { RolesService } from './roles.service';
 import { CreateRolDto } from './dto/create-rol.dto';
+import { UpdateRolDto } from './dto/update-rol.dto';
 import { AsignarPermisosDto } from './dto/asignar-permisos.dto';
 
 @ApiTags('roles')
@@ -45,6 +47,16 @@ export class RolesController {
   }
 
   @CheckPermissions('roles.actualizar')
+  @Patch(':id')
+  update(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateRolDto,
+  ) {
+    return this.rolesService.update(user.empresaId, user.id, id, dto);
+  }
+
+  @CheckPermissions('roles.actualizar')
   @Patch(':id/permisos')
   asignarPermisos(
     @CurrentUser() user: RequestUser,
@@ -52,5 +64,11 @@ export class RolesController {
     @Body() dto: AsignarPermisosDto,
   ) {
     return this.rolesService.asignarPermisos(user.empresaId, user.id, id, dto);
+  }
+
+  @CheckPermissions('roles.eliminar')
+  @Delete(':id')
+  remove(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.rolesService.remove(user.empresaId, user.id, id);
   }
 }

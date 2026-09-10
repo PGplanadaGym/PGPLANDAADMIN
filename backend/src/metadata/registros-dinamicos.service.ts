@@ -23,7 +23,8 @@ export class RegistrosDinamicosService {
     return entidad;
   }
 
-  private validarValores(
+  private async validarValores(
+    empresaId: string,
     campos: CampoDinamico[],
     valores: Record<string, unknown>,
   ) {
@@ -63,18 +64,126 @@ export class RegistrosDinamicosService {
           }
           break;
         }
+        case 'fecha':
+          if (typeof valor !== 'string' || Number.isNaN(Date.parse(valor))) {
+            throw new BadRequestException(
+              `El campo "${campo.etiqueta}" debe ser una fecha válida`,
+            );
+          }
+          break;
+        case 'relacion': {
+          const existe = await this.existeRelacion(empresaId, campo.relacionCon, String(valor));
+          if (!existe) {
+            throw new BadRequestException(
+              `El campo "${campo.etiqueta}" hace referencia a un registro que no existe`,
+            );
+          }
+          break;
+        }
         default:
           break;
       }
     }
   }
 
+  private async existeRelacion(
+    empresaId: string,
+    relacionCon: string | null,
+    valorId: string,
+  ): Promise<boolean> {
+    if (!relacionCon) return false;
+
+    if (relacionCon === 'cliente') {
+      const cliente = await this.prisma.cliente.findFirst({
+        where: { id: valorId, empresaId },
+      });
+      return cliente != null;
+    }
+
+    if (relacionCon.startsWith('entidad:')) {
+      const claveDestino = relacionCon.slice('entidad:'.length);
+      const entidadDestino = await this.prisma.entidadDinamica.findUnique({
+        where: { empresaId_clave: { empresaId, clave: claveDestino } },
+      });
+      if (!entidadDestino) return false;
+
+      const registro = await this.prisma.registroDinamico.findFirst({
+        where: { id: valorId, entidadId: entidadDestino.id },
+      });
+      return registro != null;
+    }
+
+    return false;
+  }
+
+  /** Para campos "relacion", resuelve el id guardado a un texto legible (nombre del cliente o
+   * primer campo del registro relacionado) para mostrar en vez del id crudo. */
+  private async resolverEtiquetas(
+    empresaId: string,
+    campos: CampoDinamico[],
+    registros: { id: string; valores: Prisma.JsonValue }[],
+  ): Promise<Record<string, Record<string, string>>> {
+    const camposRelacion = campos.filter((c) => c.tipo === 'relacion' && c.relacionCon);
+    if (camposRelacion.length === 0) return {};
+
+    const resultado: Record<string, Record<string, string>> = {};
+    for (const registro of registros) resultado[registro.id] = {};
+
+    for (const campo of camposRelacion) {
+      const idsUsados = new Set<string>();
+      for (const registro of registros) {
+        const valores = registro.valores as Record<string, unknown>;
+        const valor = valores[campo.clave];
+        if (typeof valor === 'string' && valor) idsUsados.add(valor);
+      }
+      if (idsUsados.size === 0) continue;
+
+      const etiquetaPorId = new Map<string, string>();
+
+      if (campo.relacionCon === 'cliente') {
+        const clientes = await this.prisma.cliente.findMany({
+          where: { id: { in: [...idsUsados] }, empresaId },
+          select: { id: true, nombre: true },
+        });
+        for (const cliente of clientes) etiquetaPorId.set(cliente.id, cliente.nombre);
+      } else if (campo.relacionCon?.startsWith('entidad:')) {
+        const claveDestino = campo.relacionCon.slice('entidad:'.length);
+        const entidadDestino = await this.prisma.entidadDinamica.findUnique({
+          where: { empresaId_clave: { empresaId, clave: claveDestino } },
+          include: { campos: { orderBy: { orden: 'asc' }, take: 1 } },
+        });
+        const primerCampo = entidadDestino?.campos[0]?.clave;
+        if (entidadDestino && primerCampo) {
+          const relacionados = await this.prisma.registroDinamico.findMany({
+            where: { id: { in: [...idsUsados] }, entidadId: entidadDestino.id },
+          });
+          for (const rel of relacionados) {
+            const valores = rel.valores as Record<string, unknown>;
+            etiquetaPorId.set(rel.id, String(valores[primerCampo] ?? rel.id));
+          }
+        }
+      }
+
+      for (const registro of registros) {
+        const valores = registro.valores as Record<string, unknown>;
+        const valor = valores[campo.clave];
+        if (typeof valor === 'string' && etiquetaPorId.has(valor)) {
+          resultado[registro.id][campo.clave] = etiquetaPorId.get(valor)!;
+        }
+      }
+    }
+
+    return resultado;
+  }
+
   async findAll(empresaId: string, entidadClave: string) {
     const entidad = await this.getEntidad(empresaId, entidadClave);
-    return this.prisma.registroDinamico.findMany({
+    const registros = await this.prisma.registroDinamico.findMany({
       where: { entidadId: entidad.id },
       orderBy: { creadoEn: 'desc' },
     });
+    const etiquetas = await this.resolverEtiquetas(empresaId, entidad.campos, registros);
+    return registros.map((r) => ({ ...r, etiquetas: etiquetas[r.id] ?? {} }));
   }
 
   async findOne(empresaId: string, entidadClave: string, id: string) {
@@ -87,7 +196,8 @@ export class RegistrosDinamicosService {
       throw new NotFoundException('Registro no encontrado');
     }
 
-    return registro;
+    const etiquetas = await this.resolverEtiquetas(empresaId, entidad.campos, [registro]);
+    return { ...registro, etiquetas: etiquetas[registro.id] ?? {} };
   }
 
   async create(
@@ -97,7 +207,7 @@ export class RegistrosDinamicosService {
     valores: Record<string, unknown>,
   ) {
     const entidad = await this.getEntidad(empresaId, entidadClave);
-    this.validarValores(entidad.campos, valores);
+    await this.validarValores(empresaId, entidad.campos, valores);
 
     const registro = await this.prisma.registroDinamico.create({
       data: {
@@ -126,7 +236,7 @@ export class RegistrosDinamicosService {
   ) {
     const entidad = await this.getEntidad(empresaId, entidadClave);
     await this.findOne(empresaId, entidadClave, id);
-    this.validarValores(entidad.campos, valores);
+    await this.validarValores(empresaId, entidad.campos, valores);
 
     const registro = await this.prisma.registroDinamico.update({
       where: { id },

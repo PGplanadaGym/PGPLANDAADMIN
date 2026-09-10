@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { CanAccess } from '@refinedev/core'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -698,14 +699,16 @@ export function CosteoEditorPage() {
           </div>
           <div className="flex gap-2">
             {!esNuevo && (
-              <button
-                type="button"
-                onClick={eliminar}
-                disabled={guardando}
-                className="rounded px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-              >
-                Eliminar
-              </button>
+              <CanAccess resource="costeo" action="delete">
+                <button
+                  type="button"
+                  onClick={eliminar}
+                  disabled={guardando}
+                  className="rounded px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Eliminar
+                </button>
+              </CanAccess>
             )}
             <button
               type="button"
@@ -715,35 +718,41 @@ export function CosteoEditorPage() {
               Volver
             </button>
             {!esNuevo && bloqueado && (
-              <button
-                type="button"
-                onClick={deshacerVenta}
-                disabled={guardando}
-                className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
-              >
-                {guardando && <Spinner size={14} />}
-                Deshacer venta
-              </button>
+              <CanAccess resource="costeo" action="edit">
+                <button
+                  type="button"
+                  onClick={deshacerVenta}
+                  disabled={guardando}
+                  className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
+                >
+                  {guardando && <Spinner size={14} />}
+                  Deshacer venta
+                </button>
+              </CanAccess>
             )}
             {!esNuevo && !bloqueado && (
-              <button
-                type="button"
-                onClick={abrirModalVender}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:brightness-90"
-              >
-                Marcar como vendido
-              </button>
+              <CanAccess resource="costeo" action="edit">
+                <button
+                  type="button"
+                  onClick={abrirModalVender}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:brightness-90"
+                >
+                  Marcar como vendido
+                </button>
+              </CanAccess>
             )}
             {!bloqueado && (
-              <PrimaryButton
-                type="button"
-                onClick={guardar}
-                disabled={guardando}
-                className="flex items-center gap-2"
-              >
-                {guardando && <Spinner size={14} />}
-                {guardando ? 'Guardando…' : 'Guardar'}
-              </PrimaryButton>
+              <CanAccess resource="costeo" action={esNuevo ? 'create' : 'edit'}>
+                <PrimaryButton
+                  type="button"
+                  onClick={guardar}
+                  disabled={guardando}
+                  className="flex items-center gap-2"
+                >
+                  {guardando && <Spinner size={14} />}
+                  {guardando ? 'Guardando…' : 'Guardar'}
+                </PrimaryButton>
+              </CanAccess>
             )}
           </div>
         </div>
@@ -751,7 +760,7 @@ export function CosteoEditorPage() {
 
       {modalVenderAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-[var(--color-bg-card)] p-6 shadow-[var(--sombra-lg)]">
+          <div className="max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-xl bg-[var(--color-bg-card)] p-6 shadow-[var(--sombra-lg)]">
             <h2 className="text-base font-semibold text-[var(--color-text)]">Marcar como vendido</h2>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               Se creará un ingreso por lo que cobraste{totales.montoEgreso > 0 && ' y un egreso por el costo real en materiales/otros'} — tu tiempo de trabajo no se registra como egreso porque no es dinero que salió de tu bolsillo.
@@ -788,22 +797,24 @@ export function CosteoEditorPage() {
                     </option>
                   ))}
                 </select>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    value={nombreNuevaCategoria}
-                    onChange={(e) => setNombreNuevaCategoria(e.target.value)}
-                    placeholder="Nueva categoría de ingreso…"
-                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs focus:border-[var(--color-primario)] focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={crearCategoriaVentaRapida}
-                    disabled={creandoCategoria || !nombreNuevaCategoria.trim()}
-                    className="shrink-0 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
-                  >
-                    Agregar
-                  </button>
-                </div>
+                <CanAccess resource="cuentas" action="create">
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      value={nombreNuevaCategoria}
+                      onChange={(e) => setNombreNuevaCategoria(e.target.value)}
+                      placeholder="Nueva categoría de ingreso…"
+                      className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs focus:border-[var(--color-primario)] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={crearCategoriaVentaRapida}
+                      disabled={creandoCategoria || !nombreNuevaCategoria.trim()}
+                      className="shrink-0 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </CanAccess>
               </div>
 
               {totales.montoEgreso > 0 && (
@@ -823,6 +834,7 @@ export function CosteoEditorPage() {
                       </option>
                     ))}
                   </select>
+                  <CanAccess resource="cuentas" action="create">
                   <div className="mt-2 flex gap-2">
                     <input
                       value={nombreNuevaCategoriaEgreso}
@@ -839,6 +851,7 @@ export function CosteoEditorPage() {
                       Agregar
                     </button>
                   </div>
+                  </CanAccess>
                 </div>
               )}
 

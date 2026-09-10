@@ -44,6 +44,7 @@ export class EntidadesDinamicasService {
             tipo: campo.tipo,
             requerido: campo.requerido ?? false,
             opciones: campo.opciones,
+            relacionCon: campo.relacionCon,
             orden: campo.orden ?? index,
           })),
         },
@@ -109,6 +110,7 @@ export class EntidadesDinamicasService {
             tipo: campo.tipo,
             requerido: campo.requerido ?? false,
             opciones: campo.opciones,
+            relacionCon: campo.relacionCon,
             orden: campo.orden ?? index,
           };
           const existente = existentesPorClave.get(campo.clave);

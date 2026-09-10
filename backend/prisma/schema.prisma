@@ -13,7 +13,12 @@ datasource db {
 
 model Empresa {
   id            String   @id @default(uuid())
-  nombre        String
+  nombre        String // nombre comercial / marca (se usa en sidebar, login, recibos)
+  razonSocial   String? // nombre legal registrado en el SRI, si difiere del nombre comercial
+  ruc           String?
+  direccion     String?
+  telefono      String?
+  email         String?
   logoUrl       String?
   colorPrimario String?  @default("#0F172A")
   dominio       String?  @unique
@@ -46,41 +51,54 @@ model Empresa {
   proveedores          Proveedor[]
   ordenesCompra        OrdenCompra[]
   pagosNomina          PagoNomina[]
+  mantenimientosActivo MantenimientoActivo[]
+  categoriasProducto   CategoriaProducto[]
 }
 
 model Sucursal {
-  id        String  @id @default(uuid())
-  empresaId String
-  empresa   Empresa @relation(fields: [empresaId], references: [id])
-  nombre    String
-  direccion String?
-  activa    Boolean @default(true)
+  id                    String  @id @default(uuid())
+  empresaId             String
+  empresa               Empresa @relation(fields: [empresaId], references: [id])
+  nombre                String
+  direccion             String?
+  latitud               Float?
+  longitud              Float?
+  codigoEstablecimiento String? // código SRI de 3 dígitos (ej. "001")
+  telefono              String?
+  encargadoId           String?
+  encargado             Usuario? @relation("SucursalEncargado", fields: [encargadoId], references: [id], onDelete: SetNull)
+  horarioAtencion       String?
+  activa                Boolean @default(true)
 
   usuarios          Usuario[]
   recursos          Recurso[]
   activos           Activo[]
   movimientosCuenta MovimientoCuenta[]
+  movimientosStock  MovimientoStock[]
 }
 
 model Usuario {
-  id           String    @id @default(uuid())
-  empresaId    String
-  empresa      Empresa   @relation(fields: [empresaId], references: [id])
-  nombre       String
-  email        String    @unique
-  passwordHash String
-  fotoUrl      String?
-  telefono     String?
-  cargo        String?
-  bio          String?
-  activo       Boolean   @default(true)
+  id                  String    @id @default(uuid())
+  empresaId           String
+  empresa             Empresa   @relation(fields: [empresaId], references: [id])
+  nombre              String
+  email               String    @unique
+  passwordHash        String
+  fotoUrl             String?
+  telefono            String?
+  cargo               String?
+  bio                 String?
+  activo              Boolean   @default(true)
   // false = todavía usa la contraseña aleatoria de la invitación (no puede iniciar sesión
   // hasta que la reemplace vía /reset-password). true por defecto porque los usuarios
   // sembrados o creados con una contraseña real ya la tienen "configurada" desde el inicio.
-  passwordConfigurada Boolean @default(true)
-  sucursalId   String?
-  sucursal     Sucursal? @relation(fields: [sucursalId], references: [id])
-  creadoEn     DateTime  @default(now())
+  passwordConfigurada Boolean   @default(true)
+  // Dueño de la plataforma (no de una empresa cliente en particular): puede ver y
+  // gestionar todas las empresas. No se asigna desde la UI, solo por migración/soporte.
+  esSuperAdmin        Boolean   @default(false)
+  sucursalId          String?
+  sucursal            Sucursal? @relation(fields: [sucursalId], references: [id])
+  creadoEn            DateTime  @default(now())
 
   roles                  UsuarioRol[]
   refreshTokens          RefreshToken[]
@@ -97,6 +115,9 @@ model Usuario {
   ordenesCompra          OrdenCompra[]
   pagosNomina            PagoNomina[]         @relation("NominaEmpleado")
   pagosNominaRegistrados PagoNomina[]         @relation("NominaRegistradoPor")
+  recursosVinculados     Recurso[]
+  mantenimientosActivo   MantenimientoActivo[]
+  sucursalesEncargado    Sucursal[]           @relation("SucursalEncargado")
 }
 
 model RegistroAuditoria {
@@ -178,10 +199,11 @@ model RolPermiso {
 // ---------- MÓDULOS (catálogo + activación por empresa) ----------
 
 model Modulo {
-  id          String  @id @default(uuid())
-  clave       String  @unique // "inventario", "citas", "facturacion"
-  nombre      String
-  descripcion String?
+  id             String   @id @default(uuid())
+  clave          String   @unique // "inventario", "citas", "facturacion"
+  nombre         String
+  descripcion    String?
+  precioMensual  Decimal? @db.Decimal(10, 2)
 
   empresas EmpresaModulo[]
 }
@@ -205,6 +227,11 @@ model Cliente {
   nombre         String
   email          String?
   telefono       String?
+  notas          String?
+  etiqueta       String?
+  latitud        Float?
+  longitud       Float?
+  activo         Boolean  @default(true)
   atributosExtra Json?
   creadoEn       DateTime @default(now())
 
@@ -215,19 +242,36 @@ model Cliente {
   costeos           CosteoProyecto[]
 }
 
+model CategoriaProducto {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nombre    String
+  activo    Boolean @default(true)
+
+  productos ProductoServicio[]
+
+  @@unique([empresaId, nombre])
+}
+
 model ProductoServicio {
-  id             String   @id @default(uuid())
+  id             String             @id @default(uuid())
   empresaId      String
-  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  empresa        Empresa            @relation(fields: [empresaId], references: [id])
+  categoriaId    String?
+  categoria      CategoriaProducto? @relation(fields: [categoriaId], references: [id])
   tipo           String // "producto" | "servicio"
   nombre         String
   sku            String?
-  precio         Decimal  @db.Decimal(10, 2)
+  precio         Decimal            @db.Decimal(10, 2)
+  costo          Decimal?           @db.Decimal(10, 2)
   stock          Int? // null si es servicio
   stockMinimo    Int?
-  unidadMedida   String   @default("unidad")
+  unidadMedida   String             @default("unidad")
+  activo         Boolean            @default(true)
+  imagenUrl      String?
   atributosExtra Json?
-  creadoEn       DateTime @default(now())
+  creadoEn       DateTime           @default(now())
 
   movimientosStock MovimientoStock[]
   ordenItems       OrdenItem[]
@@ -242,8 +286,9 @@ model Orden {
   cliente   Cliente? @relation(fields: [clienteId], references: [id])
   usuarioId String
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-  estado    String   @default("completada")
+  estado    String   @default("completada") // completada | pendiente (venta en espera)
   total     Decimal  @db.Decimal(10, 2)
+  descuento Decimal  @default(0) @db.Decimal(10, 2)
   notas     String?
   creadoEn  DateTime @default(now())
 
@@ -277,15 +322,17 @@ model EntidadDinamica {
 }
 
 model CampoDinamico {
-  id        String          @id @default(uuid())
-  entidadId String
-  entidad   EntidadDinamica @relation(fields: [entidadId], references: [id])
-  clave     String // "raza", "placa"
-  etiqueta  String
-  tipo      String // "texto" | "numero" | "fecha" | "booleano" | "select"
-  requerido Boolean         @default(false)
-  opciones  Json? // solo si tipo = "select"
-  orden     Int             @default(0)
+  id          String          @id @default(uuid())
+  entidadId   String
+  entidad     EntidadDinamica @relation(fields: [entidadId], references: [id])
+  clave       String // "raza", "placa"
+  etiqueta    String
+  tipo        String // "texto" | "numero" | "fecha" | "booleano" | "select" | "relacion" | "imagen"
+  requerido   Boolean         @default(false)
+  opciones    Json? // solo si tipo = "select"
+  // solo si tipo = "relacion": "cliente" o "entidad:<clave>" (otra entidad dinámica)
+  relacionCon String?
+  orden       Int             @default(0)
 
   @@unique([entidadId, clave])
 }
@@ -307,13 +354,16 @@ model Recurso {
   tipo       String // "persona" | "sala" | "equipo"
   nombre     String
   usuarioId  String? // opcional: si el recurso es un empleado con cuenta propia
+  usuario    Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   sucursalId String?
   sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
   activo     Boolean   @default(true)
   creadoEn   DateTime  @default(now())
 
   horarios HorarioAtencion[]
+  bloqueos BloqueoDisponibilidad[]
   citas    Cita[]
+  tiposCita TipoCita[] @relation("RecursoTipoCita")
 }
 
 model HorarioAtencion {
@@ -325,17 +375,36 @@ model HorarioAtencion {
   horaFin    String // "18:00"
 }
 
-model TipoCita {
-  id              String  @id @default(uuid())
-  empresaId       String
-  empresa         Empresa @relation(fields: [empresaId], references: [id])
-  nombre          String
-  duracionMinutos Int
-  bufferMinutos   Int     @default(0)
-  color           String  @default("#0F172A")
-  activo          Boolean @default(true)
+// Bloqueo puntual de disponibilidad de un recurso (vacaciones, día libre, cita médica…),
+// distinto del horario semanal recurrente de HorarioAtencion. Si horaInicio/horaFin son null,
+// bloquea el día completo; si ambos tienen valor, bloquea solo esa franja dentro del día.
+model BloqueoDisponibilidad {
+  id         String   @id @default(uuid())
+  recursoId  String
+  recurso    Recurso  @relation(fields: [recursoId], references: [id])
+  fecha      DateTime @db.Date
+  horaInicio String?
+  horaFin    String?
+  motivo     String?
+  creadoEn   DateTime @default(now())
 
-  citas Cita[]
+  @@index([recursoId, fecha])
+}
+
+model TipoCita {
+  id              String   @id @default(uuid())
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  nombre          String
+  descripcion     String?
+  duracionMinutos Int
+  bufferMinutos   Int      @default(0)
+  precio          Decimal? @db.Decimal(10, 2)
+  color           String   @default("#0F172A")
+  activo          Boolean  @default(true)
+
+  citas    Cita[]
+  recursos Recurso[] @relation("RecursoTipoCita")
 }
 
 model Cita {
@@ -354,6 +423,8 @@ model Cita {
   notas               String?
   recordatorioEnviado Boolean  @default(false)
   creadoEn            DateTime @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
 }
 
 // ---------- INVENTARIO (activos con historial de dueño + stock por cantidad) ----------
@@ -377,19 +448,42 @@ model Activo {
   categoriaActivoId String
   categoriaActivo   CategoriaActivo @relation(fields: [categoriaActivoId], references: [id])
   nombre            String
+  marca             String?
+  modelo            String?
   codigoInterno     String?
   numeroSerie       String?
   estado            String          @default("disponible") // disponible|asignado|baja
   valorCompra       Decimal?        @db.Decimal(10, 2)
   fechaCompra       DateTime?
+  garantiaHasta     DateTime?
   sucursalId        String?
   sucursal          Sucursal?       @relation(fields: [sucursalId], references: [id])
+  imagenUrl         String?
   notas             String?
   creadoEn          DateTime        @default(now())
 
-  asignaciones AsignacionActivo[]
+  asignaciones  AsignacionActivo[]
+  mantenimientos MantenimientoActivo[]
 
   @@unique([empresaId, codigoInterno])
+}
+
+model MantenimientoActivo {
+  id          String   @id @default(uuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  activoId    String
+  activo      Activo   @relation(fields: [activoId], references: [id])
+  fecha       DateTime
+  descripcion String
+  costo       Decimal? @db.Decimal(10, 2)
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn    DateTime @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
+
+  @@index([activoId, fecha])
 }
 
 model AsignacionActivo {
@@ -421,6 +515,8 @@ model MovimientoStock {
   motivo     String?
   usuarioId  String
   usuario    Usuario          @relation(fields: [usuarioId], references: [id])
+  sucursalId String?
+  sucursal   Sucursal?        @relation(fields: [sucursalId], references: [id])
   creadoEn   DateTime         @default(now())
 }
 
@@ -479,6 +575,10 @@ model MovimientoCuenta {
   ordenCompra       OrdenCompra?        @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
   pagoNominaId      String?
   pagoNomina        PagoNomina?         @relation(fields: [pagoNominaId], references: [id], onDelete: Cascade)
+  citaId            String?
+  cita              Cita?               @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  mantenimientoId   String?
+  mantenimiento     MantenimientoActivo? @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
   sucursalId        String?
   sucursal          Sucursal?           @relation(fields: [sucursalId], references: [id])
   creadoEn          DateTime            @default(now())
@@ -551,13 +651,15 @@ model Notificacion {
   empresaId String
   empresa   Empresa  @relation(fields: [empresaId], references: [id])
   usuarioId String? // null = para todos los usuarios de la empresa
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   tipo      String // "stock_bajo" | "cita_asignada" | ...
   titulo    String
   mensaje   String
   enlace    String? // ruta del frontend a la que lleva, ej. "/productos"
   leida     Boolean  @default(false)
   creadoEn  DateTime @default(now())
+
+  @@index([empresaId, usuarioId, leida])
 }
 
 // ---------- PROVEEDORES Y ÓRDENES DE COMPRA ----------
@@ -567,6 +669,7 @@ model Proveedor {
   empresaId String
   empresa   Empresa  @relation(fields: [empresaId], references: [id])
   nombre    String
+  ruc       String?
   contacto  String?
   telefono  String?
   email     String?
@@ -587,9 +690,10 @@ model OrdenCompra {
   proveedor      Proveedor @relation(fields: [proveedorId], references: [id])
   usuarioId      String
   usuario        Usuario   @relation(fields: [usuarioId], references: [id])
-  estado         String    @default("pendiente") // "pendiente" | "recibida" | "cancelada"
+  estado         String    @default("pendiente") // "pendiente" | "parcial" | "recibida" | "cancelada"
   total          Decimal   @db.Decimal(10, 2)
   notas          String?
+  fechaEsperada  DateTime?
   fechaRecepcion DateTime?
   creadoEn       DateTime  @default(now())
 
@@ -598,13 +702,14 @@ model OrdenCompra {
 }
 
 model OrdenCompraItem {
-  id            String           @id @default(uuid())
-  ordenCompraId String
-  ordenCompra   OrdenCompra      @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
-  productoId    String
-  producto      ProductoServicio @relation(fields: [productoId], references: [id])
-  cantidad      Int
-  precioUnit    Decimal          @db.Decimal(10, 2)
+  id                String           @id @default(uuid())
+  ordenCompraId     String
+  ordenCompra       OrdenCompra      @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  productoId        String
+  producto          ProductoServicio @relation(fields: [productoId], references: [id])
+  cantidad          Int
+  cantidadRecibida  Int              @default(0)
+  precioUnit        Decimal          @db.Decimal(10, 2)
 }
 
 // ---------- NÓMINA (registro simple de pagos a empleados) ----------
@@ -627,4 +732,6 @@ model PagoNomina {
   creadoEn        DateTime @default(now())
 
   movimientosCuenta MovimientoCuenta[]
+
+  @@index([empresaId, periodo])
 }

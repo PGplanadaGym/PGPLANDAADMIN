@@ -16,6 +16,16 @@ export class CreateClienteDto {
   @IsString()
   telefono?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notas?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  etiqueta?: string;
+
   @ApiProperty({ required: false, type: Object })
   @IsOptional()
   @IsObject()

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -34,8 +35,14 @@ export class ProveedoresController {
 
   @CheckPermissions('proveedores.leer')
   @Get('proveedores')
-  findAllProveedores(@CurrentUser() user: RequestUser) {
-    return this.proveedoresService.findAllProveedores(user.empresaId);
+  findAllProveedores(
+    @CurrentUser() user: RequestUser,
+    @Query('incluirInactivos') incluirInactivos?: string,
+  ) {
+    return this.proveedoresService.findAllProveedores(
+      user.empresaId,
+      incluirInactivos === 'true',
+    );
   }
 
   @CheckPermissions('proveedores.crear')
@@ -45,6 +52,12 @@ export class ProveedoresController {
     @Body() dto: CreateProveedorDto,
   ) {
     return this.proveedoresService.createProveedor(user.empresaId, dto);
+  }
+
+  @CheckPermissions('proveedores.leer')
+  @Get('proveedores/:id/perfil')
+  findPerfilProveedor(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.proveedoresService.findPerfilProveedor(user.empresaId, id);
   }
 
   @CheckPermissions('proveedores.actualizar')
@@ -59,8 +72,12 @@ export class ProveedoresController {
 
   @CheckPermissions('compras.leer')
   @Get('ordenes-compra')
-  findAllOrdenesCompra(@CurrentUser() user: RequestUser) {
-    return this.proveedoresService.findAllOrdenesCompra(user.empresaId);
+  findAllOrdenesCompra(
+    @CurrentUser() user: RequestUser,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    return this.proveedoresService.findAllOrdenesCompra(user.empresaId, desde, hasta);
   }
 
   @CheckPermissions('compras.leer')
@@ -98,6 +115,12 @@ export class ProveedoresController {
       id,
       dto,
     );
+  }
+
+  @CheckPermissions('compras.actualizar')
+  @Post('ordenes-compra/:id/cancelar')
+  cancelarOrdenCompra(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.proveedoresService.cancelarOrdenCompra(user.empresaId, user.id, id);
   }
 
   @CheckPermissions('compras.eliminar')

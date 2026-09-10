@@ -35,6 +35,11 @@ export class UpdateProveedorDto {
   @IsString()
   notas?: string;
 
+  @ApiProperty({ required: false, description: 'RUC del proveedor' })
+  @IsOptional()
+  @IsString()
+  ruc?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()

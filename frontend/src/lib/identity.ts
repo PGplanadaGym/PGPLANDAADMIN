@@ -2,8 +2,12 @@ import { axiosInstance } from './axios'
 
 export interface EmpresaBranding {
   nombre: string
+  razonSocial: string | null
   logoUrl: string | null
   colorPrimario: string | null
+  ruc: string | null
+  direccion: string | null
+  telefono: string | null
 }
 
 export interface Identity {
@@ -14,6 +18,7 @@ export interface Identity {
   fotoUrl: string | null
   permisos: string[]
   empresa: EmpresaBranding
+  esSuperAdmin: boolean
 }
 
 let cached: Identity | null = null

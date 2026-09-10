@@ -13,6 +13,16 @@ export class CreateActivoDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  marca?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  modelo?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   codigoInterno?: string;
 
   @ApiProperty({ required: false })
@@ -32,6 +42,11 @@ export class CreateActivoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsISO8601()
+  garantiaHasta?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   notas?: string;
 
@@ -39,4 +54,9 @@ export class CreateActivoDto {
   @IsOptional()
   @IsString()
   sucursalId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  imagenUrl?: string;
 }

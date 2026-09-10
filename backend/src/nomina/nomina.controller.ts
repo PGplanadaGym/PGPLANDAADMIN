@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -20,6 +21,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { NominaService } from './nomina.service';
 import { CreatePagoNominaDto } from './dto/create-pago-nomina.dto';
+import { UpdatePagoNominaDto } from './dto/update-pago-nomina.dto';
 
 @ApiTags('nomina')
 @ApiBearerAuth()
@@ -48,6 +50,16 @@ export class NominaController {
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreatePagoNominaDto) {
     return this.nominaService.create(user.empresaId, user.id, dto);
+  }
+
+  @CheckPermissions('nomina.actualizar')
+  @Patch(':id')
+  update(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: UpdatePagoNominaDto,
+  ) {
+    return this.nominaService.update(user.empresaId, user.id, id, dto);
   }
 
   @CheckPermissions('nomina.eliminar')

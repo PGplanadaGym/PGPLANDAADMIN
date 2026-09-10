@@ -18,11 +18,13 @@ import { UsuariosListPage } from './pages/usuarios/UsuariosListPage'
 import { UsuariosCreatePage } from './pages/usuarios/UsuariosCreatePage'
 import { UsuarioPerfilPage } from './pages/usuarios/UsuarioPerfilPage'
 import { ClientesListPage } from './pages/clientes/ClientesListPage'
-import { ClientesCreatePage } from './pages/clientes/ClientesCreatePage'
+import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
 import { ModulosPage } from './pages/modulos/ModulosPage'
 import { EntidadDinamicaPage } from './pages/entidades/EntidadDinamicaPage'
 import { EntidadesAdminPage } from './pages/entidades/EntidadesAdminPage'
+import { RegistroDetallePage } from './pages/entidades/RegistroDetallePage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
+import { EmpresasAdminPage } from './pages/plataforma/EmpresasAdminPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
 import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
 import { CitasPage } from './pages/citas/CitasPage'
@@ -39,8 +41,10 @@ import { CosteosPage } from './pages/costeo/CosteosPage'
 import { CosteoEditorPage } from './pages/costeo/CosteoEditorPage'
 import { VentasPage } from './pages/ventas/VentasPage'
 import { ProveedoresPage } from './pages/proveedores/ProveedoresPage'
+import { ProveedorPerfilPage } from './pages/proveedores/ProveedorPerfilPage'
 import { ClientePerfilPage } from './pages/clientes/ClientePerfilPage'
 import { SucursalesPage } from './pages/sucursales/SucursalesPage'
+import { SucursalPerfilPage } from './pages/sucursales/SucursalPerfilPage'
 import { NominaPage } from './pages/nomina/NominaPage'
 import { ReportesPage } from './pages/reportes/ReportesPage'
 
@@ -85,6 +89,7 @@ function App() {
           name: 'clientes',
           list: '/clientes',
           create: '/clientes/nuevo',
+          edit: '/clientes/:id/editar',
           meta: { label: 'Clientes' },
         },
         {
@@ -167,6 +172,11 @@ function App() {
           list: '/reportes',
           meta: { label: 'Reportes' },
         },
+        {
+          name: 'empresas-todas',
+          list: '/plataforma/empresas',
+          meta: { label: 'Empresas (plataforma)' },
+        },
       ]}
       options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
     >
@@ -193,10 +203,12 @@ function App() {
           <Route path="/costeos/nuevo" element={<CosteoEditorPage />} />
           <Route path="/costeos/:id" element={<CosteoEditorPage />} />
           <Route path="/clientes" element={<ClientesListPage />} />
-          <Route path="/clientes/nuevo" element={<ClientesCreatePage />} />
+          <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
+          <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
           <Route path="/modulos" element={<ModulosPage />} />
           <Route path="/entidades" element={<EntidadesAdminPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
+          <Route path="/plataforma/empresas" element={<EmpresasAdminPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />
           <Route path="/recursos" element={<RecursosPage />} />
@@ -205,14 +217,17 @@ function App() {
           <Route path="/productos" element={<ProductosPage />} />
           <Route path="/ventas" element={<VentasPage />} />
           <Route path="/proveedores" element={<ProveedoresPage />} />
+          <Route path="/proveedores/:id" element={<ProveedorPerfilPage />} />
           <Route path="/clientes/:id" element={<ClientePerfilPage />} />
           <Route path="/sucursales" element={<SucursalesPage />} />
+          <Route path="/sucursales/:id" element={<SucursalPerfilPage />} />
           <Route path="/nomina" element={<NominaPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/asistencia/reporte" element={<AsistenciaReportePage />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/entidades/:entidadClave" element={<EntidadDinamicaPage />} />
+          <Route path="/entidades/:entidadClave/:id" element={<RegistroDetallePage />} />
         </Route>
 
         <Route path="*" element={<NavigateToResource resource="dashboard" />} />

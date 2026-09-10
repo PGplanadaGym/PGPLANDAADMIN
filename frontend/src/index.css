@@ -202,21 +202,29 @@ input[type='password']::-ms-clear {
   color: var(--color-text-muted);
 }
 
-/* react-big-calendar */
+/* react-big-calendar
+   Su hoja de estilos trae fondos/colores fijos pensados solo para tema claro (blancos,
+   grises claros, celeste). Como esa hoja se inserta en el documento en un orden que a veces
+   queda DESPUÉS de esta (el CSS de la ruta /citas se carga en su propio chunk), a igual
+   especificidad de selector gana la regla que se insertó al final — por eso hace falta
+   !important en cada valor que depende del tema, si no el calendario se ve claro/blanco
+   aunque el resto de la app esté en modo oscuro. */
 .rbc-calendar {
   color: var(--color-text);
 }
 
 .rbc-toolbar button {
-  color: var(--color-text);
-  border-color: var(--color-border);
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+  background-color: transparent !important;
 }
 
 .rbc-toolbar button:hover,
 .rbc-toolbar button:active,
+.rbc-toolbar button:focus,
 .rbc-toolbar button.rbc-active {
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text);
+  background-color: var(--color-bg-subtle) !important;
+  color: var(--color-text) !important;
 }
 
 .rbc-toolbar-label {
@@ -227,34 +235,41 @@ input[type='password']::-ms-clear {
 .rbc-month-view,
 .rbc-time-view,
 .rbc-agenda-view {
-  border-color: var(--color-border);
+  border-color: var(--color-border) !important;
 }
 
 .rbc-header,
 .rbc-time-header-content,
 .rbc-time-content,
+.rbc-day-bg,
 .rbc-day-bg + .rbc-day-bg,
+.rbc-month-row,
 .rbc-month-row + .rbc-month-row,
 .rbc-timeslot-group,
-.rbc-time-content > * + * > * {
-  border-color: var(--color-border);
+.rbc-time-content > * + * > *,
+.rbc-time-header.rbc-overflowing {
+  border-color: var(--color-border) !important;
+}
+
+.rbc-day-bg {
+  background-color: var(--color-bg-card) !important;
 }
 
 .rbc-header {
-  color: var(--color-text-muted);
+  color: var(--color-text-muted) !important;
   padding: 0.4rem 0;
 }
 
 .rbc-off-range-bg {
-  background-color: var(--color-bg-subtle);
+  background-color: var(--color-bg-subtle) !important;
 }
 
 .rbc-off-range {
-  color: var(--color-text-faint);
+  color: var(--color-text-faint) !important;
 }
 
 .rbc-today {
-  background-color: var(--color-bg-subtle);
+  background-color: var(--color-bg-subtle) !important;
 }
 
 .rbc-event {
@@ -263,8 +278,20 @@ input[type='password']::-ms-clear {
 }
 
 .rbc-show-more {
-  color: var(--color-primario);
-  background: transparent;
+  color: var(--color-primario-legible) !important;
+  background: transparent !important;
+}
+
+.rbc-overlay {
+  background-color: var(--color-bg-card) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text);
+  box-shadow: var(--sombra-lg);
+}
+
+.rbc-overlay-header {
+  color: var(--color-text-muted) !important;
+  border-color: var(--color-border) !important;
 }
 
 .rbc-agenda-table {
@@ -272,12 +299,21 @@ input[type='password']::-ms-clear {
 }
 
 .rbc-agenda-table thead > tr > th {
-  color: var(--color-text-muted);
-  border-color: var(--color-border);
+  color: var(--color-text-muted) !important;
+  border-color: var(--color-border) !important;
+  background-color: var(--color-bg-card) !important;
 }
 
 .rbc-agenda-table tbody > tr > td {
-  border-color: var(--color-border);
+  border-color: var(--color-border) !important;
+}
+
+.rbc-agenda-table tbody > tr {
+  background-color: var(--color-bg-card) !important;
+}
+
+.rbc-selected-cell {
+  background-color: var(--color-bg-hover) !important;
 }
 
 /* Leaflet (mapa de marcaciones) */

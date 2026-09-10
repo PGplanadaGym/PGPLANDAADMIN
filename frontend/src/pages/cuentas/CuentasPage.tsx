@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { CanAccess, useGetIdentity } from '@refinedev/core'
 import {
   Bar,
   BarChart,
@@ -11,6 +12,8 @@ import {
   YAxis,
 } from 'recharts'
 import { axiosInstance } from '../../lib/axios'
+import { buildAbility } from '../../ability/ability'
+import type { Identity } from '../../lib/identity'
 import { inicioDiaLocalISO, finDiaLocalISO } from '../../lib/fechas'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
@@ -19,7 +22,7 @@ import { ComprobanteUploadField } from '../../components/ui/ComprobanteUploadFie
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 
-const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'yape/plin', 'otro']
+const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'deuna', 'otro']
 
 type Periodo = 'mes' | 'anio' | 'todo' | 'personalizado'
 
@@ -115,6 +118,10 @@ function formatoMoneda(monto: number) {
 }
 
 export function CuentasPage() {
+  const { data: identity } = useGetIdentity<Identity>()
+  const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
+  const puedeEditar = ability.can('cuentas.actualizar', 'all')
+
   const [resumen, setResumen] = useState<Resumen | null>(null)
   const [movimientos, setMovimientos] = useState<Movimiento[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -320,9 +327,11 @@ export function CuentasPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Cuentas</h1>
-        <PrimaryButton type="button" onClick={abrirCreacion}>
-          Registrar movimiento
-        </PrimaryButton>
+        <CanAccess resource="cuentas" action="create">
+          <PrimaryButton type="button" onClick={abrirCreacion}>
+            Registrar movimiento
+          </PrimaryButton>
+        </CanAccess>
       </div>
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
         Ingresos y egresos de tu negocio, con foto o PDF del comprobante cuando lo necesites.
@@ -544,8 +553,10 @@ export function CuentasPage() {
             {movimientos.map((m) => (
               <tr
                 key={m.id}
-                onClick={() => abrirEdicion(m)}
-                className="cursor-pointer border-t border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)]"
+                onClick={puedeEditar ? () => abrirEdicion(m) : undefined}
+                className={`border-t border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] ${
+                  puedeEditar ? 'cursor-pointer' : ''
+                }`}
               >
                 <td className="whitespace-nowrap px-4 py-2 text-[var(--color-text-muted)]">
                   {new Date(m.fecha).toLocaleDateString()}
@@ -605,7 +616,7 @@ export function CuentasPage() {
 
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg bg-[var(--color-bg-card)] p-6 shadow-lg">
+          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-lg bg-[var(--color-bg-card)] p-6 shadow-lg">
             <h2 className="text-base font-semibold text-[var(--color-text)]">
               {form.id ? 'Editar movimiento' : 'Nuevo movimiento'}
             </h2>
@@ -656,22 +667,24 @@ export function CuentasPage() {
                     ))}
                   </select>
                 </div>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    value={nombreNuevaCategoria}
-                    onChange={(e) => setNombreNuevaCategoria(e.target.value)}
-                    placeholder="Nueva categoría…"
-                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs focus:border-[var(--color-primario)] focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={crearCategoriaRapida}
-                    disabled={creandoCategoria || !nombreNuevaCategoria.trim()}
-                    className="shrink-0 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
-                  >
-                    Agregar
-                  </button>
-                </div>
+                <CanAccess resource="cuentas" action="create">
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      value={nombreNuevaCategoria}
+                      onChange={(e) => setNombreNuevaCategoria(e.target.value)}
+                      placeholder="Nueva categoría…"
+                      className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs focus:border-[var(--color-primario)] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={crearCategoriaRapida}
+                      disabled={creandoCategoria || !nombreNuevaCategoria.trim()}
+                      className="shrink-0 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </CanAccess>
               </div>
 
               <div className="flex gap-3">
@@ -767,15 +780,17 @@ export function CuentasPage() {
 
             <div className="mt-5 flex items-center justify-between gap-2">
               {form.id ? (
-                <button
-                  type="button"
-                  onClick={eliminar}
-                  disabled={guardando}
-                  className="flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {guardando && <Spinner size={14} />}
-                  Eliminar
-                </button>
+                <CanAccess resource="cuentas" action="delete">
+                  <button
+                    type="button"
+                    onClick={eliminar}
+                    disabled={guardando}
+                    className="flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {guardando && <Spinner size={14} />}
+                    Eliminar
+                  </button>
+                </CanAccess>
               ) : (
                 <span />
               )}
@@ -787,15 +802,17 @@ export function CuentasPage() {
                 >
                   Cancelar
                 </button>
-                <PrimaryButton
-                  type="button"
-                  onClick={guardar}
-                  disabled={guardando || !form.categoriaId || form.monto <= 0}
-                  className="flex items-center gap-2"
-                >
-                  {guardando && <Spinner size={14} />}
-                  {guardando ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar'}
-                </PrimaryButton>
+                <CanAccess resource="cuentas" action={form.id ? 'edit' : 'create'}>
+                  <PrimaryButton
+                    type="button"
+                    onClick={guardar}
+                    disabled={guardando || !form.categoriaId || form.monto <= 0}
+                    className="flex items-center gap-2"
+                  >
+                    {guardando && <Spinner size={14} />}
+                    {guardando ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar'}
+                  </PrimaryButton>
+                </CanAccess>
               </div>
             </div>
           </div>

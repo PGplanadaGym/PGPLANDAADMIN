@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -31,14 +33,23 @@ export class SucursalesController {
 
   @CheckPermissions('sucursales.leer')
   @Get()
-  findAll(@CurrentUser() user: RequestUser) {
-    return this.sucursalesService.findAll(user.empresaId);
+  findAll(
+    @CurrentUser() user: RequestUser,
+    @Query('incluirInactivas') incluirInactivas?: string,
+  ) {
+    return this.sucursalesService.findAll(user.empresaId, incluirInactivas === 'true');
   }
 
   @CheckPermissions('sucursales.crear')
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateSucursalDto) {
     return this.sucursalesService.create(user.empresaId, dto);
+  }
+
+  @CheckPermissions('sucursales.leer')
+  @Get(':id/perfil')
+  findPerfilSucursal(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.sucursalesService.findPerfilSucursal(user.empresaId, id);
   }
 
   @CheckPermissions('sucursales.actualizar')
@@ -49,5 +60,11 @@ export class SucursalesController {
     @Body() dto: UpdateSucursalDto,
   ) {
     return this.sucursalesService.update(user.empresaId, id, dto);
+  }
+
+  @CheckPermissions('sucursales.actualizar')
+  @Delete(':id')
+  remove(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.sucursalesService.remove(user.empresaId, id);
   }
 }

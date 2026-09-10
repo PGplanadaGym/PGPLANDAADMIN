@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsInt,
+  IsISO8601,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -39,6 +40,11 @@ export class CreateOrdenCompraDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @ApiProperty({ required: false, description: 'Fecha esperada de entrega' })
+  @IsOptional()
+  @IsISO8601()
+  fechaEsperada?: string;
 
   @ApiProperty({ type: [OrdenCompraItemDto] })
   @IsArray()

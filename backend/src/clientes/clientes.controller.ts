@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
@@ -11,6 +19,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @ApiTags('clientes')
 @ApiBearerAuth()
@@ -35,12 +44,22 @@ export class ClientesController {
   @CheckPermissions('clientes.leer')
   @Get(':id/perfil')
   findPerfil(@CurrentUser() user: RequestUser, @Param('id') id: string) {
-    return this.clientesService.findPerfil(user.empresaId, id);
+    return this.clientesService.findPerfil(user.empresaId, id, user.permisos);
   }
 
   @CheckPermissions('clientes.crear')
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateClienteDto) {
     return this.clientesService.create(user.empresaId, user.id, dto);
+  }
+
+  @CheckPermissions('clientes.actualizar')
+  @Patch(':id')
+  update(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateClienteDto,
+  ) {
+    return this.clientesService.update(user.empresaId, user.id, id, dto);
   }
 }

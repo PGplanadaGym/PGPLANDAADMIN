@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateTipoCitaDto {
   @ApiProperty()
   @IsString()
   nombre!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
 
   @ApiProperty()
   @IsInt()
@@ -16,6 +21,12 @@ export class CreateTipoCitaDto {
   @IsInt()
   @Min(0)
   bufferMinutos?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  precio?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()

@@ -12,6 +12,7 @@ interface Cliente {
   nombre: string
   email: string | null
   telefono: string | null
+  etiqueta: string | null
   creadoEn: string
 }
 
@@ -54,6 +55,7 @@ export function ClientesListPage() {
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Teléfono</th>
+              <th className="px-4 py-2">Etiqueta</th>
               <th className="px-4 py-2">Creado</th>
             </tr>
           </thead>
@@ -68,13 +70,22 @@ export function ClientesListPage() {
                 <td className="px-4 py-2">{cliente.email ?? '—'}</td>
                 <td className="px-4 py-2">{cliente.telefono ?? '—'}</td>
                 <td className="px-4 py-2">
+                  {cliente.etiqueta ? (
+                    <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+                      {cliente.etiqueta}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="px-4 py-2">
                   {new Date(cliente.creadoEn).toLocaleDateString()}
                 </td>
               </tr>
             ))}
             {pageItems.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
+                <td colSpan={5} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
                   {tableQuery.isLoading ? (
                     <CargandoPantalla minHeight={80} />
                   ) : query ? (

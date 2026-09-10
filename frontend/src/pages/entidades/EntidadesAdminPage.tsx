@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CanAccess } from '@refinedev/core'
 import { toast } from 'sonner'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
@@ -16,6 +17,8 @@ const TIPOS_CAMPO: { value: TipoCampo; label: string }[] = [
   { value: 'fecha', label: 'Fecha' },
   { value: 'booleano', label: 'Sí/No' },
   { value: 'select', label: 'Lista de opciones' },
+  { value: 'relacion', label: 'Relación con otra entidad' },
+  { value: 'imagen', label: 'Imagen' },
 ]
 
 interface CampoListItem {
@@ -25,6 +28,7 @@ interface CampoListItem {
   tipo: TipoCampo
   requerido: boolean
   opciones: string[] | null
+  relacionCon: string | null
   orden: number
 }
 
@@ -41,6 +45,7 @@ interface CampoForm {
   tipo: TipoCampo
   requerido: boolean
   opciones: string
+  relacionCon: string
 }
 
 function slugificar(texto: string) {
@@ -57,12 +62,12 @@ function slugificar(texto: string) {
 }
 
 function campoVacio(): CampoForm {
-  return { clave: '', etiqueta: '', tipo: 'texto', requerido: false, opciones: '' }
+  return { clave: '', etiqueta: '', tipo: 'texto', requerido: false, opciones: '', relacionCon: '' }
 }
 
 export function EntidadesAdminPage() {
   const navigate = useNavigate()
-  const { refetch: refetchEntidadesNav } = useEntidades()
+  const { entidades: entidadesDisponibles, refetch: refetchEntidadesNav } = useEntidades()
   const { confirmar, dialog } = useConfirm()
 
   const [entidades, setEntidades] = useState<EntidadListItem[]>([])
@@ -144,13 +149,17 @@ export function EntidadesAdminPage() {
           tipo: c.tipo,
           requerido: c.requerido,
           opciones: (c.opciones ?? []).join(', '),
+          relacionCon: c.relacionCon ?? '',
         })),
     )
     setMostrarForm(true)
   }
 
   const campoInvalido = (c: CampoForm) =>
-    !c.clave.trim() || !c.etiqueta.trim() || (c.tipo === 'select' && !c.opciones.trim())
+    !c.clave.trim() ||
+    !c.etiqueta.trim() ||
+    (c.tipo === 'select' && !c.opciones.trim()) ||
+    (c.tipo === 'relacion' && !c.relacionCon.trim())
 
   const clavesCampos = campos.map((c) => c.clave)
   const hayClavesDuplicadas = new Set(clavesCampos).size !== clavesCampos.length
@@ -178,6 +187,7 @@ export function EntidadesAdminPage() {
                 .map((o) => o.trim())
                 .filter(Boolean)
             : undefined,
+        relacionCon: c.tipo === 'relacion' ? c.relacionCon : undefined,
         orden: index,
       }))
 
@@ -236,9 +246,17 @@ export function EntidadesAdminPage() {
             necesites, sin escribir código. Cada una aparece sola en el menú con su propio CRUD.
           </p>
         </div>
-        <PrimaryButton type="button" onClick={mostrarForm ? cerrarForm : abrirCreacion}>
-          {mostrarForm ? 'Cancelar' : 'Nueva entidad'}
-        </PrimaryButton>
+        {mostrarForm ? (
+          <PrimaryButton type="button" onClick={cerrarForm}>
+            Cancelar
+          </PrimaryButton>
+        ) : (
+          <CanAccess resource="entidades" action="create">
+            <PrimaryButton type="button" onClick={abrirCreacion}>
+              Nueva entidad
+            </PrimaryButton>
+          </CanAccess>
+        )}
       </div>
 
       {mostrarForm && (
@@ -339,6 +357,30 @@ export function EntidadesAdminPage() {
                       />
                     </div>
                   )}
+                  {campo.tipo === 'relacion' && (
+                    <div className="min-w-[160px] flex-1">
+                      <label className="mb-1 block text-xs text-[var(--color-text-muted)]">
+                        Enlaza con
+                      </label>
+                      <select
+                        value={campo.relacionCon}
+                        onChange={(e) => actualizarCampo(index, { relacionCon: e.target.value })}
+                        className="w-full rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+                      >
+                        <option value="" disabled>
+                          Selecciona…
+                        </option>
+                        <option value="cliente">Cliente</option>
+                        {entidadesDisponibles
+                          .filter((e) => e.clave !== clave)
+                          .map((e) => (
+                            <option key={e.clave} value={`entidad:${e.clave}`}>
+                              {e.nombre}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
                   <label className="flex items-center gap-1.5 pb-2 text-xs text-[var(--color-text)]">
                     <input
                       type="checkbox"
@@ -403,30 +445,36 @@ export function EntidadesAdminPage() {
                 <td className="px-4 py-2 text-[var(--color-text-muted)]">{entidad.campos.length}</td>
                 <td className="px-4 py-2 text-right">
                   <div className="flex justify-end gap-1">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/entidades/${entidad.clave}`)}
-                      className="rounded px-2 py-1 text-xs text-[var(--color-primario-legible)] hover:bg-[var(--color-bg-subtle)]"
-                    >
-                      Ver registros
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => iniciarEdicion(entidad)}
-                      className="rounded p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]"
-                      aria-label={`Editar ${entidad.nombre}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => eliminarEntidad(entidad)}
-                      disabled={eliminandoClave === entidad.clave}
-                      className="rounded p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                      aria-label={`Eliminar ${entidad.nombre}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <CanAccess resource="entidades.registros" action="list">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/entidades/${entidad.clave}`)}
+                        className="rounded px-2 py-1 text-xs text-[var(--color-primario-legible)] hover:bg-[var(--color-bg-subtle)]"
+                      >
+                        Ver registros
+                      </button>
+                    </CanAccess>
+                    <CanAccess resource="entidades" action="edit">
+                      <button
+                        type="button"
+                        onClick={() => iniciarEdicion(entidad)}
+                        className="rounded p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]"
+                        aria-label={`Editar ${entidad.nombre}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </CanAccess>
+                    <CanAccess resource="entidades" action="delete">
+                      <button
+                        type="button"
+                        onClick={() => eliminarEntidad(entidad)}
+                        disabled={eliminandoClave === entidad.clave}
+                        className="rounded p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
+                        aria-label={`Eliminar ${entidad.nombre}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </CanAccess>
                   </div>
                 </td>
               </tr>

@@ -20,6 +20,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { VentasService } from './ventas.service';
 import { CreateOrdenDto } from './dto/create-orden.dto';
+import { ConfirmarOrdenDto } from './dto/confirmar-orden.dto';
 
 @ApiTags('ventas')
 @ApiBearerAuth()
@@ -31,8 +32,12 @@ export class VentasController {
 
   @CheckPermissions('ventas.leer')
   @Get()
-  findAll(@CurrentUser() user: RequestUser) {
-    return this.ventasService.findAll(user.empresaId);
+  findAll(
+    @CurrentUser() user: RequestUser,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    return this.ventasService.findAll(user.empresaId, desde, hasta);
   }
 
   @CheckPermissions('ventas.leer')
@@ -55,6 +60,16 @@ export class VentasController {
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateOrdenDto) {
     return this.ventasService.create(user.empresaId, user.id, dto);
+  }
+
+  @CheckPermissions('ventas.crear')
+  @Post(':id/confirmar')
+  confirmar(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: ConfirmarOrdenDto,
+  ) {
+    return this.ventasService.confirmar(user.empresaId, user.id, id, dto);
   }
 
   @CheckPermissions('ventas.eliminar')

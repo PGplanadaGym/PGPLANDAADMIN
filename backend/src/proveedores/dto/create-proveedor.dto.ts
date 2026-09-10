@@ -25,4 +25,9 @@ export class CreateProveedorDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @ApiProperty({ required: false, description: 'RUC del proveedor' })
+  @IsOptional()
+  @IsString()
+  ruc?: string;
 }

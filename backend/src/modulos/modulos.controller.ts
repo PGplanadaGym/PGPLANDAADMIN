@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
@@ -22,6 +22,24 @@ export class ModulosController {
   @Get()
   findEstado(@CurrentUser() user: RequestUser) {
     return this.modulosService.findEstadoPorEmpresa(user.empresaId);
+  }
+
+  @CheckPermissions('modulos.actualizar')
+  @Get('detalle')
+  findDetalle(@CurrentUser() user: RequestUser) {
+    return this.modulosService.findDetallePorEmpresa(user.empresaId);
+  }
+
+  @CheckPermissions('modulos.actualizar')
+  @Get('plantillas')
+  listarPlantillas() {
+    return this.modulosService.listarPlantillas();
+  }
+
+  @CheckPermissions('modulos.actualizar')
+  @Post('plantillas/:clave/aplicar')
+  aplicarPlantilla(@CurrentUser() user: RequestUser, @Param('clave') clave: string) {
+    return this.modulosService.aplicarPlantilla(user.empresaId, user.id, clave);
   }
 
   @CheckPermissions('modulos.actualizar')

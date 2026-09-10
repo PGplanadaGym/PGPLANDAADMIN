@@ -56,4 +56,19 @@ export class CreatePagoNominaDto {
   @IsOptional()
   @IsString()
   categoriaEgresoId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  metodoPago?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  numeroComprobante?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  comprobanteUrl?: string;
 }

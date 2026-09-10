@@ -20,4 +20,9 @@ export class RegistrarMovimientoDto {
   @IsOptional()
   @IsString()
   motivo?: string;
+
+  @ApiProperty({ required: false, description: 'Sucursal donde ocurre el movimiento' })
+  @IsOptional()
+  @IsString()
+  sucursalId?: string;
 }
