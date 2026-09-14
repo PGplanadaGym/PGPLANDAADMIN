@@ -1,0 +1,715 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- CORE: Empresa, Usuarios, Roles, Permisos ----------
+
+model Empresa {
+  id            String   @id @default(uuid())
+  nombre        String // nombre comercial / marca (se usa en sidebar, login, recibos)
+  razonSocial   String? // nombre legal registrado en el SRI, si difiere del nombre comercial
+  ruc           String?
+  direccion     String?
+  telefono      String?
+  email         String?
+  logoUrl       String?
+  colorPrimario String?  @default("#0F172A")
+  dominio       String?  @unique
+  zonaHoraria   String   @default("America/Guayaquil")
+  creadoEn      DateTime @default(now())
+
+  sucursales Sucursal[]
+  usuarios   Usuario[]
+  roles      Rol[]
+
+  clientes             Cliente[]
+  productosServicio    ProductoServicio[]
+  ordenes              Orden[]
+  registrosAuditoria   RegistroAuditoria[]
+  recursos             Recurso[]
+  tiposCita            TipoCita[]
+  citas                Cita[]
+  categoriasActivo     CategoriaActivo[]
+  activos              Activo[]
+  asignacionesActivo   AsignacionActivo[]
+  movimientosStock     MovimientoStock[]
+  marcaciones          Marcacion[]
+  categoriasMovimiento CategoriaMovimiento[]
+  movimientosCuenta    MovimientoCuenta[]
+  materiales           Material[]
+  costeos              CosteoProyecto[]
+  notificaciones       Notificacion[]
+  proveedores          Proveedor[]
+  ordenesCompra        OrdenCompra[]
+  pagosNomina          PagoNomina[]
+  mantenimientosActivo MantenimientoActivo[]
+  categoriasProducto   CategoriaProducto[]
+  planesMembresia      PlanMembresia[]
+  membresias           Membresia[]
+}
+
+model Sucursal {
+  id                    String  @id @default(uuid())
+  empresaId             String
+  empresa               Empresa @relation(fields: [empresaId], references: [id])
+  nombre                String
+  direccion             String?
+  latitud               Float?
+  longitud              Float?
+  codigoEstablecimiento String? // código SRI de 3 dígitos (ej. "001")
+  telefono              String?
+  encargadoId           String?
+  encargado             Usuario? @relation("SucursalEncargado", fields: [encargadoId], references: [id], onDelete: SetNull)
+  horarioAtencion       String?
+  imagenUrl             String?
+  activa                Boolean @default(true)
+
+  usuarios          Usuario[]
+  recursos          Recurso[]
+  activos           Activo[]
+  movimientosCuenta MovimientoCuenta[]
+  movimientosStock  MovimientoStock[]
+}
+
+model Usuario {
+  id                  String    @id @default(uuid())
+  empresaId           String
+  empresa             Empresa   @relation(fields: [empresaId], references: [id])
+  nombre              String
+  email               String    @unique
+  passwordHash        String
+  fotoUrl             String?
+  telefono            String?
+  cargo               String?
+  bio                 String?
+  activo              Boolean   @default(true)
+  // false = todavía usa la contraseña aleatoria de la invitación (no puede iniciar sesión
+  // hasta que la reemplace vía /reset-password). true por defecto porque los usuarios
+  // sembrados o creados con una contraseña real ya la tienen "configurada" desde el inicio.
+  passwordConfigurada Boolean   @default(true)
+  sucursalId          String?
+  sucursal            Sucursal? @relation(fields: [sucursalId], references: [id])
+  creadoEn            DateTime  @default(now())
+
+  roles                  UsuarioRol[]
+  refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
+  registrosAuditoria     RegistroAuditoria[]
+  activosAsignados       AsignacionActivo[]   @relation("ActivoTitular")
+  asignacionesRealizadas AsignacionActivo[]   @relation("ActivoAsignadoPor")
+  movimientosStock       MovimientoStock[]
+  marcaciones            Marcacion[]
+  movimientosCuenta      MovimientoCuenta[]
+  costeos                CosteoProyecto[]
+  ordenes                Orden[]
+  notificaciones         Notificacion[]
+  ordenesCompra          OrdenCompra[]
+  pagosNomina            PagoNomina[]         @relation("NominaEmpleado")
+  pagosNominaRegistrados PagoNomina[]         @relation("NominaRegistradoPor")
+  recursosVinculados     Recurso[]
+  mantenimientosActivo   MantenimientoActivo[]
+  sucursalesEncargado    Sucursal[]           @relation("SucursalEncargado")
+}
+
+model RegistroAuditoria {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  accion    String // "crear" | "actualizar" | "eliminar" | "activar" | "desactivar"
+  entidad   String // "usuario" | "cliente" | "modulo" | "empresa" | "rol" | "entidad_dinamica:<clave>"
+  entidadId String?
+  detalle   Json?
+  creadoEn  DateTime @default(now())
+}
+
+model RefreshToken {
+  id             String   @id @default(uuid())
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id])
+  tokenHash      String   @unique
+  sessionId      String
+  inicioSesionEn DateTime @default(now())
+  userAgent      String?
+  ip             String?
+  creadoEn       DateTime @default(now())
+  expiraEn       DateTime
+  revocado       Boolean  @default(false)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  tokenHash String   @unique
+  creadoEn  DateTime @default(now())
+  expiraEn  DateTime
+  usado     Boolean  @default(false)
+}
+
+model Rol {
+  id          String   @id @default(uuid())
+  empresaId   String? // null = rol de sistema
+  empresa     Empresa? @relation(fields: [empresaId], references: [id])
+  nombre      String
+  descripcion String?
+
+  usuarios UsuarioRol[]
+  permisos RolPermiso[]
+
+  @@unique([empresaId, nombre])
+}
+
+model UsuarioRol {
+  usuarioId String
+  rolId     String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  rol       Rol     @relation(fields: [rolId], references: [id])
+
+  @@id([usuarioId, rolId])
+}
+
+model Permiso {
+  id       String @id @default(uuid())
+  clave    String @unique // ej: "inventario.crear", "citas.eliminar"
+  etiqueta String
+
+  roles RolPermiso[]
+}
+
+model RolPermiso {
+  rolId     String
+  permisoId String
+  rol       Rol     @relation(fields: [rolId], references: [id])
+  permiso   Permiso @relation(fields: [permisoId], references: [id])
+
+  @@id([rolId, permisoId])
+}
+
+// ---------- ENTIDADES DE NEGOCIO COMUNES (con extensión JSON) ----------
+
+model Cliente {
+  id             String   @id @default(uuid())
+  empresaId      String
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  nombre         String
+  email          String?
+  telefono       String?
+  notas          String?
+  etiqueta       String?
+  latitud        Float?
+  longitud       Float?
+  fotoUrl        String?
+  activo         Boolean  @default(true)
+  atributosExtra Json?
+  creadoEn       DateTime @default(now())
+
+  ordenes           Orden[]
+  citas             Cita[]
+  activosAsignados  AsignacionActivo[]
+  movimientosCuenta MovimientoCuenta[]
+  costeos           CosteoProyecto[]
+  membresias        Membresia[]
+}
+
+// ---------- MEMBRESÍAS (suscripciones de socios, ej. gimnasios/academias) ----------
+
+model PlanMembresia {
+  id           String   @id @default(uuid())
+  empresaId    String
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  nombre       String // "Mensual", "Trimestral", "Anual"
+  duracionDias Int
+  precio       Decimal  @db.Decimal(10, 2)
+  activo       Boolean  @default(true)
+
+  membresias Membresia[]
+
+  @@unique([empresaId, nombre])
+}
+
+model Membresia {
+  id               String        @id @default(uuid())
+  empresaId        String
+  empresa          Empresa       @relation(fields: [empresaId], references: [id])
+  clienteId        String
+  cliente          Cliente       @relation(fields: [clienteId], references: [id])
+  planId           String
+  plan             PlanMembresia @relation(fields: [planId], references: [id])
+  fechaInicio      DateTime
+  fechaVencimiento DateTime
+  // evita reenviar el correo de "por vencer" más de una vez por renovación
+  avisoEnviado     Boolean       @default(false)
+  creadoEn         DateTime      @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
+}
+
+model CategoriaProducto {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nombre    String
+  activo    Boolean @default(true)
+
+  productos ProductoServicio[]
+
+  @@unique([empresaId, nombre])
+}
+
+model ProductoServicio {
+  id             String             @id @default(uuid())
+  empresaId      String
+  empresa        Empresa            @relation(fields: [empresaId], references: [id])
+  categoriaId    String?
+  categoria      CategoriaProducto? @relation(fields: [categoriaId], references: [id])
+  tipo           String // "producto" | "servicio"
+  nombre         String
+  sku            String?
+  precio         Decimal            @db.Decimal(10, 2)
+  costo          Decimal?           @db.Decimal(10, 2)
+  stock          Int? // null si es servicio
+  stockMinimo    Int?
+  unidadMedida   String             @default("unidad")
+  activo         Boolean            @default(true)
+  imagenUrl      String?
+  atributosExtra Json?
+  creadoEn       DateTime           @default(now())
+
+  movimientosStock MovimientoStock[]
+  ordenItems       OrdenItem[]
+  ordenCompraItems OrdenCompraItem[]
+}
+
+model Orden {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  estado    String   @default("completada") // completada | pendiente (venta en espera)
+  total     Decimal  @db.Decimal(10, 2)
+  descuento Decimal  @default(0) @db.Decimal(10, 2)
+  notas     String?
+  creadoEn  DateTime @default(now())
+
+  items             OrdenItem[]
+  movimientosCuenta MovimientoCuenta[]
+}
+
+model OrdenItem {
+  id         String           @id @default(uuid())
+  ordenId    String
+  orden      Orden            @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   ProductoServicio @relation(fields: [productoId], references: [id])
+  cantidad   Int
+  precioUnit Decimal          @db.Decimal(10, 2)
+}
+
+// ---------- CITAS / CALENDARIO (genérico para cualquier rubro) ----------
+
+model Recurso {
+  id         String    @id @default(uuid())
+  empresaId  String
+  empresa    Empresa   @relation(fields: [empresaId], references: [id])
+  tipo       String // "persona" | "sala" | "equipo"
+  nombre     String
+  usuarioId  String? // opcional: si el recurso es un empleado con cuenta propia
+  usuario    Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
+  activo     Boolean   @default(true)
+  creadoEn   DateTime  @default(now())
+
+  horarios HorarioAtencion[]
+  bloqueos BloqueoDisponibilidad[]
+  citas    Cita[]
+  tiposCita TipoCita[] @relation("RecursoTipoCita")
+}
+
+model HorarioAtencion {
+  id         String  @id @default(uuid())
+  recursoId  String
+  recurso    Recurso @relation(fields: [recursoId], references: [id])
+  diaSemana  Int // 0 = domingo … 6 = sábado
+  horaInicio String // "09:00"
+  horaFin    String // "18:00"
+}
+
+// Bloqueo puntual de disponibilidad de un recurso (vacaciones, día libre, cita médica…),
+// distinto del horario semanal recurrente de HorarioAtencion. Si horaInicio/horaFin son null,
+// bloquea el día completo; si ambos tienen valor, bloquea solo esa franja dentro del día.
+model BloqueoDisponibilidad {
+  id         String   @id @default(uuid())
+  recursoId  String
+  recurso    Recurso  @relation(fields: [recursoId], references: [id])
+  fecha      DateTime @db.Date
+  horaInicio String?
+  horaFin    String?
+  motivo     String?
+  creadoEn   DateTime @default(now())
+
+  @@index([recursoId, fecha])
+}
+
+model TipoCita {
+  id              String   @id @default(uuid())
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  nombre          String
+  descripcion     String?
+  duracionMinutos Int
+  bufferMinutos   Int      @default(0)
+  precio          Decimal? @db.Decimal(10, 2)
+  color           String   @default("#0F172A")
+  activo          Boolean  @default(true)
+
+  citas    Cita[]
+  recursos Recurso[] @relation("RecursoTipoCita")
+}
+
+model Cita {
+  id                  String   @id @default(uuid())
+  empresaId           String
+  empresa             Empresa  @relation(fields: [empresaId], references: [id])
+  clienteId           String?
+  cliente             Cliente? @relation(fields: [clienteId], references: [id])
+  recursoId           String
+  recurso             Recurso  @relation(fields: [recursoId], references: [id])
+  tipoCitaId          String
+  tipoCita            TipoCita @relation(fields: [tipoCitaId], references: [id])
+  fechaInicio         DateTime
+  fechaFin            DateTime
+  estado              String   @default("pendiente") // pendiente|confirmada|cancelada|completada|no_asistio
+  notas               String?
+  recordatorioEnviado Boolean  @default(false)
+  creadoEn            DateTime @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
+}
+
+// ---------- INVENTARIO (activos con historial de dueño + stock por cantidad) ----------
+
+model CategoriaActivo {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nombre    String
+  activo    Boolean @default(true)
+
+  activos Activo[]
+
+  @@unique([empresaId, nombre])
+}
+
+model Activo {
+  id                String          @id @default(uuid())
+  empresaId         String
+  empresa           Empresa         @relation(fields: [empresaId], references: [id])
+  categoriaActivoId String
+  categoriaActivo   CategoriaActivo @relation(fields: [categoriaActivoId], references: [id])
+  nombre            String
+  marca             String?
+  modelo            String?
+  codigoInterno     String?
+  numeroSerie       String?
+  estado            String          @default("disponible") // disponible|asignado|baja
+  valorCompra       Decimal?        @db.Decimal(10, 2)
+  fechaCompra       DateTime?
+  garantiaHasta     DateTime?
+  sucursalId        String?
+  sucursal          Sucursal?       @relation(fields: [sucursalId], references: [id])
+  imagenUrl         String?
+  notas             String?
+  creadoEn          DateTime        @default(now())
+
+  asignaciones  AsignacionActivo[]
+  mantenimientos MantenimientoActivo[]
+  movimientosCuenta MovimientoCuenta[]
+
+  @@unique([empresaId, codigoInterno])
+}
+
+model MantenimientoActivo {
+  id          String   @id @default(uuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  activoId    String
+  activo      Activo   @relation(fields: [activoId], references: [id])
+  fecha       DateTime
+  descripcion String
+  costo       Decimal? @db.Decimal(10, 2)
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn    DateTime @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
+
+  @@index([activoId, fecha])
+}
+
+model AsignacionActivo {
+  id              String    @id @default(uuid())
+  empresaId       String
+  empresa         Empresa   @relation(fields: [empresaId], references: [id])
+  activoId        String
+  activo          Activo    @relation(fields: [activoId], references: [id])
+  usuarioId       String?
+  usuario         Usuario?  @relation("ActivoTitular", fields: [usuarioId], references: [id])
+  clienteId       String?
+  cliente         Cliente?  @relation(fields: [clienteId], references: [id])
+  fechaAsignacion DateTime  @default(now())
+  fechaDevolucion DateTime?
+  notas           String?
+  asignadoPorId   String
+  asignadoPor     Usuario   @relation("ActivoAsignadoPor", fields: [asignadoPorId], references: [id])
+  creadoEn        DateTime  @default(now())
+}
+
+model MovimientoStock {
+  id         String           @id @default(uuid())
+  empresaId  String
+  empresa    Empresa          @relation(fields: [empresaId], references: [id])
+  productoId String
+  producto   ProductoServicio @relation(fields: [productoId], references: [id])
+  tipo       String // "entrada" | "salida" | "ajuste"
+  cantidad   Int
+  motivo     String?
+  usuarioId  String
+  usuario    Usuario          @relation(fields: [usuarioId], references: [id])
+  sucursalId String?
+  sucursal   Sucursal?        @relation(fields: [sucursalId], references: [id])
+  creadoEn   DateTime         @default(now())
+}
+
+// ---------- ASISTENCIA (entrada/salida/comida con geolocalización) ----------
+
+model Marcacion {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  tipo      String // "entrada" | "salida" | "inicio_comida" | "fin_comida"
+  latitud   Float?
+  longitud  Float?
+  precision Float? // precisión del GPS en metros
+  creadoEn  DateTime @default(now())
+}
+
+// ---------- CUENTAS (ingresos y egresos) ----------
+
+model CategoriaMovimiento {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  tipo      String // "ingreso" | "egreso"
+  nombre    String
+  activo    Boolean @default(true)
+
+  movimientos MovimientoCuenta[]
+
+  @@unique([empresaId, tipo, nombre])
+}
+
+model MovimientoCuenta {
+  id                String              @id @default(uuid())
+  empresaId         String
+  empresa           Empresa             @relation(fields: [empresaId], references: [id])
+  tipo              String // "ingreso" | "egreso"
+  categoriaId       String
+  categoria         CategoriaMovimiento @relation(fields: [categoriaId], references: [id])
+  monto             Decimal             @db.Decimal(10, 2)
+  fecha             DateTime
+  descripcion       String?
+  metodoPago        String?
+  numeroComprobante String?
+  comprobanteUrl    String?
+  clienteId         String?
+  cliente           Cliente?            @relation(fields: [clienteId], references: [id])
+  usuarioId         String
+  usuario           Usuario             @relation(fields: [usuarioId], references: [id])
+  costeoProyectoId  String?
+  costeoProyecto    CosteoProyecto?     @relation(fields: [costeoProyectoId], references: [id], onDelete: Cascade)
+  ordenId           String?
+  orden             Orden?              @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  ordenCompraId     String?
+  ordenCompra       OrdenCompra?        @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  pagoNominaId      String?
+  pagoNomina        PagoNomina?         @relation(fields: [pagoNominaId], references: [id], onDelete: Cascade)
+  citaId            String?
+  cita              Cita?               @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  mantenimientoId   String?
+  mantenimiento     MantenimientoActivo? @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
+  activoId          String?
+  activoCompra      Activo?             @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  sucursalId        String?
+  sucursal          Sucursal?           @relation(fields: [sucursalId], references: [id])
+  membresiaId       String?
+  membresia         Membresia?          @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
+  creadoEn          DateTime            @default(now())
+}
+
+// ---------- COSTEO (calculadora de costos por partes y materiales, ej. cosplay) ----------
+
+model Material {
+  id             String   @id @default(uuid())
+  empresaId      String
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  nombre         String
+  calidad        String?
+  unidadMedida   String
+  precioUnitario Decimal  @db.Decimal(10, 2)
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+
+  lineas CosteoParteMaterial[]
+}
+
+model CosteoProyecto {
+  id                 String    @id @default(uuid())
+  empresaId          String
+  empresa            Empresa   @relation(fields: [empresaId], references: [id])
+  nombre             String
+  clienteId          String?
+  cliente            Cliente?  @relation(fields: [clienteId], references: [id])
+  tarifaHora         Decimal   @db.Decimal(10, 2)
+  margenPorcentaje   Decimal   @default(0) @db.Decimal(6, 2)
+  otrosCostos        Decimal   @default(0) @db.Decimal(10, 2)
+  notas              String?
+  estado             String    @default("borrador") // "borrador" | "vendido"
+  precioVenta        Decimal?  @db.Decimal(10, 2)
+  costoTotalSnapshot Decimal?  @db.Decimal(10, 2) // costo real al momento de vender, para calcular la ganancia sin recalcular partes/materiales
+  fechaVenta         DateTime?
+  usuarioId          String
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+  creadoEn           DateTime  @default(now())
+
+  partes            CosteoParte[]
+  movimientosCuenta MovimientoCuenta[]
+}
+
+model CosteoParte {
+  id         String         @id @default(uuid())
+  proyectoId String
+  proyecto   CosteoProyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  nombre     String
+  horas      Decimal        @default(0) @db.Decimal(6, 2)
+  orden      Int            @default(0)
+
+  materiales CosteoParteMaterial[]
+}
+
+model CosteoParteMaterial {
+  id                     String      @id @default(uuid())
+  parteId                String
+  parte                  CosteoParte @relation(fields: [parteId], references: [id], onDelete: Cascade)
+  materialId             String
+  material               Material    @relation(fields: [materialId], references: [id])
+  cantidad               Decimal     @db.Decimal(10, 2)
+  precioUnitarioSnapshot Decimal     @db.Decimal(10, 2)
+}
+
+// ---------- NOTIFICACIONES (centro de notificaciones dentro de la app) ----------
+
+model Notificacion {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  usuarioId String? // null = para todos los usuarios de la empresa
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo      String // "stock_bajo" | "cita_asignada" | ...
+  titulo    String
+  mensaje   String
+  enlace    String? // ruta del frontend a la que lleva, ej. "/productos"
+  leida     Boolean  @default(false)
+  creadoEn  DateTime @default(now())
+
+  @@index([empresaId, usuarioId, leida])
+}
+
+// ---------- PROVEEDORES Y ÓRDENES DE COMPRA ----------
+
+model Proveedor {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  nombre    String
+  ruc       String?
+  contacto  String?
+  telefono  String?
+  email     String?
+  notas     String?
+  latitud   Float?
+  longitud  Float?
+  logoUrl   String?
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+
+  ordenesCompra OrdenCompra[]
+}
+
+model OrdenCompra {
+  id             String    @id @default(uuid())
+  empresaId      String
+  empresa        Empresa   @relation(fields: [empresaId], references: [id])
+  proveedorId    String
+  proveedor      Proveedor @relation(fields: [proveedorId], references: [id])
+  usuarioId      String
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id])
+  estado         String    @default("pendiente") // "pendiente" | "parcial" | "recibida" | "cancelada"
+  total          Decimal   @db.Decimal(10, 2)
+  notas          String?
+  fechaEsperada  DateTime?
+  fechaRecepcion DateTime?
+  creadoEn       DateTime  @default(now())
+
+  items             OrdenCompraItem[]
+  movimientosCuenta MovimientoCuenta[]
+}
+
+model OrdenCompraItem {
+  id                String           @id @default(uuid())
+  ordenCompraId     String
+  ordenCompra       OrdenCompra      @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  productoId        String
+  producto          ProductoServicio @relation(fields: [productoId], references: [id])
+  cantidad          Int
+  cantidadRecibida  Int              @default(0)
+  precioUnit        Decimal          @db.Decimal(10, 2)
+}
+
+// ---------- NÓMINA (registro simple de pagos a empleados) ----------
+
+model PagoNomina {
+  id              String   @id @default(uuid())
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  empleadoId      String
+  empleado        Usuario  @relation("NominaEmpleado", fields: [empleadoId], references: [id])
+  periodo         String // "2026-09" (año-mes al que corresponde el pago)
+  sueldoBase      Decimal  @db.Decimal(10, 2)
+  bonos           Decimal  @default(0) @db.Decimal(10, 2)
+  descuentos      Decimal  @default(0) @db.Decimal(10, 2)
+  totalPagado     Decimal  @db.Decimal(10, 2) // snapshot: sueldoBase + bonos - descuentos
+  fechaPago       DateTime
+  notas           String?
+  registradoPorId String
+  registradoPor   Usuario  @relation("NominaRegistradoPor", fields: [registradoPorId], references: [id])
+  creadoEn        DateTime @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
+
+  @@index([empresaId, periodo])
+}
