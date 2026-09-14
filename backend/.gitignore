@@ -1,8 +1,0 @@
-node_modules
-# Keep environment variables out of version control
-.env
-
-# prisma/ solo se ejecuta vía ts-node, nunca se debe compilar/commitear su salida
-prisma/*.js
-prisma/*.js.map
-prisma/*.d.ts
