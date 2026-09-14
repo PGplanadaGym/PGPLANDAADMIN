@@ -5,7 +5,6 @@ import { ChevronDown, ChevronRight, Menu, Search } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { aplicarColorPrimario } from '../../lib/theme'
 import { buildAbility } from '../../ability/ability'
-import { EntidadesProvider, useEntidades } from '../../providers/entidadesContext'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { NotificationBell } from '../ui/NotificationBell'
 import { CommandPalette } from '../ui/CommandPalette'
@@ -24,7 +23,6 @@ function esRutaActiva(pathname: string, to: string) {
 }
 
 function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
-  const { entidades } = useEntidades()
   const location = useLocation()
   // solo guarda los grupos que el usuario abrió/cerró a mano — si un grupo no
   // está aquí, su estado por defecto es "abierto si estás en una de sus páginas"
@@ -34,9 +32,6 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
 
   const puedeVerItem = (item: NavLeaf) =>
     item.sinPermiso || ability.can(`${item.resource}.leer`, 'all')
-
-  const puedeVerEntidades =
-    identity?.permisos.includes('entidades.registros.leer') ?? false
 
   const claseEnlace = (activo: boolean) =>
     `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -148,25 +143,6 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
               </Link>
             )
           })}
-
-          {puedeVerEntidades && entidades.length > 0 && (
-            <>
-              <div className="mb-1 mt-4 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-faint)]">
-                Entidades
-              </div>
-              {entidades.map((entidad) => (
-                <Link
-                  key={entidad.clave}
-                  to={`/entidades/${entidad.clave}`}
-                  onClick={onCerrar}
-                  className={claseEnlace(esRutaActiva(location.pathname, `/entidades/${entidad.clave}`))}
-                >
-                  <span className="h-4 w-4 shrink-0 rounded bg-[var(--color-bg-muted)]" />
-                  <span className="truncate">{entidad.nombre}</span>
-                </Link>
-              ))}
-            </>
-          )}
         </nav>
       </aside>
     </>
@@ -189,7 +165,7 @@ export function Layout() {
   }, [location.pathname])
 
   return (
-    <EntidadesProvider>
+    <>
       <CommandPalette abierto={paletaAbierta} onCambiar={setPaletaAbierta} />
       <div className="flex min-h-screen bg-[var(--color-bg)]">
         <Sidebar
@@ -243,6 +219,6 @@ export function Layout() {
           </main>
         </div>
       </div>
-    </EntidadesProvider>
+    </>
   )
 }

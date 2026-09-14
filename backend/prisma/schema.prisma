@@ -32,7 +32,6 @@ model Empresa {
   clientes             Cliente[]
   productosServicio    ProductoServicio[]
   ordenes              Orden[]
-  entidadesDinamicas   EntidadDinamica[]
   registrosAuditoria   RegistroAuditoria[]
   recursos             Recurso[]
   tiposCita            TipoCita[]
@@ -316,45 +315,6 @@ model OrdenItem {
   producto   ProductoServicio @relation(fields: [productoId], references: [id])
   cantidad   Int
   precioUnit Decimal          @db.Decimal(10, 2)
-}
-
-// ---------- MOTOR DE ENTIDADES DINÁMICAS (solo para lo muy propio del rubro) ----------
-
-model EntidadDinamica {
-  id        String  @id @default(uuid())
-  empresaId String
-  empresa   Empresa @relation(fields: [empresaId], references: [id])
-  clave     String // "mascota", "vehiculo", "equipo_alquiler"
-  nombre    String
-
-  campos    CampoDinamico[]
-  registros RegistroDinamico[]
-
-  @@unique([empresaId, clave])
-}
-
-model CampoDinamico {
-  id          String          @id @default(uuid())
-  entidadId   String
-  entidad     EntidadDinamica @relation(fields: [entidadId], references: [id])
-  clave       String // "raza", "placa"
-  etiqueta    String
-  tipo        String // "texto" | "numero" | "fecha" | "booleano" | "select" | "relacion" | "imagen"
-  requerido   Boolean         @default(false)
-  opciones    Json? // solo si tipo = "select"
-  // solo si tipo = "relacion": "cliente" o "entidad:<clave>" (otra entidad dinámica)
-  relacionCon String?
-  orden       Int             @default(0)
-
-  @@unique([entidadId, clave])
-}
-
-model RegistroDinamico {
-  id        String          @id @default(uuid())
-  entidadId String
-  entidad   EntidadDinamica @relation(fields: [entidadId], references: [id])
-  valores   Json
-  creadoEn  DateTime        @default(now())
 }
 
 // ---------- CITAS / CALENDARIO (genérico para cualquier rubro) ----------

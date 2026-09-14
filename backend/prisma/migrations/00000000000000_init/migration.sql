@@ -236,41 +236,6 @@ CREATE TABLE "OrdenItem" (
 );
 
 -- CreateTable
-CREATE TABLE "EntidadDinamica" (
-    "id" TEXT NOT NULL,
-    "empresaId" TEXT NOT NULL,
-    "clave" TEXT NOT NULL,
-    "nombre" TEXT NOT NULL,
-
-    CONSTRAINT "EntidadDinamica_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CampoDinamico" (
-    "id" TEXT NOT NULL,
-    "entidadId" TEXT NOT NULL,
-    "clave" TEXT NOT NULL,
-    "etiqueta" TEXT NOT NULL,
-    "tipo" TEXT NOT NULL,
-    "requerido" BOOLEAN NOT NULL DEFAULT false,
-    "opciones" JSONB,
-    "relacionCon" TEXT,
-    "orden" INTEGER NOT NULL DEFAULT 0,
-
-    CONSTRAINT "CampoDinamico_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "RegistroDinamico" (
-    "id" TEXT NOT NULL,
-    "entidadId" TEXT NOT NULL,
-    "valores" JSONB NOT NULL,
-    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "RegistroDinamico_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Recurso" (
     "id" TEXT NOT NULL,
     "empresaId" TEXT NOT NULL,
@@ -639,12 +604,6 @@ CREATE UNIQUE INDEX "PlanMembresia_empresaId_nombre_key" ON "PlanMembresia"("emp
 CREATE UNIQUE INDEX "CategoriaProducto_empresaId_nombre_key" ON "CategoriaProducto"("empresaId", "nombre");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EntidadDinamica_empresaId_clave_key" ON "EntidadDinamica"("empresaId", "clave");
-
--- CreateIndex
-CREATE UNIQUE INDEX "CampoDinamico_entidadId_clave_key" ON "CampoDinamico"("entidadId", "clave");
-
--- CreateIndex
 CREATE INDEX "BloqueoDisponibilidad_recursoId_fecha_idx" ON "BloqueoDisponibilidad"("recursoId", "fecha");
 
 -- CreateIndex
@@ -745,15 +704,6 @@ ALTER TABLE "OrdenItem" ADD CONSTRAINT "OrdenItem_ordenId_fkey" FOREIGN KEY ("or
 
 -- AddForeignKey
 ALTER TABLE "OrdenItem" ADD CONSTRAINT "OrdenItem_productoId_fkey" FOREIGN KEY ("productoId") REFERENCES "ProductoServicio"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "EntidadDinamica" ADD CONSTRAINT "EntidadDinamica_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CampoDinamico" ADD CONSTRAINT "CampoDinamico_entidadId_fkey" FOREIGN KEY ("entidadId") REFERENCES "EntidadDinamica"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "RegistroDinamico" ADD CONSTRAINT "RegistroDinamico_entidadId_fkey" FOREIGN KEY ("entidadId") REFERENCES "EntidadDinamica"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Recurso" ADD CONSTRAINT "Recurso_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

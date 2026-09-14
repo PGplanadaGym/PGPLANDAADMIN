@@ -19,9 +19,6 @@ import { UsuariosCreatePage } from './pages/usuarios/UsuariosCreatePage'
 import { UsuarioPerfilPage } from './pages/usuarios/UsuarioPerfilPage'
 import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
-import { EntidadDinamicaPage } from './pages/entidades/EntidadDinamicaPage'
-import { EntidadesAdminPage } from './pages/entidades/EntidadesAdminPage'
-import { RegistroDetallePage } from './pages/entidades/RegistroDetallePage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
 import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
@@ -90,11 +87,6 @@ function App() {
           create: '/clientes/nuevo',
           edit: '/clientes/:id/editar',
           meta: { label: 'Clientes' },
-        },
-        {
-          name: 'entidades',
-          list: '/entidades',
-          meta: { label: 'Entidades dinámicas' },
         },
         {
           name: 'empresas',
@@ -199,7 +191,6 @@ function App() {
           <Route path="/clientes" element={<ClientesListPage />} />
           <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
           <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
-          <Route path="/entidades" element={<EntidadesAdminPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />
@@ -219,8 +210,6 @@ function App() {
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/asistencia/reporte" element={<AsistenciaReportePage />} />
           <Route path="/perfil" element={<PerfilPage />} />
-          <Route path="/entidades/:entidadClave" element={<EntidadDinamicaPage />} />
-          <Route path="/entidades/:entidadClave/:id" element={<RegistroDetallePage />} />
         </Route>
 
         <Route path="*" element={<NavigateToResource resource="dashboard" />} />

@@ -21,7 +21,6 @@ import {
   Store,
   Wallet2,
   BarChart3,
-  Database,
   BadgeCheck,
 } from 'lucide-react'
 
@@ -131,7 +130,6 @@ export const NAV_ITEMS: NavEntry[] = [
       },
     ],
   },
-  { to: '/entidades', label: 'Entidades dinámicas', resource: 'entidades', icon: Database },
   { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
 ]

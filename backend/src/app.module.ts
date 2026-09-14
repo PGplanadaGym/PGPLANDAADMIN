@@ -8,7 +8,6 @@ import { EmpresasModule } from './empresas/empresas.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { RolesPermisosModule } from './roles-permisos/roles-permisos.module';
 import { ClientesModule } from './clientes/clientes.module';
-import { MetadataModule } from './metadata/metadata.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { RecursosModule } from './recursos/recursos.module';
@@ -40,7 +39,6 @@ import { MembresiasModule } from './membresias/membresias.module';
     UsuariosModule,
     RolesPermisosModule,
     ClientesModule,
-    MetadataModule,
     UploadsModule,
     RecursosModule,
     TiposCitaModule,

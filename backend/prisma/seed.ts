@@ -52,34 +52,6 @@ async function main() {
     create: { usuarioId: empleado.id, rolId: rolEmpleado.id },
   });
 
-  const entidadMascotaExistente = await prisma.entidadDinamica.findUnique({
-    where: { empresaId_clave: { empresaId: empresa.id, clave: 'mascota' } },
-  });
-  if (!entidadMascotaExistente) {
-    await prisma.entidadDinamica.create({
-      data: {
-        empresaId: empresa.id,
-        clave: 'mascota',
-        nombre: 'Mascotas',
-        campos: {
-          create: [
-            { clave: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, orden: 0 },
-            {
-              clave: 'especie',
-              etiqueta: 'Especie',
-              tipo: 'select',
-              requerido: true,
-              opciones: ['Perro', 'Gato', 'Otro'],
-              orden: 1,
-            },
-            { clave: 'fechaNacimiento', etiqueta: 'Fecha de nacimiento', tipo: 'fecha', orden: 2 },
-            { clave: 'peso', etiqueta: 'Peso (kg)', tipo: 'numero', orden: 3 },
-          ],
-        },
-      },
-    });
-  }
-
   const recursoDemo = await prisma.recurso.findFirst({
     where: { empresaId: empresa.id, nombre: 'Recepción' },
   });
@@ -259,7 +231,6 @@ async function main() {
   console.log(`  Rol Admin id: ${rolAdmin.id}`);
   console.log('  admin@demo.local / Admin123!  (rol Admin, todos los permisos)');
   console.log('  empleado@demo.local / Empleado123!  (rol Empleado, solo usuarios.leer)');
-  console.log('  Entidad dinámica "Mascota" creada de ejemplo');
   console.log(`  Citas: recurso "${recurso.nombre}", tipo de cita "${tipoCita.nombre}"`);
   console.log('  Inventario: activo "Laptop Dell Latitude #001" (asignado al admin), producto "Papel bond A4 (paquete)" (stock 20)');
   console.log('  Cuentas: 3 categorías y 4 movimientos de ejemplo');

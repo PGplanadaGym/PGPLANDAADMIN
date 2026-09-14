@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useGetIdentity, useLogout } from '@refinedev/core'
 import type { Identity } from '../../lib/identity'
 import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
-import { useEntidades } from '../../providers/entidadesContext'
 import { axiosInstance } from '../../lib/axios'
 
 interface Props {
@@ -40,7 +39,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
   const navigate = useNavigate()
   const { data: identity } = useGetIdentity<Identity>()
   const { mutate: logout } = useLogout()
-  const { entidades } = useEntidades()
 
   const [busqueda, setBusqueda] = useState('')
   const [clientes, setClientes] = useState<ClienteResultado[] | null>(null)
@@ -92,7 +90,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
     onCambiar(false)
   }
 
-  const puedeVerEntidades = tienePermiso('entidades.registros.leer')
   const busquedaNormalizada = busqueda.trim().toLowerCase()
   const buscandoDatos = busquedaNormalizada.length >= 2
 
@@ -181,19 +178,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
             </Command.Item>
           ))}
         </Command.Group>
-
-        {puedeVerEntidades && entidades.length > 0 && (
-          <Command.Group heading="Entidades">
-            {entidades.map((entidad) => (
-              <Command.Item
-                key={entidad.clave}
-                onSelect={() => ir(`/entidades/${entidad.clave}`)}
-              >
-                {entidad.nombre}
-              </Command.Item>
-            ))}
-          </Command.Group>
-        )}
 
         <Command.Group heading="Acciones rápidas">
           {tienePermiso('usuarios.crear') && (
