@@ -33,4 +33,9 @@ export class CreateSucursalDto {
   @IsOptional()
   @IsString()
   horarioAtencion?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  imagenUrl?: string;
 }

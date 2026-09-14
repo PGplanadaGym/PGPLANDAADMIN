@@ -174,6 +174,30 @@ export class ActivosService {
       detalle: { nombre: activo.nombre },
     });
 
+    // el gasto de compra se registra solo, junto con el resto de movimientos de Cuentas.
+    if (dto.valorCompra) {
+      const categoriaEgreso = await this.prisma.categoriaMovimiento.upsert({
+        where: {
+          empresaId_tipo_nombre: { empresaId, tipo: 'egreso', nombre: 'Compra de activos' },
+        },
+        update: {},
+        create: { empresaId, tipo: 'egreso', nombre: 'Compra de activos' },
+      });
+
+      await this.prisma.movimientoCuenta.create({
+        data: {
+          empresaId,
+          tipo: 'egreso',
+          categoriaId: categoriaEgreso.id,
+          monto: dto.valorCompra,
+          fecha: activo.fechaCompra ?? new Date(),
+          descripcion: `Compra de activo: ${activo.nombre}`,
+          usuarioId: actorId,
+          activoId: activo.id,
+        },
+      });
+    }
+
     return activo;
   }
 

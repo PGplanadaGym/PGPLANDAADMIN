@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Users, Boxes, Wrench } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
+import { Avatar } from '../../components/ui/Avatar'
 
 interface Sucursal {
   id: string
@@ -13,6 +14,7 @@ interface Sucursal {
   telefono: string | null
   encargado: { id: string; nombre: string } | null
   horarioAtencion: string | null
+  imagenUrl: string | null
   activa: boolean
 }
 
@@ -106,6 +108,7 @@ export function SucursalPerfilPage() {
 
       <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
         <div className="flex items-center gap-2">
+          <Avatar nombre={sucursal.nombre} fotoUrl={sucursal.imagenUrl} size={40} />
           <h1 className="text-xl font-bold text-[var(--color-text)]">{sucursal.nombre}</h1>
           {!sucursal.activa && (
             <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">

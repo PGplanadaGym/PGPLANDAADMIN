@@ -44,6 +44,7 @@ import { ClientePerfilPage } from './pages/clientes/ClientePerfilPage'
 import { SucursalesPage } from './pages/sucursales/SucursalesPage'
 import { SucursalPerfilPage } from './pages/sucursales/SucursalPerfilPage'
 import { NominaPage } from './pages/nomina/NominaPage'
+import { MembresiasPage } from './pages/membresias/MembresiasPage'
 import { ReportesPage } from './pages/reportes/ReportesPage'
 
 function App() {
@@ -161,6 +162,11 @@ function App() {
           meta: { label: 'Nómina' },
         },
         {
+          name: 'membresias',
+          list: '/membresias',
+          meta: { label: 'Membresías' },
+        },
+        {
           name: 'reportes',
           list: '/reportes',
           meta: { label: 'Reportes' },
@@ -208,6 +214,7 @@ function App() {
           <Route path="/sucursales" element={<SucursalesPage />} />
           <Route path="/sucursales/:id" element={<SucursalPerfilPage />} />
           <Route path="/nomina" element={<NominaPage />} />
+          <Route path="/membresias" element={<MembresiasPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/asistencia/reporte" element={<AsistenciaReportePage />} />

@@ -6,6 +6,7 @@ import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
+import { ImageUploadField } from '../../components/ui/ImageUploadField'
 
 interface ClienteDetalle {
   nombre: string
@@ -13,6 +14,7 @@ interface ClienteDetalle {
   telefono: string | null
   notas: string | null
   etiqueta: string | null
+  fotoUrl: string | null
 }
 
 const SUGERENCIAS_ETIQUETA = ['VIP', 'Frecuente', 'Moroso', 'Nuevo']
@@ -37,6 +39,7 @@ export function ClienteFormPage() {
   const [telefono, setTelefono] = useState('')
   const [notas, setNotas] = useState('')
   const [etiqueta, setEtiqueta] = useState('')
+  const [fotoUrl, setFotoUrl] = useState('')
 
   const [errorNombre, setErrorNombre] = useState('')
   const [errorEmail, setErrorEmail] = useState('')
@@ -51,6 +54,7 @@ export function ClienteFormPage() {
         setTelefono(data.telefono ?? '')
         setNotas(data.notas ?? '')
         setEtiqueta(data.etiqueta ?? '')
+        setFotoUrl(data.fotoUrl ?? '')
       })
       .catch(() => toast.error('No se pudo cargar el cliente'))
       .finally(() => setCargando(false))
@@ -83,6 +87,7 @@ export function ClienteFormPage() {
         telefono: telefono || undefined,
         notas: notas || undefined,
         etiqueta: etiqueta || undefined,
+        fotoUrl: fotoUrl || undefined,
       }
       if (esNuevo) {
         await axiosInstance.post('/clientes', payload)
@@ -122,6 +127,8 @@ export function ClienteFormPage() {
         }}
         className="mt-4 flex flex-col gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-6"
       >
+        <ImageUploadField label="Foto (opcional)" value={fotoUrl} onChange={setFotoUrl} rounded />
+
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
             Nombre

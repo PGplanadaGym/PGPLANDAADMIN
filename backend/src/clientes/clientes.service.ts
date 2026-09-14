@@ -65,6 +65,7 @@ export class ClientesService {
         telefono: dto.telefono,
         notas: dto.notas,
         etiqueta: dto.etiqueta,
+        fotoUrl: dto.fotoUrl,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
     });

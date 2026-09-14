@@ -26,6 +26,11 @@ export class CreateClienteDto {
   @IsString()
   etiqueta?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fotoUrl?: string;
+
   @ApiProperty({ required: false, type: Object })
   @IsOptional()
   @IsObject()

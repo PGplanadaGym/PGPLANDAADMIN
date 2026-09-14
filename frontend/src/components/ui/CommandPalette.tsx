@@ -3,7 +3,7 @@ import { Command } from 'cmdk'
 import { useNavigate } from 'react-router-dom'
 import { useGetIdentity, useLogout } from '@refinedev/core'
 import type { Identity } from '../../lib/identity'
-import { NAV_ITEMS } from '../../lib/navigation'
+import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
 import { useEntidades } from '../../providers/entidadesContext'
 import { axiosInstance } from '../../lib/axios'
 
@@ -172,7 +172,7 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
         )}
 
         <Command.Group heading="Navegación">
-          {NAV_ITEMS.filter(
+          {aplanarNav(NAV_ITEMS).filter(
             (item) => item.sinPermiso || tienePermiso(`${item.resource}.leer`),
           ).map((item) => (
             <Command.Item key={item.to} onSelect={() => ir(item.to)}>

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, ShoppingBag, Wallet, MapPin } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
+import { Avatar } from '../../components/ui/Avatar'
 
 interface Proveedor {
   id: string
@@ -15,6 +16,7 @@ interface Proveedor {
   notas: string | null
   latitud: number | null
   longitud: number | null
+  logoUrl: string | null
   activo: boolean
 }
 
@@ -92,6 +94,7 @@ export function ProveedorPerfilPage() {
 
       <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
         <div className="flex items-center gap-2">
+          <Avatar nombre={proveedor.nombre} fotoUrl={proveedor.logoUrl} size={40} />
           <h1 className="text-xl font-bold text-[var(--color-text)]">{proveedor.nombre}</h1>
           {!proveedor.activo && (
             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">

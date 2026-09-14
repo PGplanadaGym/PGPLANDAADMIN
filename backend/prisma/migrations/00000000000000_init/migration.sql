@@ -31,6 +31,7 @@ CREATE TABLE "Sucursal" (
     "telefono" TEXT,
     "encargadoId" TEXT,
     "horarioAtencion" TEXT,
+    "imagenUrl" TEXT,
     "activa" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "Sucursal_pkey" PRIMARY KEY ("id")
@@ -143,11 +144,38 @@ CREATE TABLE "Cliente" (
     "etiqueta" TEXT,
     "latitud" DOUBLE PRECISION,
     "longitud" DOUBLE PRECISION,
+    "fotoUrl" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "atributosExtra" JSONB,
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Cliente_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PlanMembresia" (
+    "id" TEXT NOT NULL,
+    "empresaId" TEXT NOT NULL,
+    "nombre" TEXT NOT NULL,
+    "duracionDias" INTEGER NOT NULL,
+    "precio" DECIMAL(10,2) NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "PlanMembresia_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Membresia" (
+    "id" TEXT NOT NULL,
+    "empresaId" TEXT NOT NULL,
+    "clienteId" TEXT NOT NULL,
+    "planId" TEXT NOT NULL,
+    "fechaInicio" TIMESTAMP(3) NOT NULL,
+    "fechaVencimiento" TIMESTAMP(3) NOT NULL,
+    "avisoEnviado" BOOLEAN NOT NULL DEFAULT false,
+    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Membresia_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -434,7 +462,9 @@ CREATE TABLE "MovimientoCuenta" (
     "pagoNominaId" TEXT,
     "citaId" TEXT,
     "mantenimientoId" TEXT,
+    "activoId" TEXT,
     "sucursalId" TEXT,
+    "membresiaId" TEXT,
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "MovimientoCuenta_pkey" PRIMARY KEY ("id")
@@ -523,6 +553,7 @@ CREATE TABLE "Proveedor" (
     "notas" TEXT,
     "latitud" DOUBLE PRECISION,
     "longitud" DOUBLE PRECISION,
+    "logoUrl" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -602,6 +633,9 @@ CREATE UNIQUE INDEX "Rol_empresaId_nombre_key" ON "Rol"("empresaId", "nombre");
 CREATE UNIQUE INDEX "Permiso_clave_key" ON "Permiso"("clave");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PlanMembresia_empresaId_nombre_key" ON "PlanMembresia"("empresaId", "nombre");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CategoriaProducto_empresaId_nombre_key" ON "CategoriaProducto"("empresaId", "nombre");
 
 -- CreateIndex
@@ -675,6 +709,18 @@ ALTER TABLE "RolPermiso" ADD CONSTRAINT "RolPermiso_permisoId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Cliente" ADD CONSTRAINT "Cliente_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PlanMembresia" ADD CONSTRAINT "PlanMembresia_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Membresia" ADD CONSTRAINT "Membresia_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Membresia" ADD CONSTRAINT "Membresia_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Membresia" ADD CONSTRAINT "Membresia_planId_fkey" FOREIGN KEY ("planId") REFERENCES "PlanMembresia"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CategoriaProducto" ADD CONSTRAINT "CategoriaProducto_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -827,7 +873,13 @@ ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_citaId_fkey" FOR
 ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_mantenimientoId_fkey" FOREIGN KEY ("mantenimientoId") REFERENCES "MantenimientoActivo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_activoId_fkey" FOREIGN KEY ("activoId") REFERENCES "Activo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_sucursalId_fkey" FOREIGN KEY ("sucursalId") REFERENCES "Sucursal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_membresiaId_fkey" FOREIGN KEY ("membresiaId") REFERENCES "Membresia"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Material" ADD CONSTRAINT "Material_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

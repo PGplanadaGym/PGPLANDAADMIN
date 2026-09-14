@@ -78,6 +78,27 @@ export class EmailService {
     );
   }
 
+  async enviarAvisoMembresiaPorVencer(
+    email: string,
+    nombreCliente: string,
+    fechaVencimiento: Date,
+  ) {
+    const fechaTexto = fechaVencimiento.toLocaleDateString('es', {
+      dateStyle: 'full',
+    });
+
+    await this.enviar(
+      email,
+      'Tu membresía está por vencer',
+      `
+        <p>Hola ${nombreCliente},</p>
+        <p>Tu membresía vence el <strong>${fechaTexto}</strong>.</p>
+        <p>Renueva a tiempo para no perder el acceso.</p>
+      `,
+      `aviso de membresía por vencer para ${email}`,
+    );
+  }
+
   private async enviar(
     to: string,
     subject: string,

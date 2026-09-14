@@ -8,6 +8,17 @@ export class CreateEmpresaDto {
 
   @ApiProperty({
     required: false,
+    description:
+      'Identificador corto y único para el enlace de login (/login/:dominio). Si no se manda, se genera uno aleatorio.',
+  })
+  @IsOptional()
+  @Matches(/^[a-zA-Z0-9_-]+$/, {
+    message: 'El identificador solo puede tener letras, números, guiones y guion bajo',
+  })
+  dominio?: string;
+
+  @ApiProperty({
+    required: false,
     description: 'Razón social registrada en el SRI, si difiere del nombre comercial',
   })
   @IsOptional()

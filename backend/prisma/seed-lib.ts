@@ -12,8 +12,6 @@ export const CATALOGO_PERMISOS = [
   { clave: 'roles.crear', etiqueta: 'Crear roles' },
   { clave: 'roles.actualizar', etiqueta: 'Actualizar roles' },
   { clave: 'roles.eliminar', etiqueta: 'Eliminar roles' },
-  { clave: 'modulos.leer', etiqueta: 'Ver módulos' },
-  { clave: 'modulos.actualizar', etiqueta: 'Activar/desactivar módulos' },
   { clave: 'clientes.leer', etiqueta: 'Ver clientes' },
   { clave: 'clientes.crear', etiqueta: 'Crear clientes' },
   { clave: 'clientes.actualizar', etiqueta: 'Editar y archivar clientes' },
@@ -71,6 +69,9 @@ export const CATALOGO_PERMISOS = [
   { clave: 'nomina.crear', etiqueta: 'Registrar pagos de nómina' },
   { clave: 'nomina.actualizar', etiqueta: 'Editar pagos de nómina' },
   { clave: 'nomina.eliminar', etiqueta: 'Eliminar pagos de nómina' },
+  { clave: 'membresias.leer', etiqueta: 'Ver membresías de socios' },
+  { clave: 'membresias.crear', etiqueta: 'Renovar membresías' },
+  { clave: 'membresias.actualizar', etiqueta: 'Editar planes de membresía' },
 ];
 
 interface SeedEmpresaBaseOptions {

@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
-import { CanAccess, useGetIdentity } from '@refinedev/core'
+import { useEffect, useMemo, useState } from 'react'
+import { useGetIdentity } from '@refinedev/core'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Menu, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Menu, Search } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { aplicarColorPrimario } from '../../lib/theme'
+import { buildAbility } from '../../ability/ability'
 import { EntidadesProvider, useEntidades } from '../../providers/entidadesContext'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { NotificationBell } from '../ui/NotificationBell'
 import { CommandPalette } from '../ui/CommandPalette'
 import { UserMenu } from '../ui/UserMenu'
-import { NAV_ITEMS } from '../../lib/navigation'
+import { NAV_ITEMS, esGrupoNav, type NavLeaf } from '../../lib/navigation'
 
 interface SidebarProps {
   identity?: Identity
@@ -25,6 +26,14 @@ function esRutaActiva(pathname: string, to: string) {
 function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
   const { entidades } = useEntidades()
   const location = useLocation()
+  // solo guarda los grupos que el usuario abrió/cerró a mano — si un grupo no
+  // está aquí, su estado por defecto es "abierto si estás en una de sus páginas"
+  const [overridesGrupo, setOverridesGrupo] = useState<Record<string, boolean>>({})
+
+  const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
+
+  const puedeVerItem = (item: NavLeaf) =>
+    item.sinPermiso || ability.can(`${item.resource}.leer`, 'all')
 
   const puedeVerEntidades =
     identity?.permisos.includes('entidades.registros.leer') ?? false
@@ -35,6 +44,13 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
         ? 'bg-[var(--color-primario-suave)] text-[var(--color-primario-legible)]'
         : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]'
     }`
+
+  const alternarGrupo = (label: string, abiertoPorDefecto: boolean) => {
+    setOverridesGrupo((prev) => ({
+      ...prev,
+      [label]: !(prev[label] ?? abiertoPorDefecto),
+    }))
+  }
 
   return (
     <>
@@ -68,23 +84,68 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
 
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {NAV_ITEMS.map((item) => {
+            if (esGrupoNav(item)) {
+              const hijosVisibles = item.children.filter(puedeVerItem)
+              if (hijosVisibles.length === 0) return null
+
+              const algunHijoActivo = hijosVisibles.some((hijo) =>
+                esRutaActiva(location.pathname, hijo.to),
+              )
+              const grupoAbierto = overridesGrupo[item.label] ?? algunHijoActivo
+              const Icono = item.icon
+
+              return (
+                <div key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => alternarGrupo(item.label, algunHijoActivo)}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      algunHijoActivo
+                        ? 'text-[var(--color-text)]'
+                        : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]'
+                    }`}
+                  >
+                    <Icono className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span className="flex-1 truncate text-left">{item.label}</span>
+                    {grupoAbierto ? (
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                  </button>
+
+                  {grupoAbierto && (
+                    <div className="ml-4 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-3">
+                      {hijosVisibles.map((hijo) => {
+                        const HijoIcono = hijo.icon
+                        const hijoActivo = esRutaActiva(location.pathname, hijo.to)
+                        return (
+                          <Link
+                            key={hijo.to}
+                            to={hijo.to}
+                            onClick={onCerrar}
+                            className={claseEnlace(hijoActivo)}
+                          >
+                            <HijoIcono className="h-4 w-4 shrink-0" strokeWidth={2} />
+                            <span className="truncate">{hijo.label}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (!puedeVerItem(item)) return null
+
             const Icono = item.icon
             const activo = esRutaActiva(location.pathname, item.to)
-            const enlace = (
-              <Link to={item.to} onClick={onCerrar} className={claseEnlace(activo)}>
+            return (
+              <Link key={item.to} to={item.to} onClick={onCerrar} className={claseEnlace(activo)}>
                 <Icono className="h-4 w-4 shrink-0" strokeWidth={2} />
                 <span className="truncate">{item.label}</span>
               </Link>
-            )
-
-            if (item.sinPermiso) {
-              return <div key={item.to}>{enlace}</div>
-            }
-
-            return (
-              <CanAccess key={item.to} resource={item.resource} action="list">
-                {enlace}
-              </CanAccess>
             )
           })}
 

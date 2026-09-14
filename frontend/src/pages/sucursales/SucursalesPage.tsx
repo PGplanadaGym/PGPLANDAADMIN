@@ -10,6 +10,8 @@ import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { MapaSeleccionUbicacion } from '../../components/ui/MapaSeleccionUbicacion'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
+import { Avatar } from '../../components/ui/Avatar'
+import { ImageUploadField } from '../../components/ui/ImageUploadField'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
@@ -111,6 +113,7 @@ interface Sucursal {
   telefono: string | null
   encargado: UsuarioBasico | null
   horarioAtencion: string | null
+  imagenUrl: string | null
   activa: boolean
   _count: { usuarios: number; recursos: number; activos: number }
 }
@@ -149,6 +152,7 @@ export function SucursalesPage() {
   const [horarioDiasEdit, setHorarioDiasEdit] = useState<Set<string>>(new Set())
   const [horarioInicioEdit, setHorarioInicioEdit] = useState('09:00')
   const [horarioFinEdit, setHorarioFinEdit] = useState('18:00')
+  const [imagenUrlEdit, setImagenUrlEdit] = useState('')
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
   const [modalUbicacion, setModalUbicacion] = useState<Sucursal | null>(null)
@@ -228,6 +232,7 @@ export function SucursalesPage() {
     setHorarioDiasEdit(new Set())
     setHorarioInicioEdit('09:00')
     setHorarioFinEdit('18:00')
+    setImagenUrlEdit(sucursal.imagenUrl ?? '')
   }
 
   const guardarEdicion = async () => {
@@ -243,6 +248,7 @@ export function SucursalesPage() {
         encargadoId: encargadoIdEdit || '',
         // Si no tocaste los días del horario, se conserva el que ya tenía guardado.
         horarioAtencion: horarioDiasEdit.size > 0 ? horarioCompuesto : sucursalEdit.horarioAtencion,
+        imagenUrl: imagenUrlEdit || null,
       })
       toast.success('Sucursal actualizada')
       setSucursalEdit(null)
@@ -441,12 +447,15 @@ export function SucursalesPage() {
               return (
                 <tr key={sucursal.id} className="border-t border-[var(--color-border)]">
                   <td className="px-4 py-2">
-                    <Link
-                      to={`/sucursales/${sucursal.id}`}
-                      className="text-[var(--color-primario-legible)] hover:underline"
-                    >
-                      {sucursal.nombre}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Avatar nombre={sucursal.nombre} fotoUrl={sucursal.imagenUrl} size={24} />
+                      <Link
+                        to={`/sucursales/${sucursal.id}`}
+                        className="text-[var(--color-primario-legible)] hover:underline"
+                      >
+                        {sucursal.nombre}
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-[var(--color-text-muted)]">
                     {sucursal.direccion ?? '—'}
@@ -562,6 +571,8 @@ export function SucursalesPage() {
           <div className="max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-xl bg-[var(--color-bg-card)] p-6 shadow-[var(--sombra-lg)]">
             <h2 className="text-base font-semibold text-[var(--color-text)]">Editar sucursal</h2>
             <div className="mt-4 flex flex-col gap-3">
+              <ImageUploadField label="Foto (opcional)" value={imagenUrlEdit} onChange={setImagenUrlEdit} rounded />
+
               <div>
                 <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
                   Nombre

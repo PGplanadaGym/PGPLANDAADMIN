@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { buildAbility } from '../../ability/ability'
-import { NAV_ITEMS } from '../../lib/navigation'
+import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
 import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
@@ -79,7 +79,7 @@ export function DashboardPage() {
   const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
   const puedeVer = (resource: string) => ability.can(`${resource}.leer`, 'all')
 
-  const accesos = NAV_ITEMS.filter(
+  const accesos = aplanarNav(NAV_ITEMS).filter(
     (item) => item.to !== '/' && (item.sinPermiso || puedeVer(item.resource)),
   )
 

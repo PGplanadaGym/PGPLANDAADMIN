@@ -11,6 +11,8 @@ import { SearchInput } from '../../components/ui/SearchInput'
 import { MapaSeleccionUbicacion } from '../../components/ui/MapaSeleccionUbicacion'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
+import { Avatar } from '../../components/ui/Avatar'
+import { ImageUploadField } from '../../components/ui/ImageUploadField'
 
 function fechaHaceDias(dias: number) {
   const fecha = new Date()
@@ -28,6 +30,7 @@ interface Proveedor {
   notas: string | null
   latitud: number | null
   longitud: number | null
+  logoUrl: string | null
   activo: boolean
 }
 
@@ -106,6 +109,7 @@ export function ProveedoresPage() {
   const [telefonoEdit, setTelefonoEdit] = useState('')
   const [emailEdit, setEmailEdit] = useState('')
   const [notasEdit, setNotasEdit] = useState('')
+  const [logoUrlEdit, setLogoUrlEdit] = useState('')
   const [guardandoEdicionProveedor, setGuardandoEdicionProveedor] = useState(false)
 
   const [proveedorId, setProveedorId] = useState('')
@@ -213,6 +217,7 @@ export function ProveedoresPage() {
     setTelefonoEdit(proveedor.telefono ?? '')
     setEmailEdit(proveedor.email ?? '')
     setNotasEdit(proveedor.notas ?? '')
+    setLogoUrlEdit(proveedor.logoUrl ?? '')
   }
 
   const guardarEdicionProveedor = async () => {
@@ -226,6 +231,7 @@ export function ProveedoresPage() {
         telefono: telefonoEdit || null,
         email: emailEdit || null,
         notas: notasEdit || null,
+        logoUrl: logoUrlEdit || null,
       })
       toast.success('Proveedor actualizado')
       setProveedorEdit(null)
@@ -483,8 +489,9 @@ export function ProveedoresPage() {
             )}
             {proveedoresFiltrados.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
-                <span className="text-[var(--color-text-muted)]">
-                  <Link to={`/proveedores/${p.id}`} className="text-[var(--color-primario-legible)] hover:underline">
+                <span className="flex min-w-0 items-center gap-2 text-[var(--color-text-muted)]">
+                  <Avatar nombre={p.nombre} fotoUrl={p.logoUrl} size={24} />
+                  <Link to={`/proveedores/${p.id}`} className="truncate text-[var(--color-primario-legible)] hover:underline">
                     {p.nombre}
                   </Link>
                   {p.telefono ? ` · ${p.telefono}` : ''}
@@ -946,6 +953,8 @@ export function ProveedoresPage() {
           <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-xl bg-[var(--color-bg-card)] p-6 shadow-[var(--sombra-lg)]">
             <h2 className="text-base font-semibold text-[var(--color-text)]">Editar proveedor</h2>
             <div className="mt-4 flex flex-col gap-3">
+              <ImageUploadField label="Logo (opcional)" value={logoUrlEdit} onChange={setLogoUrlEdit} rounded />
+
               <div>
                 <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
                   Nombre
