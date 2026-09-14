@@ -30,4 +30,9 @@ export class CreateProveedorDto {
   @IsOptional()
   @IsString()
   ruc?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
 }

@@ -25,4 +25,10 @@ export const PLANTILLAS_NEGOCIO = [
     descripcion: 'Varios locales, empleados con nómina y control de asistencia',
     modulos: ['sucursales', 'nomina', 'asistencia', 'cuentas'],
   },
+  {
+    clave: 'gimnasio',
+    nombre: 'Gimnasio / centro deportivo',
+    descripcion: 'Socios con membresías, clases y control de asistencia',
+    modulos: ['clientes', 'membresias', 'citas', 'cuentas', 'asistencia'],
+  },
 ];

@@ -12,7 +12,7 @@ import {
 import type { Identity } from '../../lib/identity'
 import { buildAbility } from '../../ability/ability'
 import { useModulos } from '../../providers/modulosContext'
-import { NAV_ITEMS } from '../../lib/navigation'
+import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
 import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 
@@ -83,7 +83,7 @@ export function DashboardPage() {
   const puedeVer = (resource: string) => ability.can(`${resource}.leer`, 'all')
 
   const clavesActivas = new Set(modulos.filter((m) => m.activo).map((m) => m.clave))
-  const accesos = NAV_ITEMS.filter(
+  const accesos = aplanarNav(NAV_ITEMS).filter(
     (item) =>
       item.modulo &&
       clavesActivas.has(item.modulo) &&

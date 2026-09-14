@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { PLANTILLAS_NEGOCIO } from './plantillas-negocio';
@@ -9,6 +14,7 @@ import { PLANTILLAS_NEGOCIO } from './plantillas-negocio';
 const DEPENDENCIAS: Record<string, string[]> = {
   ventas: ['inventario'],
   compras: ['inventario'],
+  membresias: ['clientes'],
 };
 
 function calcularDependientes(clave: string): string[] {
@@ -37,6 +43,7 @@ const CONTEO_POR_MODULO: Record<
   compras: (prisma, empresaId) => prisma.ordenCompra.count({ where: { empresaId } }),
   sucursales: (prisma, empresaId) => prisma.sucursal.count({ where: { empresaId } }),
   nomina: (prisma, empresaId) => prisma.pagoNomina.count({ where: { empresaId } }),
+  membresias: (prisma, empresaId) => prisma.membresia.count({ where: { empresaId } }),
 };
 
 @Injectable()
@@ -52,14 +59,67 @@ export class ModulosService {
       this.prisma.empresaModulo.findMany({ where: { empresaId } }),
     ]);
 
-    const activoPorModuloId = new Map(
-      activaciones.map((activacion) => [activacion.moduloId, activacion.activo]),
-    );
+    const activacionPorModuloId = new Map(activaciones.map((a) => [a.moduloId, a]));
+
+    return catalogo
+      .filter((modulo) => activacionPorModuloId.get(modulo.id)?.habilitado === true)
+      .map((modulo) => ({
+        ...modulo,
+        activo: activacionPorModuloId.get(modulo.id)?.activo ?? false,
+      }));
+  }
+
+  /** Solo para el super-admin: catálogo completo (habilitado o no) de una empresa cualquiera. */
+  async findEntitlementsPorEmpresa(empresaId: string) {
+    const [catalogo, activaciones] = await Promise.all([
+      this.prisma.modulo.findMany(),
+      this.prisma.empresaModulo.findMany({ where: { empresaId } }),
+    ]);
+
+    const activacionPorModuloId = new Map(activaciones.map((a) => [a.moduloId, a]));
 
     return catalogo.map((modulo) => ({
       ...modulo,
-      activo: activoPorModuloId.get(modulo.id) ?? false,
+      habilitado: activacionPorModuloId.get(modulo.id)?.habilitado ?? false,
+      activo: activacionPorModuloId.get(modulo.id)?.activo ?? false,
     }));
+  }
+
+  /** Solo para el super-admin: decide si una empresa tiene permiso de usar un módulo. */
+  async setHabilitado(empresaId: string, actorId: string, clave: string, habilitado: boolean) {
+    const modulo = await this.prisma.modulo.findUnique({ where: { clave } });
+    if (!modulo) {
+      throw new NotFoundException('Módulo no encontrado');
+    }
+
+    const anterior = await this.prisma.empresaModulo.findUnique({
+      where: { empresaId_moduloId: { empresaId, moduloId: modulo.id } },
+    });
+
+    await this.prisma.empresaModulo.upsert({
+      where: { empresaId_moduloId: { empresaId, moduloId: modulo.id } },
+      update: { habilitado },
+      create: { empresaId, moduloId: modulo.id, habilitado, activo: false },
+    });
+
+    // si se revoca el permiso, no puede quedar "activo" algo que ya no está permitido
+    if (!habilitado && anterior?.activo) {
+      await this.prisma.empresaModulo.update({
+        where: { empresaId_moduloId: { empresaId, moduloId: modulo.id } },
+        data: { activo: false },
+      });
+    }
+
+    await this.auditoriaService.registrar({
+      empresaId,
+      usuarioId: actorId,
+      accion: habilitado ? 'habilitar' : 'deshabilitar',
+      entidad: 'modulo',
+      entidadId: modulo.id,
+      detalle: { clave: modulo.clave, nombre: modulo.nombre },
+    });
+
+    return { clave: modulo.clave, habilitado };
   }
 
   async findDetallePorEmpresa(empresaId: string) {
@@ -118,12 +178,21 @@ export class ModulosService {
     const activacionPrevia = await this.prisma.empresaModulo.findUnique({
       where: { empresaId_moduloId: { empresaId, moduloId: modulo.id } },
     });
+
+    if (activo && !activacionPrevia?.habilitado) {
+      throw new ForbiddenException(
+        `El módulo "${modulo.nombre}" no está disponible para tu empresa. Contacta al proveedor del sistema.`,
+      );
+    }
+
     const yaEstabaActivo = activacionPrevia?.activo === activo;
 
     await this.prisma.empresaModulo.upsert({
       where: { empresaId_moduloId: { empresaId, moduloId: modulo.id } },
       update: { activo },
-      create: { empresaId, moduloId: modulo.id, activo },
+      // si no existía fila, solo se llega aquí con activo=false (activo=true ya
+      // se rechazó arriba sin entitlement) — nunca se crea una fila habilitada sola.
+      create: { empresaId, moduloId: modulo.id, activo, habilitado: false },
     });
 
     if (!yaEstabaActivo) {
@@ -178,10 +247,16 @@ export class ModulosService {
     });
     if (activacion?.activo) return null;
 
+    if (!activacion?.habilitado) {
+      throw new ForbiddenException(
+        `"${claveOrigen}" depende de "${moduloDep.nombre}", que no está disponible para tu empresa. Contacta al proveedor del sistema.`,
+      );
+    }
+
     await this.prisma.empresaModulo.upsert({
       where: { empresaId_moduloId: { empresaId, moduloId: moduloDep.id } },
       update: { activo: true },
-      create: { empresaId, moduloId: moduloDep.id, activo: true },
+      create: { empresaId, moduloId: moduloDep.id, activo: true, habilitado: true },
     });
 
     await this.auditoriaService.registrar({

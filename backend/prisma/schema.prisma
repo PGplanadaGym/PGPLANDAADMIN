@@ -53,6 +53,8 @@ model Empresa {
   pagosNomina          PagoNomina[]
   mantenimientosActivo MantenimientoActivo[]
   categoriasProducto   CategoriaProducto[]
+  planesMembresia      PlanMembresia[]
+  membresias           Membresia[]
 }
 
 model Sucursal {
@@ -68,6 +70,7 @@ model Sucursal {
   encargadoId           String?
   encargado             Usuario? @relation("SucursalEncargado", fields: [encargadoId], references: [id], onDelete: SetNull)
   horarioAtencion       String?
+  imagenUrl             String?
   activa                Boolean @default(true)
 
   usuarios          Usuario[]
@@ -209,11 +212,14 @@ model Modulo {
 }
 
 model EmpresaModulo {
-  empresaId String
-  moduloId  String
-  activo    Boolean @default(true)
-  empresa   Empresa @relation(fields: [empresaId], references: [id])
-  modulo    Modulo  @relation(fields: [moduloId], references: [id])
+  empresaId  String
+  moduloId   String
+  activo     Boolean @default(true)
+  // decide el super-admin: si la empresa tiene permiso de usar este módulo.
+  // sin fila = no habilitado (una empresa nueva arranca sin ningún módulo).
+  habilitado Boolean @default(true)
+  empresa    Empresa @relation(fields: [empresaId], references: [id])
+  modulo     Modulo  @relation(fields: [moduloId], references: [id])
 
   @@id([empresaId, moduloId])
 }
@@ -231,6 +237,7 @@ model Cliente {
   etiqueta       String?
   latitud        Float?
   longitud       Float?
+  fotoUrl        String?
   activo         Boolean  @default(true)
   atributosExtra Json?
   creadoEn       DateTime @default(now())
@@ -240,6 +247,40 @@ model Cliente {
   activosAsignados  AsignacionActivo[]
   movimientosCuenta MovimientoCuenta[]
   costeos           CosteoProyecto[]
+  membresias        Membresia[]
+}
+
+// ---------- MEMBRESÍAS (suscripciones de socios, ej. gimnasios/academias) ----------
+
+model PlanMembresia {
+  id           String   @id @default(uuid())
+  empresaId    String
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  nombre       String // "Mensual", "Trimestral", "Anual"
+  duracionDias Int
+  precio       Decimal  @db.Decimal(10, 2)
+  activo       Boolean  @default(true)
+
+  membresias Membresia[]
+
+  @@unique([empresaId, nombre])
+}
+
+model Membresia {
+  id               String        @id @default(uuid())
+  empresaId        String
+  empresa          Empresa       @relation(fields: [empresaId], references: [id])
+  clienteId        String
+  cliente          Cliente       @relation(fields: [clienteId], references: [id])
+  planId           String
+  plan             PlanMembresia @relation(fields: [planId], references: [id])
+  fechaInicio      DateTime
+  fechaVencimiento DateTime
+  // evita reenviar el correo de "por vencer" más de una vez por renovación
+  avisoEnviado     Boolean       @default(false)
+  creadoEn         DateTime      @default(now())
+
+  movimientosCuenta MovimientoCuenta[]
 }
 
 model CategoriaProducto {
@@ -464,6 +505,7 @@ model Activo {
 
   asignaciones  AsignacionActivo[]
   mantenimientos MantenimientoActivo[]
+  movimientosCuenta MovimientoCuenta[]
 
   @@unique([empresaId, codigoInterno])
 }
@@ -579,8 +621,12 @@ model MovimientoCuenta {
   cita              Cita?               @relation(fields: [citaId], references: [id], onDelete: Cascade)
   mantenimientoId   String?
   mantenimiento     MantenimientoActivo? @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
+  activoId          String?
+  activoCompra      Activo?             @relation(fields: [activoId], references: [id], onDelete: Cascade)
   sucursalId        String?
   sucursal          Sucursal?           @relation(fields: [sucursalId], references: [id])
+  membresiaId       String?
+  membresia         Membresia?          @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
   creadoEn          DateTime            @default(now())
 }
 
@@ -676,6 +722,7 @@ model Proveedor {
   notas     String?
   latitud   Float?
   longitud  Float?
+  logoUrl   String?
   activo    Boolean  @default(true)
   creadoEn  DateTime @default(now())
 

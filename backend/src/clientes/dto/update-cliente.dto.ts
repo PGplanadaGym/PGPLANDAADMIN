@@ -38,6 +38,11 @@ export class UpdateClienteDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  fotoUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsBoolean()
   activo?: boolean;
 

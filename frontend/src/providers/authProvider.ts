@@ -6,6 +6,9 @@ export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
       await axiosInstance.post('/auth/login', { email, password })
+      // por si había una sesión anterior sin cerrar (otro usuario/empresa): sin esto,
+      // getIdentity() seguiría sirviendo en caché los datos de esa cuenta anterior.
+      clearIdentity()
       return { success: true, redirectTo: '/' }
     } catch {
       return {

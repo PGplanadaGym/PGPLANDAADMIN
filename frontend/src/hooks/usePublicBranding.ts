@@ -8,12 +8,13 @@ interface Branding {
   colorPrimario: string | null
 }
 
-export function usePublicBranding() {
+export function usePublicBranding(slug?: string) {
   const [branding, setBranding] = useState<Branding | null>(null)
 
   useEffect(() => {
+    const url = slug ? `/public/branding/${slug}` : '/public/branding'
     axiosInstance
-      .get<Branding>('/public/branding')
+      .get<Branding>(url)
       .then(({ data }) => {
         setBranding(data)
         aplicarColorPrimario(data.colorPrimario)
@@ -21,7 +22,7 @@ export function usePublicBranding() {
       .catch(() => {
         // sin conexión al backend todavía: se queda con el branding por defecto
       })
-  }, [])
+  }, [slug])
 
   return branding
 }

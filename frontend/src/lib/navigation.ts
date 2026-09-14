@@ -24,9 +24,10 @@ import {
   BarChart3,
   Database,
   Network,
+  BadgeCheck,
 } from 'lucide-react'
 
-export interface NavItem {
+export interface NavLeaf {
   to: string
   label: string
   resource: string
@@ -41,16 +42,58 @@ export interface NavItem {
   superAdminOnly?: boolean
 }
 
-export const NAV_ITEMS: NavItem[] = [
+export interface NavGroup {
+  label: string
+  icon: LucideIcon
+  children: NavLeaf[]
+}
+
+export type NavEntry = NavLeaf | NavGroup
+
+export function esGrupoNav(entry: NavEntry): entry is NavGroup {
+  return 'children' in entry
+}
+
+/** Aplana grupos y hojas en una sola lista — para buscadores/accesos rápidos
+ * a los que no les importa la agrupación visual del sidebar. */
+export function aplanarNav(items: NavEntry[]): NavLeaf[] {
+  return items.flatMap((item) => (esGrupoNav(item) ? item.children : [item]))
+}
+
+export const NAV_ITEMS: NavEntry[] = [
   { to: '/', label: 'Dashboard', resource: 'dashboard', icon: LayoutDashboard, sinPermiso: true },
   { to: '/usuarios', label: 'Usuarios', resource: 'usuarios', icon: Users },
   { to: '/roles', label: 'Roles y permisos', resource: 'roles', icon: ShieldCheck },
   { to: '/clientes', label: 'Clientes', resource: 'clientes', icon: Contact, modulo: 'clientes' },
-  { to: '/citas', label: 'Citas', resource: 'citas', icon: CalendarDays, modulo: 'citas' },
-  { to: '/recursos', label: 'Recursos', resource: 'recursos', icon: Component, modulo: 'citas' },
-  { to: '/tipos-cita', label: 'Tipos de cita', resource: 'tipos-cita', icon: Tag, modulo: 'citas' },
-  { to: '/activos', label: 'Activos', resource: 'activos', icon: Boxes, modulo: 'inventario' },
-  { to: '/productos', label: 'Productos', resource: 'productos', icon: Package, modulo: 'inventario' },
+  {
+    label: 'Citas',
+    icon: CalendarDays,
+    children: [
+      { to: '/citas', label: 'Citas', resource: 'citas', icon: CalendarDays, modulo: 'citas' },
+      { to: '/recursos', label: 'Recursos', resource: 'recursos', icon: Component, modulo: 'citas' },
+      {
+        to: '/tipos-cita',
+        label: 'Tipos de cita',
+        resource: 'tipos-cita',
+        icon: Tag,
+        modulo: 'citas',
+      },
+    ],
+  },
+  {
+    label: 'Inventario',
+    icon: Boxes,
+    children: [
+      { to: '/activos', label: 'Activos', resource: 'activos', icon: Boxes, modulo: 'inventario' },
+      {
+        to: '/productos',
+        label: 'Productos',
+        resource: 'productos',
+        icon: Package,
+        modulo: 'inventario',
+      },
+    ],
+  },
   { to: '/ventas', label: 'Ventas', resource: 'ventas', icon: ShoppingCart, modulo: 'ventas' },
   {
     to: '/proveedores',
@@ -74,32 +117,69 @@ export const NAV_ITEMS: NavItem[] = [
     modulo: 'nomina',
   },
   {
-    to: '/reportes',
-    label: 'Reportes',
-    resource: 'cuentas',
-    icon: BarChart3,
-    modulo: 'cuentas',
+    to: '/membresias',
+    label: 'Membresías',
+    resource: 'membresias',
+    icon: BadgeCheck,
+    modulo: 'membresias',
   },
-  { to: '/cuentas', label: 'Cuentas', resource: 'cuentas', icon: Wallet, modulo: 'cuentas' },
-  { to: '/costeos', label: 'Costeo', resource: 'costeo', icon: Calculator, modulo: 'costeo' },
-  { to: '/materiales', label: 'Materiales', resource: 'costeo', icon: Layers, modulo: 'costeo' },
   {
-    to: '/asistencia',
-    label: 'Mi asistencia',
-    resource: 'asistencia-propia',
+    label: 'Cuentas',
+    icon: Wallet,
+    children: [
+      { to: '/cuentas', label: 'Movimientos', resource: 'cuentas', icon: Wallet, modulo: 'cuentas' },
+      {
+        to: '/reportes',
+        label: 'Reportes',
+        resource: 'cuentas',
+        icon: BarChart3,
+        modulo: 'cuentas',
+      },
+    ],
+  },
+  {
+    label: 'Costeo',
+    icon: Calculator,
+    children: [
+      {
+        to: '/costeos',
+        label: 'Proyectos',
+        resource: 'costeo',
+        icon: Calculator,
+        modulo: 'costeo',
+      },
+      { to: '/materiales', label: 'Materiales', resource: 'costeo', icon: Layers, modulo: 'costeo' },
+    ],
+  },
+  {
+    label: 'Asistencia',
     icon: Fingerprint,
-    modulo: 'asistencia',
-    sinPermiso: true,
-  },
-  {
-    to: '/asistencia/reporte',
-    label: 'Reporte de asistencia',
-    resource: 'asistencia',
-    icon: ClipboardList,
-    modulo: 'asistencia',
+    children: [
+      {
+        to: '/asistencia',
+        label: 'Mi asistencia',
+        resource: 'asistencia-propia',
+        icon: Fingerprint,
+        modulo: 'asistencia',
+        sinPermiso: true,
+      },
+      {
+        to: '/asistencia/reporte',
+        label: 'Reporte de asistencia',
+        resource: 'asistencia',
+        icon: ClipboardList,
+        modulo: 'asistencia',
+      },
+    ],
   },
   { to: '/modulos', label: 'Módulos', resource: 'modulos', icon: Blocks },
-  { to: '/entidades', label: 'Entidades dinámicas', resource: 'entidades', icon: Database },
+  {
+    to: '/entidades',
+    label: 'Entidades dinámicas',
+    resource: 'entidades',
+    icon: Database,
+    superAdminOnly: true,
+  },
   { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
   {

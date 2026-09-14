@@ -1,8 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
+
+/** Identificador corto y no adivinable para el enlace de login por empresa. */
+function generarSlugLogin(): string {
+  return randomBytes(6).toString('base64url');
+}
 
 @Injectable()
 export class EmpresasService {
@@ -62,23 +69,43 @@ export class EmpresasService {
   }
 
   create(dto: CreateEmpresaDto) {
-    return this.prisma.empresa.create({ data: dto });
+    return this.prisma.empresa.create({
+      data: { ...dto, dominio: dto.dominio ?? generarSlugLogin() },
+    });
   }
 
-  /** Cada despliegue sirve a una sola empresa: usada por la pantalla de login (sin autenticación) para mostrar su marca. */
-  async findBrandingPublico() {
-    const empresa = await this.prisma.empresa.findFirst({
-      orderBy: { creadoEn: 'asc' },
+  /**
+   * Marca a mostrar en el login. `dominio` es el identificador de la URL
+   * (/login/:dominio) de una empresa específica. Si no viene, o no coincide con
+   * ninguna empresa, se devuelve el mismo genérico en ambos casos — a propósito,
+   * para no dar pistas de qué identificadores existen.
+   */
+  async findBrandingPublico(dominio?: string) {
+    const generico = { nombre: 'Backoffice Core', logoUrl: null, colorPrimario: null };
+    if (!dominio) return generico;
+
+    const empresa = await this.prisma.empresa.findUnique({
+      where: { dominio },
       select: { nombre: true, logoUrl: true, colorPrimario: true },
     });
-    return (
-      empresa ?? { nombre: 'Backoffice Core', logoUrl: null, colorPrimario: null }
-    );
+    return empresa ?? generico;
   }
 
   async update(id: string, actorId: string, dto: UpdateEmpresaDto) {
     await this.findOne(id);
-    const empresa = await this.prisma.empresa.update({ where: { id }, data: dto });
+
+    let empresa;
+    try {
+      empresa = await this.prisma.empresa.update({ where: { id }, data: dto });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Ese identificador de enlace ya está en uso');
+      }
+      throw error;
+    }
 
     await this.auditoriaService.registrar({
       empresaId: id,
@@ -90,5 +117,10 @@ export class EmpresasService {
     });
 
     return empresa;
+  }
+
+  /** Solo para el super-admin: invalida el enlace de login anterior y genera uno nuevo. */
+  regenerarDominio(id: string, actorId: string) {
+    return this.update(id, actorId, { dominio: generarSlugLogin() });
   }
 }

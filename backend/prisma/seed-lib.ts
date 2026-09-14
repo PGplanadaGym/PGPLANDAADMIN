@@ -71,6 +71,9 @@ export const CATALOGO_PERMISOS = [
   { clave: 'nomina.crear', etiqueta: 'Registrar pagos de nómina' },
   { clave: 'nomina.actualizar', etiqueta: 'Editar pagos de nómina' },
   { clave: 'nomina.eliminar', etiqueta: 'Eliminar pagos de nómina' },
+  { clave: 'membresias.leer', etiqueta: 'Ver membresías de socios' },
+  { clave: 'membresias.crear', etiqueta: 'Renovar membresías' },
+  { clave: 'membresias.actualizar', etiqueta: 'Editar planes de membresía' },
 ];
 
 export const CATALOGO_MODULOS = [
@@ -129,6 +132,12 @@ export const CATALOGO_MODULOS = [
     descripcion:
       'Registro simple de pagos a empleados por periodo (sin cálculo automático de IESS ni décimos)',
     precioMensual: 7,
+  },
+  {
+    clave: 'membresias',
+    nombre: 'Membresías',
+    descripcion: 'Suscripciones de socios con vencimiento, renovación y avisos automáticos',
+    precioMensual: 6,
   },
 ];
 

@@ -42,6 +42,11 @@ export class UpdateProveedorDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsBoolean()
   activo?: boolean;
 

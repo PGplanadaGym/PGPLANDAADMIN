@@ -53,4 +53,9 @@ export class UpdateSucursalDto {
   @IsOptional()
   @IsString()
   horarioAtencion?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  imagenUrl?: string;
 }

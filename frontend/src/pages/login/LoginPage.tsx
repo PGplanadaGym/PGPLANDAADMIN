@@ -2,7 +2,7 @@ import { useLogin } from '@refinedev/core'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { API_URL } from '../../lib/axios'
 import { usePublicBranding } from '../../hooks/usePublicBranding'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -17,7 +17,8 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
-  const branding = usePublicBranding()
+  const { slug } = useParams<{ slug?: string }>()
+  const branding = usePublicBranding(slug)
   const { mutate: login, isPending, data } = useLogin<LoginValues>()
   const {
     register,

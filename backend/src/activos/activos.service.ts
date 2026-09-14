@@ -174,6 +174,37 @@ export class ActivosService {
       detalle: { nombre: activo.nombre },
     });
 
+    // el gasto de compra se registra solo, igual que Membresías/Nómina/Compras — si la
+    // empresa no tiene el módulo "Cuentas" activo, el activo igual queda creado con normalidad.
+    if (dto.valorCompra) {
+      const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
+        where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
+      });
+
+      if (moduloCuentasActivo) {
+        const categoriaEgreso = await this.prisma.categoriaMovimiento.upsert({
+          where: {
+            empresaId_tipo_nombre: { empresaId, tipo: 'egreso', nombre: 'Compra de activos' },
+          },
+          update: {},
+          create: { empresaId, tipo: 'egreso', nombre: 'Compra de activos' },
+        });
+
+        await this.prisma.movimientoCuenta.create({
+          data: {
+            empresaId,
+            tipo: 'egreso',
+            categoriaId: categoriaEgreso.id,
+            monto: dto.valorCompra,
+            fecha: activo.fechaCompra ?? new Date(),
+            descripcion: `Compra de activo: ${activo.nombre}`,
+            usuarioId: actorId,
+            activoId: activo.id,
+          },
+        });
+      }
+    }
+
     return activo;
   }
 
