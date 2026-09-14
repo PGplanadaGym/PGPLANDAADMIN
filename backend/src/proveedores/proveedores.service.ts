@@ -216,16 +216,11 @@ export class ProveedoresService {
 
     let categoriaEgreso: { id: string } | null = null;
     if (dto.categoriaEgresoId) {
-      const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-        where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
+      categoriaEgreso = await this.prisma.categoriaMovimiento.findFirst({
+        where: { id: dto.categoriaEgresoId, empresaId, tipo: 'egreso' },
       });
-      if (moduloCuentasActivo) {
-        categoriaEgreso = await this.prisma.categoriaMovimiento.findFirst({
-          where: { id: dto.categoriaEgresoId, empresaId, tipo: 'egreso' },
-        });
-        if (!categoriaEgreso) {
-          throw new BadRequestException('Categoría de egreso no encontrada');
-        }
+      if (!categoriaEgreso) {
+        throw new BadRequestException('Categoría de egreso no encontrada');
       }
     }
 

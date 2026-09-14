@@ -18,7 +18,6 @@ export interface Identity {
   fotoUrl: string | null
   permisos: string[]
   empresa: EmpresaBranding
-  esSuperAdmin: boolean
 }
 
 let cached: Identity | null = null

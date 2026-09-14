@@ -18,7 +18,6 @@ export interface RequestUser {
   fotoUrl: string | null;
   permisos: string[];
   empresa: EmpresaBranding;
-  esSuperAdmin: boolean;
 }
 
 export const CurrentUser = createParamDecorator(

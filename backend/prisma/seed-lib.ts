@@ -73,65 +73,6 @@ export const CATALOGO_PERMISOS = [
   { clave: 'nomina.eliminar', etiqueta: 'Eliminar pagos de nómina' },
 ];
 
-export const CATALOGO_MODULOS = [
-  { clave: 'clientes', nombre: 'Clientes', descripcion: 'Gestión de clientes', precioMensual: 3 },
-  {
-    clave: 'citas',
-    nombre: 'Citas',
-    descripcion: 'Calendario de citas y reservas',
-    precioMensual: 6,
-  },
-  {
-    clave: 'inventario',
-    nombre: 'Inventario',
-    descripcion: 'Activos con historial de dueño y stock de productos por cantidad',
-    precioMensual: 8,
-  },
-  {
-    clave: 'asistencia',
-    nombre: 'Asistencia',
-    descripcion: 'Registro de entrada, salida y horario de comida con geolocalización',
-    precioMensual: 5,
-  },
-  {
-    clave: 'cuentas',
-    nombre: 'Cuentas',
-    descripcion: 'Registro de ingresos y egresos con reportes',
-    precioMensual: 5,
-  },
-  {
-    clave: 'costeo',
-    nombre: 'Costeo',
-    descripcion: 'Calculadora de costos por partes y materiales (ej. cosplay)',
-    precioMensual: 6,
-  },
-  {
-    clave: 'ventas',
-    nombre: 'Ventas',
-    descripcion: 'Punto de venta: vender productos del catálogo y descontar stock',
-    precioMensual: 8,
-  },
-  {
-    clave: 'compras',
-    nombre: 'Proveedores y compras',
-    descripcion: 'Proveedores y órdenes de compra: al recibirlas, suman stock y registran el egreso',
-    precioMensual: 6,
-  },
-  {
-    clave: 'sucursales',
-    nombre: 'Sucursales',
-    descripcion: 'Múltiples locales: asigna empleados, recursos y activos a una sucursal',
-    precioMensual: 6,
-  },
-  {
-    clave: 'nomina',
-    nombre: 'Nómina',
-    descripcion:
-      'Registro simple de pagos a empleados por periodo (sin cálculo automático de IESS ni décimos)',
-    precioMensual: 7,
-  },
-];
-
 interface SeedEmpresaBaseOptions {
   prisma: PrismaClient;
   empresaNombre: string;
@@ -139,8 +80,6 @@ interface SeedEmpresaBaseOptions {
   adminNombre: string;
   adminEmail: string;
   adminPassword: string;
-  activarModuloClientes?: boolean;
-  modulosActivos?: string[];
 }
 
 /**
@@ -149,16 +88,7 @@ interface SeedEmpresaBaseOptions {
  * Es la base mínima reutilizable para levantar el core en cualquier base nueva.
  */
 export async function seedEmpresaBase(opts: SeedEmpresaBaseOptions) {
-  const {
-    prisma,
-    empresaNombre,
-    dominio,
-    adminNombre,
-    adminEmail,
-    adminPassword,
-    activarModuloClientes = true,
-    modulosActivos = [],
-  } = opts;
+  const { prisma, empresaNombre, dominio, adminNombre, adminEmail, adminPassword } = opts;
 
   const permisos = await Promise.all(
     CATALOGO_PERMISOS.map((permiso) =>
@@ -166,16 +96,6 @@ export async function seedEmpresaBase(opts: SeedEmpresaBaseOptions) {
         where: { clave: permiso.clave },
         update: {},
         create: permiso,
-      }),
-    ),
-  );
-
-  const modulos = await Promise.all(
-    CATALOGO_MODULOS.map((modulo) =>
-      prisma.modulo.upsert({
-        where: { clave: modulo.clave },
-        update: {},
-        create: modulo,
       }),
     ),
   );
@@ -204,20 +124,6 @@ export async function seedEmpresaBase(opts: SeedEmpresaBaseOptions) {
     skipDuplicates: true,
   });
 
-  const clavesAActivar = new Set(modulosActivos);
-  if (activarModuloClientes) clavesAActivar.add('clientes');
-
-  for (const clave of clavesAActivar) {
-    const modulo = modulos.find((m) => m.clave === clave);
-    if (!modulo) continue;
-
-    await prisma.empresaModulo.upsert({
-      where: { empresaId_moduloId: { empresaId: empresa.id, moduloId: modulo.id } },
-      update: { activo: true },
-      create: { empresaId: empresa.id, moduloId: modulo.id, activo: true },
-    });
-  }
-
   const passwordHash = await bcrypt.hash(adminPassword, 10);
   const admin = await prisma.usuario.upsert({
     where: { email: adminEmail },
@@ -236,5 +142,5 @@ export async function seedEmpresaBase(opts: SeedEmpresaBaseOptions) {
     create: { usuarioId: admin.id, rolId: rolAdmin.id },
   });
 
-  return { empresa, admin, rolAdmin, permisos, modulos };
+  return { empresa, admin, rolAdmin, permisos };
 }

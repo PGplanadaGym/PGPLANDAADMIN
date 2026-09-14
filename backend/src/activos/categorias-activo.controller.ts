@@ -12,9 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -25,8 +23,7 @@ import { UpdateCategoriaActivoDto } from './dto/update-categoria-activo.dto';
 
 @ApiTags('categorias-activo')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('inventario')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('categorias-activo')
 export class CategoriasActivoController {
   constructor(private readonly activosService: ActivosService) {}

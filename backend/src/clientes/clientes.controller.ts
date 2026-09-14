@@ -10,9 +10,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -23,8 +21,7 @@ import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @ApiTags('clientes')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('clientes')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('clientes')
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}

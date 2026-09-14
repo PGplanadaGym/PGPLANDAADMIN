@@ -1,6 +1,3 @@
-# Credenciales de bases de datos por cliente (generadas por scripts/provision-cliente.ts)
-/clientes/
-
 # Node
 node_modules/
 

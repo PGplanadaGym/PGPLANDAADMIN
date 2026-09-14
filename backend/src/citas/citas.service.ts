@@ -401,13 +401,6 @@ export class CitasService {
       throw new ConflictException('Ya se registró un cobro para esta cita');
     }
 
-    const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-      where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
-    });
-    if (!moduloCuentasActivo) {
-      throw new ConflictException('Activa el módulo "Cuentas" para poder registrar el cobro');
-    }
-
     const categoria = await this.prisma.categoriaMovimiento.findFirst({
       where: { id: categoriaIngresoId, empresaId, tipo: 'ingreso' },
     });

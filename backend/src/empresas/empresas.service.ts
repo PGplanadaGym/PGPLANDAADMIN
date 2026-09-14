@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
-import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 
 @Injectable()
@@ -11,46 +10,6 @@ export class EmpresasService {
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
-  findAll() {
-    return this.prisma.empresa.findMany();
-  }
-
-  /** Solo para el super-admin: resumen de cada empresa cliente con sus módulos activos. */
-  async findAllConResumen() {
-    const empresas = await this.prisma.empresa.findMany({
-      orderBy: { creadoEn: 'asc' },
-      include: {
-        _count: { select: { usuarios: true } },
-        modulos: { where: { activo: true }, include: { modulo: true } },
-      },
-    });
-
-    return empresas.map((empresa) => {
-      const modulosActivos = empresa.modulos.map((activacion) => ({
-        clave: activacion.modulo.clave,
-        nombre: activacion.modulo.nombre,
-        precioMensual: activacion.modulo.precioMensual,
-      }));
-      const totalMensual = modulosActivos.reduce(
-        (acc, modulo) => acc + Number(modulo.precioMensual ?? 0),
-        0,
-      );
-
-      return {
-        id: empresa.id,
-        nombre: empresa.nombre,
-        razonSocial: empresa.razonSocial,
-        ruc: empresa.ruc,
-        email: empresa.email,
-        dominio: empresa.dominio,
-        creadoEn: empresa.creadoEn,
-        totalUsuarios: empresa._count.usuarios,
-        modulosActivos,
-        totalMensual,
-      };
-    });
-  }
-
   async findOne(id: string) {
     const empresa = await this.prisma.empresa.findUnique({ where: { id } });
 
@@ -59,10 +18,6 @@ export class EmpresasService {
     }
 
     return empresa;
-  }
-
-  create(dto: CreateEmpresaDto) {
-    return this.prisma.empresa.create({ data: dto });
   }
 
   /** Cada despliegue sirve a una sola empresa: usada por la pantalla de login (sin autenticación) para mostrar su marca. */

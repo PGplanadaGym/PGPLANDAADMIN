@@ -27,7 +27,6 @@ model Empresa {
 
   sucursales Sucursal[]
   usuarios   Usuario[]
-  modulos    EmpresaModulo[]
   roles      Rol[]
 
   clientes             Cliente[]
@@ -93,9 +92,6 @@ model Usuario {
   // hasta que la reemplace vía /reset-password). true por defecto porque los usuarios
   // sembrados o creados con una contraseña real ya la tienen "configurada" desde el inicio.
   passwordConfigurada Boolean   @default(true)
-  // Dueño de la plataforma (no de una empresa cliente en particular): puede ver y
-  // gestionar todas las empresas. No se asigna desde la UI, solo por migración/soporte.
-  esSuperAdmin        Boolean   @default(false)
   sucursalId          String?
   sucursal            Sucursal? @relation(fields: [sucursalId], references: [id])
   creadoEn            DateTime  @default(now())
@@ -159,7 +155,7 @@ model PasswordResetToken {
 
 model Rol {
   id          String   @id @default(uuid())
-  empresaId   String? // null = rol de sistema (superadmin)
+  empresaId   String? // null = rol de sistema
   empresa     Empresa? @relation(fields: [empresaId], references: [id])
   nombre      String
   descripcion String?
@@ -194,28 +190,6 @@ model RolPermiso {
   permiso   Permiso @relation(fields: [permisoId], references: [id])
 
   @@id([rolId, permisoId])
-}
-
-// ---------- MÓDULOS (catálogo + activación por empresa) ----------
-
-model Modulo {
-  id             String   @id @default(uuid())
-  clave          String   @unique // "inventario", "citas", "facturacion"
-  nombre         String
-  descripcion    String?
-  precioMensual  Decimal? @db.Decimal(10, 2)
-
-  empresas EmpresaModulo[]
-}
-
-model EmpresaModulo {
-  empresaId String
-  moduloId  String
-  activo    Boolean @default(true)
-  empresa   Empresa @relation(fields: [empresaId], references: [id])
-  modulo    Modulo  @relation(fields: [moduloId], references: [id])
-
-  @@id([empresaId, moduloId])
 }
 
 // ---------- ENTIDADES DE NEGOCIO COMUNES (con extensión JSON) ----------

@@ -589,12 +589,6 @@ export class ActivosService {
 
     let categoriaEgreso: { id: string } | null = null;
     if (dto.categoriaEgresoId && dto.costo) {
-      const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-        where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
-      });
-      if (!moduloCuentasActivo) {
-        throw new ConflictException('Activa el módulo "Cuentas" para poder registrar el gasto');
-      }
       categoriaEgreso = await this.prisma.categoriaMovimiento.findFirst({
         where: { id: dto.categoriaEgresoId, empresaId, tipo: 'egreso' },
       });

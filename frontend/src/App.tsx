@@ -19,12 +19,10 @@ import { UsuariosCreatePage } from './pages/usuarios/UsuariosCreatePage'
 import { UsuarioPerfilPage } from './pages/usuarios/UsuarioPerfilPage'
 import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
-import { ModulosPage } from './pages/modulos/ModulosPage'
 import { EntidadDinamicaPage } from './pages/entidades/EntidadDinamicaPage'
 import { EntidadesAdminPage } from './pages/entidades/EntidadesAdminPage'
 import { RegistroDetallePage } from './pages/entidades/RegistroDetallePage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
-import { EmpresasAdminPage } from './pages/plataforma/EmpresasAdminPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
 import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
 import { CitasPage } from './pages/citas/CitasPage'
@@ -91,11 +89,6 @@ function App() {
           create: '/clientes/nuevo',
           edit: '/clientes/:id/editar',
           meta: { label: 'Clientes' },
-        },
-        {
-          name: 'modulos',
-          list: '/modulos',
-          meta: { label: 'Módulos' },
         },
         {
           name: 'entidades',
@@ -172,11 +165,6 @@ function App() {
           list: '/reportes',
           meta: { label: 'Reportes' },
         },
-        {
-          name: 'empresas-todas',
-          list: '/plataforma/empresas',
-          meta: { label: 'Empresas (plataforma)' },
-        },
       ]}
       options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
     >
@@ -205,10 +193,8 @@ function App() {
           <Route path="/clientes" element={<ClientesListPage />} />
           <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
           <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
-          <Route path="/modulos" element={<ModulosPage />} />
           <Route path="/entidades" element={<EntidadesAdminPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
-          <Route path="/plataforma/empresas" element={<EmpresasAdminPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />
           <Route path="/recursos" element={<RecursosPage />} />

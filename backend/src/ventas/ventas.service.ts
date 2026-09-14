@@ -94,11 +94,6 @@ export class VentasService {
   private async resolverCategoriaIngreso(empresaId: string, categoriaIngresoId?: string) {
     if (!categoriaIngresoId) return null;
 
-    const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-      where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
-    });
-    if (!moduloCuentasActivo) return null;
-
     const categoria = await this.prisma.categoriaMovimiento.findFirst({
       where: { id: categoriaIngresoId, empresaId, tipo: 'ingreso' },
     });

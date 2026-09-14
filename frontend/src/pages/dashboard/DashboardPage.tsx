@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { buildAbility } from '../../ability/ability'
-import { useModulos } from '../../providers/modulosContext'
 import { NAV_ITEMS } from '../../lib/navigation'
 import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
@@ -31,7 +30,6 @@ interface ProximaCita {
 }
 
 interface Metricas {
-  modulosActivos: string[]
   metricas: Record<string, number>
   proximasCitas: ProximaCita[]
 }
@@ -65,7 +63,6 @@ function TarjetaMetrica({
 
 export function DashboardPage() {
   const { data: identity } = useGetIdentity<Identity>()
-  const { modulos, loading: cargandoModulos } = useModulos()
   const [datos, setDatos] = useState<Metricas | null>(null)
   const [cargandoDatos, setCargandoDatos] = useState(true)
 
@@ -82,18 +79,13 @@ export function DashboardPage() {
   const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
   const puedeVer = (resource: string) => ability.can(`${resource}.leer`, 'all')
 
-  const clavesActivas = new Set(modulos.filter((m) => m.activo).map((m) => m.clave))
   const accesos = NAV_ITEMS.filter(
-    (item) =>
-      item.modulo &&
-      clavesActivas.has(item.modulo) &&
-      item.to !== '/' &&
-      (item.sinPermiso || puedeVer(item.resource)),
+    (item) => item.to !== '/' && (item.sinPermiso || puedeVer(item.resource)),
   )
 
   const m = datos?.metricas ?? {}
 
-  if (!identity || cargandoModulos) {
+  if (!identity) {
     return <CargandoPantalla minHeight={400} />
   }
 
@@ -110,7 +102,7 @@ export function DashboardPage() {
 
       {!cargandoDatos && datos && (
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {datos.modulosActivos.includes('citas') && puedeVer('citas') && (
+          {puedeVer('citas') && (
             <TarjetaMetrica
               icono={CalendarClock}
               etiqueta="Citas de hoy"
@@ -118,7 +110,7 @@ export function DashboardPage() {
               to="/citas"
             />
           )}
-          {datos.modulosActivos.includes('ventas') && puedeVer('ventas') && (
+          {puedeVer('ventas') && (
             <TarjetaMetrica
               icono={ShoppingCart}
               etiqueta="Ventas este mes"
@@ -126,7 +118,7 @@ export function DashboardPage() {
               to="/ventas"
             />
           )}
-          {datos.modulosActivos.includes('inventario') && puedeVer('productos') && (
+          {puedeVer('productos') && (
             <TarjetaMetrica
               icono={PackageX}
               etiqueta="Productos con stock bajo"
@@ -134,7 +126,7 @@ export function DashboardPage() {
               to="/productos"
             />
           )}
-          {datos.modulosActivos.includes('asistencia') && puedeVer('asistencia') && (
+          {puedeVer('asistencia') && (
             <TarjetaMetrica
               icono={Fingerprint}
               etiqueta="Asistencia de hoy"
@@ -142,7 +134,7 @@ export function DashboardPage() {
               to="/asistencia/reporte"
             />
           )}
-          {datos.modulosActivos.includes('cuentas') && puedeVer('cuentas') && (
+          {puedeVer('cuentas') && (
             <TarjetaMetrica
               icono={TrendingUp}
               etiqueta="Ingresos este mes"
@@ -150,7 +142,7 @@ export function DashboardPage() {
               to="/cuentas"
             />
           )}
-          {datos.modulosActivos.includes('cuentas') && puedeVer('cuentas') && (
+          {puedeVer('cuentas') && (
             <TarjetaMetrica
               icono={TrendingDown}
               etiqueta="Egresos este mes"
@@ -206,11 +198,8 @@ export function DashboardPage() {
       ) : (
         <div className="mt-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 text-center">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Todavía no tienes módulos activados. Pídele a un administrador que los active en{' '}
-            <Link to="/modulos" className="text-[var(--color-primario-legible)] hover:underline">
-              Módulos
-            </Link>
-            .
+            Todavía no tienes acceso a ninguna sección. Pídele a un administrador que te asigne un
+            rol con permisos.
           </p>
         </div>
       )}

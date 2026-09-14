@@ -2,9 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -16,8 +14,7 @@ import { VenderCosteoDto } from './dto/vender-costeo.dto';
 
 @ApiTags('costeo')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('costeo')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller()
 export class CosteoController {
   constructor(private readonly costeoService: CosteoService) {}

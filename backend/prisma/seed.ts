@@ -15,18 +15,6 @@ async function main() {
     adminNombre: 'Administrador Demo',
     adminEmail: 'admin@demo.local',
     adminPassword: 'Admin123!',
-    modulosActivos: [
-      'clientes',
-      'citas',
-      'inventario',
-      'asistencia',
-      'cuentas',
-      'costeo',
-      'ventas',
-      'compras',
-      'sucursales',
-      'nomina',
-    ],
   });
 
   const rolEmpleado = await prisma.rol.upsert({
@@ -271,12 +259,11 @@ async function main() {
   console.log(`  Rol Admin id: ${rolAdmin.id}`);
   console.log('  admin@demo.local / Admin123!  (rol Admin, todos los permisos)');
   console.log('  empleado@demo.local / Empleado123!  (rol Empleado, solo usuarios.leer)');
-  console.log('  Módulo "clientes" activo para Empresa Demo');
   console.log('  Entidad dinámica "Mascota" creada de ejemplo');
-  console.log(`  Módulo "citas" activo — recurso "${recurso.nombre}", tipo de cita "${tipoCita.nombre}"`);
-  console.log('  Módulo "inventario" activo — activo "Laptop Dell Latitude #001" (asignado al admin), producto "Papel bond A4 (paquete)" (stock 20)');
-  console.log('  Módulo "cuentas" activo — 3 categorías y 4 movimientos de ejemplo');
-  console.log('  Módulo "costeo" activo — 4 materiales de ejemplo (tela, goma EVA, pintura)');
+  console.log(`  Citas: recurso "${recurso.nombre}", tipo de cita "${tipoCita.nombre}"`);
+  console.log('  Inventario: activo "Laptop Dell Latitude #001" (asignado al admin), producto "Papel bond A4 (paquete)" (stock 20)');
+  console.log('  Cuentas: 3 categorías y 4 movimientos de ejemplo');
+  console.log('  Costeo: 4 materiales de ejemplo (tela, goma EVA, pintura)');
 }
 
 main()

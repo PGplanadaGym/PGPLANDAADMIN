@@ -223,15 +223,6 @@ export class CosteoService {
       throw new ConflictException('Este costeo ya fue marcado como vendido');
     }
 
-    const moduloCuentasActivo = await this.prisma.empresaModulo.findFirst({
-      where: { empresaId, activo: true, modulo: { clave: 'cuentas' } },
-    });
-    if (!moduloCuentasActivo) {
-      throw new ConflictException(
-        'Activa el módulo "Cuentas" para poder registrar la venta como ingreso',
-      );
-    }
-
     const categoria = await this.prisma.categoriaMovimiento.findFirst({
       where: { id: dto.categoriaId, empresaId, tipo: 'ingreso' },
     });

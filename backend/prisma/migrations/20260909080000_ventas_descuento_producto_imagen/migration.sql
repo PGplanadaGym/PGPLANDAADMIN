@@ -1,2 +1,0 @@
-ALTER TABLE "Orden" ADD COLUMN "descuento" DECIMAL(10,2) NOT NULL DEFAULT 0;
-ALTER TABLE "ProductoServicio" ADD COLUMN "imagenUrl" TEXT;

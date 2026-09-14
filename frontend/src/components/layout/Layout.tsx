@@ -4,7 +4,6 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Menu, Search } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { aplicarColorPrimario } from '../../lib/theme'
-import { ModulosProvider, useModulos } from '../../providers/modulosContext'
 import { EntidadesProvider, useEntidades } from '../../providers/entidadesContext'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { NotificationBell } from '../ui/NotificationBell'
@@ -24,14 +23,8 @@ function esRutaActiva(pathname: string, to: string) {
 }
 
 function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
-  const { modulos } = useModulos()
   const { entidades } = useEntidades()
   const location = useLocation()
-
-  const moduloActivo = (clave?: string) => {
-    if (!clave) return true
-    return modulos.some((modulo) => modulo.clave === clave && modulo.activo)
-  }
 
   const puedeVerEntidades =
     identity?.permisos.includes('entidades.registros.leer') ?? false
@@ -74,9 +67,7 @@ function Sidebar({ identity, abierto, onCerrar }: SidebarProps) {
         </div>
 
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
-          {NAV_ITEMS.filter(
-            (item) => moduloActivo(item.modulo) && (!item.superAdminOnly || identity?.esSuperAdmin),
-          ).map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icono = item.icon
             const activo = esRutaActiva(location.pathname, item.to)
             const enlace = (
@@ -137,62 +128,60 @@ export function Layout() {
   }, [location.pathname])
 
   return (
-    <ModulosProvider>
-      <EntidadesProvider>
-        <CommandPalette abierto={paletaAbierta} onCambiar={setPaletaAbierta} />
-        <div className="flex min-h-screen bg-[var(--color-bg)]">
-          <Sidebar
-            identity={identity}
-            abierto={sidebarAbierto}
-            onCerrar={() => setSidebarAbierto(false)}
-          />
+    <EntidadesProvider>
+      <CommandPalette abierto={paletaAbierta} onCambiar={setPaletaAbierta} />
+      <div className="flex min-h-screen bg-[var(--color-bg)]">
+        <Sidebar
+          identity={identity}
+          abierto={sidebarAbierto}
+          onCerrar={() => setSidebarAbierto(false)}
+        />
 
-          <div className="flex min-w-0 flex-1 flex-col">
-            <header className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]/80 px-4 py-3 backdrop-blur sm:px-6">
-              <div className="flex min-w-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSidebarAbierto((v) => !v)}
-                  className="rounded-lg p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] md:hidden"
-                  aria-label="Abrir menú"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]/80 px-4 py-3 backdrop-blur sm:px-6">
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSidebarAbierto((v) => !v)}
+                className="rounded-lg p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] md:hidden"
+                aria-label="Abrir menú"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
 
-                <UserMenu />
-              </div>
+              <UserMenu />
+            </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaletaAbierta(true)}
-                  aria-label="Buscar"
-                  className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] sm:hidden"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaletaAbierta(true)}
-                  className="hidden items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] sm:flex"
-                >
-                  <Search className="h-4 w-4" />
-                  Buscar
-                  <kbd className="rounded-lg border border-[var(--color-border)] px-1.5 py-0.5 text-xs">
-                    Ctrl K
-                  </kbd>
-                </button>
-                <NotificationBell />
-                <ThemeToggle />
-              </div>
-            </header>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPaletaAbierta(true)}
+                aria-label="Buscar"
+                className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] sm:hidden"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaletaAbierta(true)}
+                className="hidden items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] sm:flex"
+              >
+                <Search className="h-4 w-4" />
+                Buscar
+                <kbd className="rounded-lg border border-[var(--color-border)] px-1.5 py-0.5 text-xs">
+                  Ctrl K
+                </kbd>
+              </button>
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+          </header>
 
-            <main className="min-w-0 flex-1 p-4 sm:p-6">
-              <Outlet />
-            </main>
-          </div>
+          <main className="min-w-0 flex-1 p-4 sm:p-6">
+            <Outlet />
+          </main>
         </div>
-      </EntidadesProvider>
-    </ModulosProvider>
+      </div>
+    </EntidadesProvider>
   )
 }

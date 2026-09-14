@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useGetIdentity, useLogout } from '@refinedev/core'
 import type { Identity } from '../../lib/identity'
 import { NAV_ITEMS } from '../../lib/navigation'
-import { useModulos } from '../../providers/modulosContext'
 import { useEntidades } from '../../providers/entidadesContext'
 import { axiosInstance } from '../../lib/axios'
 
@@ -41,7 +40,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
   const navigate = useNavigate()
   const { data: identity } = useGetIdentity<Identity>()
   const { mutate: logout } = useLogout()
-  const { modulos } = useModulos()
   const { entidades } = useEntidades()
 
   const [busqueda, setBusqueda] = useState('')
@@ -61,11 +59,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto])
 
-  const moduloActivo = (clave?: string) => {
-    if (!clave) return true
-    return modulos.some((modulo) => modulo.clave === clave && modulo.activo)
-  }
-
   const tienePermiso = (permiso: string) => identity?.permisos.includes(permiso) ?? false
 
   // Trae clientes/productos/usuarios una sola vez, la primera vez que se abre la paleta —
@@ -73,13 +66,13 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
   useEffect(() => {
     if (!abierto) return
 
-    if (clientes === null && moduloActivo('clientes') && tienePermiso('clientes.leer')) {
+    if (clientes === null && tienePermiso('clientes.leer')) {
       axiosInstance
         .get<ClienteResultado[]>('/clientes')
         .then(({ data }) => setClientes(data))
         .catch(() => setClientes([]))
     }
-    if (productos === null && moduloActivo('inventario') && tienePermiso('productos.leer')) {
+    if (productos === null && tienePermiso('productos.leer')) {
       axiosInstance
         .get<ProductoResultado[]>('/productos')
         .then(({ data }) => setProductos(data))
@@ -180,7 +173,7 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
 
         <Command.Group heading="Navegación">
           {NAV_ITEMS.filter(
-            (item) => moduloActivo(item.modulo) && (item.sinPermiso || tienePermiso(`${item.resource}.leer`)),
+            (item) => item.sinPermiso || tienePermiso(`${item.resource}.leer`),
           ).map((item) => (
             <Command.Item key={item.to} onSelect={() => ir(item.to)}>
               <item.icon className="h-4 w-4" strokeWidth={2} />
@@ -208,37 +201,37 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
               Invitar usuario
             </Command.Item>
           )}
-          {tienePermiso('clientes.crear') && moduloActivo('clientes') && (
+          {tienePermiso('clientes.crear') && (
             <Command.Item onSelect={() => ir('/clientes/nuevo')}>
               Nuevo cliente
             </Command.Item>
           )}
-          {tienePermiso('productos.crear') && moduloActivo('inventario') && (
+          {tienePermiso('productos.crear') && (
             <Command.Item onSelect={() => ir('/productos')}>
               Nuevo producto
             </Command.Item>
           )}
-          {tienePermiso('activos.crear') && moduloActivo('inventario') && (
+          {tienePermiso('activos.crear') && (
             <Command.Item onSelect={() => ir('/activos')}>
               Nuevo activo
             </Command.Item>
           )}
-          {tienePermiso('citas.crear') && moduloActivo('citas') && (
+          {tienePermiso('citas.crear') && (
             <Command.Item onSelect={() => ir('/citas')}>
               Nueva cita
             </Command.Item>
           )}
-          {tienePermiso('ventas.crear') && moduloActivo('ventas') && (
+          {tienePermiso('ventas.crear') && (
             <Command.Item onSelect={() => ir('/ventas')}>
               Nueva venta
             </Command.Item>
           )}
-          {tienePermiso('proveedores.crear') && moduloActivo('compras') && (
+          {tienePermiso('proveedores.crear') && (
             <Command.Item onSelect={() => ir('/proveedores')}>
               Nuevo proveedor
             </Command.Item>
           )}
-          {tienePermiso('costeo.crear') && moduloActivo('costeo') && (
+          {tienePermiso('costeo.crear') && (
             <Command.Item onSelect={() => ir('/costeos/nuevo')}>
               Nuevo costeo
             </Command.Item>

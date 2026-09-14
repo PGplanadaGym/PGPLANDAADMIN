@@ -12,9 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -25,8 +23,7 @@ import { UpdatePagoNominaDto } from './dto/update-pago-nomina.dto';
 
 @ApiTags('nomina')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('nomina')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('nomina')
 export class NominaController {
   constructor(private readonly nominaService: NominaService) {}

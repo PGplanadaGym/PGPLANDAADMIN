@@ -11,9 +11,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -24,8 +22,7 @@ import { ConfirmarOrdenDto } from './dto/confirmar-orden.dto';
 
 @ApiTags('ventas')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('ventas')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('ventas')
 export class VentasController {
   constructor(private readonly ventasService: VentasService) {}

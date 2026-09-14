@@ -12,9 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -28,8 +26,7 @@ import { SetTiposCitaDto } from './dto/set-tipos-cita.dto';
 
 @ApiTags('recursos')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('citas')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('recursos')
 export class RecursosController {
   constructor(private readonly recursosService: RecursosService) {}

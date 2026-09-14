@@ -11,9 +11,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { ModuloActivoGuard } from '../common/guards/modulo-activo.guard';
 import { CheckPermissions } from '../common/decorators/permissions.decorator';
-import { RequiereModulo } from '../common/decorators/requiere-modulo.decorator';
 import {
   CurrentUser,
   type RequestUser,
@@ -24,8 +22,7 @@ import { UpdateTipoCitaDto } from './dto/update-tipo-cita.dto';
 
 @ApiTags('tipos-cita')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard, ModuloActivoGuard)
-@RequiereModulo('citas')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('tipos-cita')
 export class TiposCitaController {
   constructor(private readonly tiposCitaService: TiposCitaService) {}

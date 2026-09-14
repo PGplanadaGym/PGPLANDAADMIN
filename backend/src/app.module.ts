@@ -7,7 +7,6 @@ import { AuthModule } from './auth/auth.module';
 import { EmpresasModule } from './empresas/empresas.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { RolesPermisosModule } from './roles-permisos/roles-permisos.module';
-import { ModulosModule } from './modulos/modulos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -39,7 +38,6 @@ import { NominaModule } from './nomina/nomina.module';
     EmpresasModule,
     UsuariosModule,
     RolesPermisosModule,
-    ModulosModule,
     ClientesModule,
     MetadataModule,
     UploadsModule,
