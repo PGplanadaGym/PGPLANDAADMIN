@@ -1,0 +1,3 @@
+ALTER TABLE "Activo" ADD COLUMN "marca" TEXT;
+ALTER TABLE "Activo" ADD COLUMN "modelo" TEXT;
+ALTER TABLE "Activo" ADD COLUMN "imagenUrl" TEXT;

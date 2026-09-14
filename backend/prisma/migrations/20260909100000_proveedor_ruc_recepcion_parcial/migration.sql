@@ -1,0 +1,2 @@
+ALTER TABLE "Proveedor" ADD COLUMN "ruc" TEXT;
+ALTER TABLE "OrdenCompraItem" ADD COLUMN "cantidadRecibida" INTEGER NOT NULL DEFAULT 0;
