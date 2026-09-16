@@ -16,7 +16,6 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { setAuthCookies, clearAuthCookies } from './cookies.util';
 import {
   CurrentUser,
@@ -103,23 +102,5 @@ export class AuthController {
       user.id,
       req.cookies?.refresh_token,
     );
-  }
-
-  @Get('google')
-  @UseGuards(GoogleAuthGuard)
-  googleLogin() {
-    // Passport redirige a Google; este método nunca se ejecuta.
-  }
-
-  @Get('google/callback')
-  @UseGuards(GoogleAuthGuard)
-  async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const usuario = req.user as { id: string };
-    const { accessToken, refreshToken } = await this.authService.emitirTokens(
-      usuario.id,
-      { userAgent: req.headers['user-agent'], ip: req.ip },
-    );
-    setAuthCookies(res, accessToken, refreshToken);
-    res.redirect(process.env.FRONTEND_URL ?? 'http://localhost:5173');
   }
 }

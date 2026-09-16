@@ -45,19 +45,6 @@ export class AuthService {
     return this.emitirTokens(usuario.id, meta);
   }
 
-  /** Usada por el login de Google: no valida contraseña, solo que exista una cuenta activa con ese email en esta empresa. */
-  async validarUsuarioGoogle(email: string) {
-    const usuario = await this.prisma.usuario.findUnique({ where: { email } });
-
-    if (!usuario || !usuario.activo) {
-      throw new UnauthorizedException(
-        'No existe una cuenta activa con este email en esta empresa. Pide a un administrador que te invite primero.',
-      );
-    }
-
-    return usuario;
-  }
-
   async emitirTokens(usuarioId: string, meta: SesionMeta = {}) {
     const accessToken = await this.jwtService.signAsync(
       { sub: usuarioId },

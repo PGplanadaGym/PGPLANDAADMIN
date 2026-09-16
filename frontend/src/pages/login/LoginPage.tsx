@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
-import { API_URL } from '../../lib/axios'
 import { usePublicBranding } from '../../hooks/usePublicBranding'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { ThemeToggle } from '../../components/ui/ThemeToggle'
@@ -83,19 +82,6 @@ export function LoginPage() {
           <PrimaryButton type="submit" disabled={isPending} className="mt-2">
             {isPending ? 'Ingresando…' : 'Ingresar'}
           </PrimaryButton>
-
-          <div className="flex items-center gap-2 text-xs text-[var(--color-text-faint)]">
-            <div className="h-px flex-1 bg-[var(--color-bg-muted)]" />
-            o
-            <div className="h-px flex-1 bg-[var(--color-bg-muted)]" />
-          </div>
-
-          <a
-            href={`${API_URL}/auth/google`}
-            className="flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
-          >
-            Continuar con Google
-          </a>
         </div>
       </form>
     </div>
