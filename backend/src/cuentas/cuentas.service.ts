@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateCategoriaMovimientoDto } from './dto/create-categoria-movimiento.dto';
 import { CreateMovimientoCuentaDto } from './dto/create-movimiento-cuenta.dto';
 import { UpdateMovimientoCuentaDto } from './dto/update-movimiento-cuenta.dto';
@@ -11,10 +10,7 @@ const SELECT_USUARIO_BASICO = { id: true, nombre: true, email: true } as const;
 
 @Injectable()
 export class CuentasService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAllCategorias(empresaId: string, tipo?: string) {
     return this.prisma.categoriaMovimiento.findMany({
@@ -51,7 +47,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
       orderBy: { fecha: 'desc' },
       take: 500,
@@ -65,7 +60,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
     });
     if (!movimiento) {
@@ -100,17 +94,7 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'movimiento_cuenta',
-      entidadId: movimiento.id,
-      detalle: { tipo: dto.tipo, monto: dto.monto },
     });
 
     return movimiento;
@@ -149,16 +133,7 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'movimiento_cuenta',
-      entidadId: id,
     });
 
     return movimiento;
@@ -167,14 +142,6 @@ export class CuentasService {
   async removeMovimiento(empresaId: string, actorId: string, id: string) {
     await this.findOneMovimiento(empresaId, id);
     await this.prisma.movimientoCuenta.delete({ where: { id } });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'movimiento_cuenta',
-      entidadId: id,
-    });
 
     return { success: true };
   }
@@ -185,13 +152,11 @@ export class CuentasService {
 
     const movimientos = await this.prisma.movimientoCuenta.findMany({
       where: { empresaId, fecha: { gte: rangoDesde, lte: rangoHasta } },
-      include: { categoria: true, costeoProyecto: { select: { costoTotalSnapshot: true } } },
+      include: { categoria: true },
     });
 
     let totalIngresos = 0;
     let totalEgresos = 0;
-    let gananciaCosteos = 0;
-    let ventasDeCosteos = 0;
     const porMesMap = new Map<string, { mes: string; ingresos: number; egresos: number }>();
     const porCategoriaMap = new Map<
       string,
@@ -227,14 +192,6 @@ export class CuentasService {
         bucketMes.egresos += monto;
       }
       bucketCategoria.total += monto;
-
-      // Un costeo vendido puede generar dos movimientos (el ingreso de la venta y el
-      // egreso del costo de materiales); la ganancia solo se calcula una vez, a
-      // partir del lado del ingreso.
-      if (movimiento.tipo === 'ingreso' && movimiento.costeoProyecto?.costoTotalSnapshot != null) {
-        ventasDeCosteos += monto;
-        gananciaCosteos += monto - Number(movimiento.costeoProyecto.costoTotalSnapshot);
-      }
     }
 
     return {
@@ -243,8 +200,6 @@ export class CuentasService {
       totalIngresos,
       totalEgresos,
       balance: totalIngresos - totalEgresos,
-      ventasDeCosteos,
-      gananciaCosteos,
       porMes: [...porMesMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v),
       porCategoria: [...porCategoriaMap.values()].sort((a, b) => b.total - a.total),
     };

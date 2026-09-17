@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class CreateClienteDto {
   @ApiProperty()
@@ -30,6 +30,11 @@ export class CreateClienteDto {
   @IsOptional()
   @IsString()
   fotoUrl?: string;
+
+  @ApiProperty({ required: false, enum: ['M', 'F'] })
+  @IsOptional()
+  @IsIn(['M', 'F'])
+  sexo?: string;
 
   @ApiProperty({ required: false, type: Object })
   @IsOptional()

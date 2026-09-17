@@ -9,7 +9,6 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { RolesPermisosModule } from './roles-permisos/roles-permisos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { AuditoriaModule } from './auditoria/auditoria.module';
 import { RecursosModule } from './recursos/recursos.module';
 import { TiposCitaModule } from './tipos-cita/tipos-cita.module';
 import { CitasModule } from './citas/citas.module';
@@ -17,7 +16,6 @@ import { ActivosModule } from './activos/activos.module';
 import { ProductosModule } from './productos/productos.module';
 import { AsistenciaModule } from './asistencia/asistencia.module';
 import { CuentasModule } from './cuentas/cuentas.module';
-import { CosteoModule } from './costeo/costeo.module';
 import { VentasModule } from './ventas/ventas.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -25,6 +23,7 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
 import { SucursalesModule } from './sucursales/sucursales.module';
 import { NominaModule } from './nomina/nomina.module';
 import { MembresiasModule } from './membresias/membresias.module';
+import { MedicionesModule } from './mediciones/mediciones.module';
 
 @Module({
   imports: [
@@ -32,7 +31,6 @@ import { MembresiasModule } from './membresias/membresias.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     CommonModule,
-    AuditoriaModule,
     NotificacionesModule,
     AuthModule,
     EmpresasModule,
@@ -47,13 +45,13 @@ import { MembresiasModule } from './membresias/membresias.module';
     ProductosModule,
     AsistenciaModule,
     CuentasModule,
-    CosteoModule,
     VentasModule,
     DashboardModule,
     ProveedoresModule,
     SucursalesModule,
     NominaModule,
     MembresiasModule,
+    MedicionesModule,
   ],
 })
 export class AppModule {}

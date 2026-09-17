@@ -10,11 +10,8 @@ import {
   Boxes,
   Package,
   Wallet,
-  Calculator,
-  Layers,
   Fingerprint,
   ClipboardList,
-  Activity,
   Building2,
   ShoppingCart,
   Truck,
@@ -104,14 +101,6 @@ export const NAV_ITEMS: NavEntry[] = [
     ],
   },
   {
-    label: 'Costeo',
-    icon: Calculator,
-    children: [
-      { to: '/costeos', label: 'Proyectos', resource: 'costeo', icon: Calculator },
-      { to: '/materiales', label: 'Materiales', resource: 'costeo', icon: Layers },
-    ],
-  },
-  {
     label: 'Asistencia',
     icon: Fingerprint,
     children: [
@@ -130,6 +119,5 @@ export const NAV_ITEMS: NavEntry[] = [
       },
     ],
   },
-  { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
 ]

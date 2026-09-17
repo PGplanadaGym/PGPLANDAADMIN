@@ -15,7 +15,6 @@ export const CATALOGO_PERMISOS = [
   { clave: 'clientes.leer', etiqueta: 'Ver clientes' },
   { clave: 'clientes.crear', etiqueta: 'Crear clientes' },
   { clave: 'clientes.actualizar', etiqueta: 'Editar y archivar clientes' },
-  { clave: 'auditoria.leer', etiqueta: 'Ver historial de actividad' },
   { clave: 'recursos.leer', etiqueta: 'Ver recursos agendables' },
   { clave: 'recursos.crear', etiqueta: 'Crear recursos agendables' },
   { clave: 'recursos.actualizar', etiqueta: 'Editar recursos agendables y su horario' },
@@ -40,10 +39,6 @@ export const CATALOGO_PERMISOS = [
   { clave: 'cuentas.crear', etiqueta: 'Registrar ingresos y egresos' },
   { clave: 'cuentas.actualizar', etiqueta: 'Editar ingresos y egresos' },
   { clave: 'cuentas.eliminar', etiqueta: 'Eliminar ingresos y egresos' },
-  { clave: 'costeo.leer', etiqueta: 'Ver materiales y costeos' },
-  { clave: 'costeo.crear', etiqueta: 'Crear materiales y costeos' },
-  { clave: 'costeo.actualizar', etiqueta: 'Editar costeos' },
-  { clave: 'costeo.eliminar', etiqueta: 'Eliminar costeos' },
   { clave: 'ventas.leer', etiqueta: 'Ver ventas' },
   { clave: 'ventas.crear', etiqueta: 'Registrar ventas' },
   { clave: 'ventas.eliminar', etiqueta: 'Eliminar ventas' },
@@ -64,6 +59,10 @@ export const CATALOGO_PERMISOS = [
   { clave: 'membresias.leer', etiqueta: 'Ver membresías de socios' },
   { clave: 'membresias.crear', etiqueta: 'Renovar membresías' },
   { clave: 'membresias.actualizar', etiqueta: 'Editar planes de membresía' },
+  { clave: 'mediciones.leer', etiqueta: 'Ver seguimiento físico de clientes' },
+  { clave: 'mediciones.crear', etiqueta: 'Registrar mediciones corporales' },
+  { clave: 'mediciones.actualizar', etiqueta: 'Editar mediciones corporales' },
+  { clave: 'mediciones.eliminar', etiqueta: 'Eliminar mediciones corporales' },
 ];
 
 interface SeedEmpresaBaseOptions {

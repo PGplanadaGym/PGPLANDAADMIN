@@ -32,7 +32,6 @@ model Empresa {
   clientes             Cliente[]
   productosServicio    ProductoServicio[]
   ordenes              Orden[]
-  registrosAuditoria   RegistroAuditoria[]
   recursos             Recurso[]
   tiposCita            TipoCita[]
   citas                Cita[]
@@ -43,8 +42,6 @@ model Empresa {
   marcaciones          Marcacion[]
   categoriasMovimiento CategoriaMovimiento[]
   movimientosCuenta    MovimientoCuenta[]
-  materiales           Material[]
-  costeos              CosteoProyecto[]
   notificaciones       Notificacion[]
   proveedores          Proveedor[]
   ordenesCompra        OrdenCompra[]
@@ -53,6 +50,7 @@ model Empresa {
   categoriasProducto   CategoriaProducto[]
   planesMembresia      PlanMembresia[]
   membresias           Membresia[]
+  medicionesCorporales MedicionCorporal[]
 }
 
 model Sucursal {
@@ -101,13 +99,11 @@ model Usuario {
   roles                  UsuarioRol[]
   refreshTokens          RefreshToken[]
   passwordResetTokens    PasswordResetToken[]
-  registrosAuditoria     RegistroAuditoria[]
   activosAsignados       AsignacionActivo[]   @relation("ActivoTitular")
   asignacionesRealizadas AsignacionActivo[]   @relation("ActivoAsignadoPor")
   movimientosStock       MovimientoStock[]
   marcaciones            Marcacion[]
   movimientosCuenta      MovimientoCuenta[]
-  costeos                CosteoProyecto[]
   ordenes                Orden[]
   notificaciones         Notificacion[]
   ordenesCompra          OrdenCompra[]
@@ -116,19 +112,7 @@ model Usuario {
   recursosVinculados     Recurso[]
   mantenimientosActivo   MantenimientoActivo[]
   sucursalesEncargado    Sucursal[]           @relation("SucursalEncargado")
-}
-
-model RegistroAuditoria {
-  id        String   @id @default(uuid())
-  empresaId String
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
-  usuarioId String?
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
-  accion    String // "crear" | "actualizar" | "eliminar" | "activar" | "desactivar"
-  entidad   String // "usuario" | "cliente" | "modulo" | "empresa" | "rol" | "entidad_dinamica:<clave>"
-  entidadId String?
-  detalle   Json?
-  creadoEn  DateTime @default(now())
+  medicionesCorporales   MedicionCorporal[]
 }
 
 model RefreshToken {
@@ -209,15 +193,44 @@ model Cliente {
   longitud       Float?
   fotoUrl        String?
   activo         Boolean  @default(true)
+  // "M" | "F" | null — solo se usa para calcular el % de grasa corporal (fórmula naval,
+  // que difiere por sexo). Opcional: sin este dato simplemente no se calcula ese campo.
+  sexo           String?
   atributosExtra Json?
   creadoEn       DateTime @default(now())
 
-  ordenes           Orden[]
-  citas             Cita[]
-  activosAsignados  AsignacionActivo[]
-  movimientosCuenta MovimientoCuenta[]
-  costeos           CosteoProyecto[]
-  membresias        Membresia[]
+  ordenes             Orden[]
+  citas               Cita[]
+  activosAsignados    AsignacionActivo[]
+  movimientosCuenta   MovimientoCuenta[]
+  membresias          Membresia[]
+  medicionesCorporales MedicionCorporal[]
+}
+
+// ---------- SEGUIMIENTO FÍSICO (mediciones corporales tomadas a mano, ej. gimnasios) ----------
+
+model MedicionCorporal {
+  id               String   @id @default(uuid())
+  empresaId        String
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  clienteId        String
+  cliente          Cliente  @relation(fields: [clienteId], references: [id])
+  fecha            DateTime
+  peso             Decimal  @db.Decimal(5, 2) // kg
+  talla            Decimal  @db.Decimal(5, 2) // cm
+  perimetroCuello  Decimal? @db.Decimal(5, 2) // cm — con cintura(+cadera si es mujer), permite calcular % de grasa
+  perimetroCintura Decimal? @db.Decimal(5, 2)
+  perimetroCadera  Decimal? @db.Decimal(5, 2)
+  perimetroPecho   Decimal? @db.Decimal(5, 2)
+  // % de masa muscular: dato manual opcional (solo si el gimnasio consigue una báscula de
+  // bioimpedancia algún día) — no existe una fórmula confiable con cinta métrica para esto.
+  masaMuscular     Decimal? @db.Decimal(5, 2)
+  notas            String?
+  usuarioId        String
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn         DateTime @default(now())
+
+  @@index([clienteId, fecha])
 }
 
 // ---------- MEMBRESÍAS (suscripciones de socios, ej. gimnasios/academias) ----------
@@ -540,8 +553,6 @@ model MovimientoCuenta {
   cliente           Cliente?            @relation(fields: [clienteId], references: [id])
   usuarioId         String
   usuario           Usuario             @relation(fields: [usuarioId], references: [id])
-  costeoProyectoId  String?
-  costeoProyecto    CosteoProyecto?     @relation(fields: [costeoProyectoId], references: [id], onDelete: Cascade)
   ordenId           String?
   orden             Orden?              @relation(fields: [ordenId], references: [id], onDelete: Cascade)
   ordenCompraId     String?
@@ -559,66 +570,6 @@ model MovimientoCuenta {
   membresiaId       String?
   membresia         Membresia?          @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
   creadoEn          DateTime            @default(now())
-}
-
-// ---------- COSTEO (calculadora de costos por partes y materiales, ej. cosplay) ----------
-
-model Material {
-  id             String   @id @default(uuid())
-  empresaId      String
-  empresa        Empresa  @relation(fields: [empresaId], references: [id])
-  nombre         String
-  calidad        String?
-  unidadMedida   String
-  precioUnitario Decimal  @db.Decimal(10, 2)
-  activo         Boolean  @default(true)
-  creadoEn       DateTime @default(now())
-
-  lineas CosteoParteMaterial[]
-}
-
-model CosteoProyecto {
-  id                 String    @id @default(uuid())
-  empresaId          String
-  empresa            Empresa   @relation(fields: [empresaId], references: [id])
-  nombre             String
-  clienteId          String?
-  cliente            Cliente?  @relation(fields: [clienteId], references: [id])
-  tarifaHora         Decimal   @db.Decimal(10, 2)
-  margenPorcentaje   Decimal   @default(0) @db.Decimal(6, 2)
-  otrosCostos        Decimal   @default(0) @db.Decimal(10, 2)
-  notas              String?
-  estado             String    @default("borrador") // "borrador" | "vendido"
-  precioVenta        Decimal?  @db.Decimal(10, 2)
-  costoTotalSnapshot Decimal?  @db.Decimal(10, 2) // costo real al momento de vender, para calcular la ganancia sin recalcular partes/materiales
-  fechaVenta         DateTime?
-  usuarioId          String
-  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
-  creadoEn           DateTime  @default(now())
-
-  partes            CosteoParte[]
-  movimientosCuenta MovimientoCuenta[]
-}
-
-model CosteoParte {
-  id         String         @id @default(uuid())
-  proyectoId String
-  proyecto   CosteoProyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
-  nombre     String
-  horas      Decimal        @default(0) @db.Decimal(6, 2)
-  orden      Int            @default(0)
-
-  materiales CosteoParteMaterial[]
-}
-
-model CosteoParteMaterial {
-  id                     String      @id @default(uuid())
-  parteId                String
-  parte                  CosteoParte @relation(fields: [parteId], references: [id], onDelete: Cascade)
-  materialId             String
-  material               Material    @relation(fields: [materialId], references: [id])
-  cantidad               Decimal     @db.Decimal(10, 2)
-  precioUnitarioSnapshot Decimal     @db.Decimal(10, 2)
 }
 
 // ---------- NOTIFICACIONES (centro de notificaciones dentro de la app) ----------

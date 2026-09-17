@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateCategoriaActivoDto } from './dto/create-categoria-activo.dto';
 import { UpdateCategoriaActivoDto } from './dto/update-categoria-activo.dto';
 import { CreateActivoDto } from './dto/create-activo.dto';
@@ -40,10 +39,7 @@ type ActivoConIncludes = Prisma.ActivoGetPayload<{ include: typeof INCLUDE_ACTIV
 
 @Injectable()
 export class ActivosService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private lanzarErrorCodigoInternoDuplicado(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -165,15 +161,6 @@ export class ActivosService {
       })
       .catch((error) => this.lanzarErrorCodigoInternoDuplicado(error));
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'activo',
-      entidadId: activo.id,
-      detalle: { nombre: activo.nombre },
-    });
-
     // el gasto de compra se registra solo, junto con el resto de movimientos de Cuentas.
     if (dto.valorCompra) {
       const categoriaEgreso = await this.prisma.categoriaMovimiento.upsert({
@@ -255,19 +242,6 @@ export class ActivosService {
       })
       .catch((error) => this.lanzarErrorCodigoInternoDuplicado(error));
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'activo',
-      entidadId: id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
-      },
-    });
-
     return this.findOneActivo(empresaId, id);
   }
 
@@ -284,15 +258,6 @@ export class ActivosService {
     }
 
     await this.prisma.activo.delete({ where: { id } });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'activo',
-      entidadId: id,
-      detalle: { nombre: activo.nombre },
-    });
   }
 
   async findHistorial(empresaId: string, activoId: string) {
@@ -398,15 +363,6 @@ export class ActivosService {
       this.asignarActivoEnTx(tx, empresaId, actorId, activo, dto, nuevaSucursalId),
     );
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'activo',
-      entidadId: activoId,
-      detalle: { asignadoA: dto.usuarioId ?? dto.clienteId },
-    });
-
     return this.findOneActivo(empresaId, activoId);
   }
 
@@ -428,17 +384,6 @@ export class ActivosService {
         await this.asignarActivoEnTx(tx, empresaId, actorId, activo, dto, nuevaSucursalId);
       }
     });
-
-    for (const activo of activos) {
-      await this.auditoriaService.registrar({
-        empresaId,
-        usuarioId: actorId,
-        accion: 'actualizar',
-        entidad: 'activo',
-        entidadId: activo.id,
-        detalle: { asignadoA: dto.usuarioId ?? dto.clienteId, asignacionMasiva: true },
-      });
-    }
 
     return this.prisma.activo.findMany({
       where: { id: { in: dto.activoIds } },
@@ -474,15 +419,6 @@ export class ActivosService {
       }),
     ]);
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'activo',
-      entidadId: activoId,
-      detalle: { devuelto: true },
-    });
-
     return this.findOneActivo(empresaId, activoId);
   }
 
@@ -513,17 +449,6 @@ export class ActivosService {
         });
       }
     });
-
-    for (const asignacion of asignaciones) {
-      await this.auditoriaService.registrar({
-        empresaId,
-        usuarioId: actorId,
-        accion: 'actualizar',
-        entidad: 'activo',
-        entidadId: asignacion.activoId,
-        detalle: { devuelto: true, devolucionMasiva: true, deUsuarioId: dto.usuarioId },
-      });
-    }
 
     return { cantidad: asignaciones.length };
   }
@@ -568,23 +493,6 @@ export class ActivosService {
       });
 
       await this.asignarActivoEnTx(tx, empresaId, actorId, activoNuevo, destino, nuevaSucursalId);
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'activo',
-      entidadId: activoViejoId,
-      detalle: { reemplazadoPor: dto.activoNuevoId, motivo: dto.motivo, estadoFinal: estadoFinalViejo },
-    });
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'activo',
-      entidadId: dto.activoNuevoId,
-      detalle: { reemplazaA: activoViejoId, motivo: dto.motivo },
     });
 
     return {

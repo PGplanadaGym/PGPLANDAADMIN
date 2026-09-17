@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateProveedorDto } from './dto/create-proveedor.dto';
 import { UpdateProveedorDto } from './dto/update-proveedor.dto';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
@@ -21,10 +20,7 @@ const INCLUDE_ORDEN_COMPRA = {
 
 @Injectable()
 export class ProveedoresService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAllProveedores(empresaId: string, incluirInactivos = false) {
     return this.prisma.proveedor.findMany({
@@ -158,15 +154,6 @@ export class ProveedoresService {
       return orden.id;
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'orden-compra',
-      entidadId: ordenId,
-      detalle: { total },
-    });
-
     return this.findOneOrdenCompra(empresaId, ordenId);
   }
 
@@ -294,15 +281,6 @@ export class ProveedoresService {
       return todoCompleto;
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'orden-compra',
-      entidadId: id,
-      detalle: { recibidoAhora: montoRecibidoAhora, completa },
-    });
-
     return this.findOneOrdenCompra(empresaId, id);
   }
 
@@ -317,15 +295,6 @@ export class ProveedoresService {
     await this.prisma.ordenCompra.update({
       where: { id },
       data: { estado: 'cancelada' },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'orden-compra',
-      entidadId: id,
-      detalle: { cancelada: true },
     });
 
     return this.findOneOrdenCompra(empresaId, id);
@@ -363,14 +332,6 @@ export class ProveedoresService {
 
       // El egreso vinculado en Cuentas se borra en cascada (FK ordenCompraId con onDelete: Cascade).
       await tx.ordenCompra.delete({ where: { id } });
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'orden-compra',
-      entidadId: id,
     });
 
     return { success: true };

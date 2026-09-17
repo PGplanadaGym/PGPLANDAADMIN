@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   CalendarDays,
   ShoppingBag,
-  Calculator,
   Wallet,
   Boxes,
   Pencil,
@@ -21,6 +20,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { MapaSeleccionUbicacion } from '../../components/ui/MapaSeleccionUbicacion'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
+import { SeguimientoFisico } from './SeguimientoFisico'
 
 interface Cliente {
   id: string
@@ -32,6 +32,7 @@ interface Cliente {
   latitud: number | null
   longitud: number | null
   activo: boolean
+  sexo: string | null
 }
 
 function mensajeError(error: unknown, fallback: string) {
@@ -60,14 +61,6 @@ interface Orden {
   items: OrdenItem[]
 }
 
-interface Costeo {
-  id: string
-  nombre: string
-  estado: string
-  precioVenta: string | null
-  creadoEn: string
-}
-
 interface MovimientoCuenta {
   id: string
   tipo: string
@@ -87,7 +80,6 @@ interface Perfil {
   cliente: Cliente
   citas: Cita[]
   ordenes: Orden[]
-  costeos: Costeo[]
   movimientosCuenta: MovimientoCuenta[]
   activosAsignados: ActivoAsignado[]
   resumen: { totalCitas: number; totalGastado: number; activosEnPosesion: number }
@@ -200,7 +192,7 @@ export function ClientePerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Cliente no encontrado</p>
   }
 
-  const { cliente, citas, ordenes, costeos, movimientosCuenta, activosAsignados, resumen } = perfil
+  const { cliente, citas, ordenes, movimientosCuenta, activosAsignados, resumen } = perfil
 
   return (
     <div>
@@ -320,6 +312,8 @@ export function ClientePerfilPage() {
         </div>
       </div>
 
+      <SeguimientoFisico clienteId={cliente.id} sexo={cliente.sexo} />
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {citas.length > 0 && (
           <Seccion icono={CalendarDays} titulo="Citas recientes">
@@ -344,20 +338,6 @@ export function ClientePerfilPage() {
                 <span className="text-[var(--color-text-muted)]">
                   · {new Date(orden.creadoEn).toLocaleDateString()} ·{' '}
                   {orden.items.map((i) => `${i.cantidad}× ${i.producto.nombre}`).join(', ')}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-        {costeos.length > 0 && (
-          <Seccion icono={Calculator} titulo="Costeos">
-            {costeos.map((costeo) => (
-              <div key={costeo.id} className="text-sm">
-                <span className="text-[var(--color-text)]">{costeo.nombre}</span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {costeo.estado}
-                  {costeo.precioVenta ? ` · $${Number(costeo.precioVenta).toFixed(2)}` : ''}
                 </span>
               </div>
             ))}
@@ -397,7 +377,6 @@ export function ClientePerfilPage() {
 
       {citas.length === 0 &&
         ordenes.length === 0 &&
-        costeos.length === 0 &&
         movimientosCuenta.length === 0 &&
         activosAsignados.length === 0 && (
           <p className="mt-6 text-sm text-[var(--color-text-faint)]">

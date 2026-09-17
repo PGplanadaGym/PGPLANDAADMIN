@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
@@ -21,7 +20,6 @@ const INCLUDE_PRODUCTO = {
 export class ProductosService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
@@ -91,15 +89,6 @@ export class ProductosService {
       include: INCLUDE_PRODUCTO,
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'producto',
-      entidadId: producto.id,
-      detalle: { nombre: producto.nombre },
-    });
-
     return producto;
   }
 
@@ -119,19 +108,6 @@ export class ProductosService {
       where: { id },
       data: { ...dto, categoriaId: dto.categoriaId === '' ? null : dto.categoriaId },
       include: INCLUDE_PRODUCTO,
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'producto',
-      entidadId: id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
-      },
     });
 
     // Si al editar se sube el stock mínimo (o el producto ya estaba bajo de stock) puede
@@ -284,15 +260,6 @@ export class ProductosService {
         data: { stock: nuevoStock },
       }),
     ]);
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'producto',
-      entidadId: productoId,
-      detalle: { tipo: dto.tipo, cantidad: delta, stockResultante: nuevoStock },
-    });
 
     await this.notificarSiStockBajo(empresaId, producto, nuevoStock);
 

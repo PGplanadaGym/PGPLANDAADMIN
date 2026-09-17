@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { CosteoProyecto, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -35,10 +34,7 @@ type AsignacionConActivo = Prisma.AsignacionActivoGetPayload<{
 
 @Injectable()
 export class ClientesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(empresaId: string) {
     return this.prisma.cliente.findMany({ where: { empresaId, activo: true } });
@@ -66,17 +62,9 @@ export class ClientesService {
         notas: dto.notas,
         etiqueta: dto.etiqueta,
         fotoUrl: dto.fotoUrl,
+        sexo: dto.sexo,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'cliente',
-      entidadId: cliente.id,
-      detalle: { nombre: cliente.nombre },
     });
 
     return cliente;
@@ -84,21 +72,20 @@ export class ClientesService {
 
   /**
    * `permisosVisor` son los permisos de quien hace la petición (no reglas sobre el cliente):
-   * cada sección del perfil viene de un módulo distinto (Citas, Ventas, Costeo, Cuentas,
-   * Activos), así que solo se incluye si el visor tiene el `.leer` de ese módulo — de lo
-   * contrario alguien con solo `clientes.leer` (ej. recepción) vería ventas, costeos y
-   * movimientos financieros de cualquier cliente sin tener permiso sobre esos módulos.
+   * cada sección del perfil viene de un módulo distinto (Citas, Ventas, Cuentas, Activos),
+   * así que solo se incluye si el visor tiene el `.leer` de ese módulo — de lo contrario
+   * alguien con solo `clientes.leer` (ej. recepción) vería ventas y movimientos financieros
+   * de cualquier cliente sin tener permiso sobre esos módulos.
    */
   async findPerfil(empresaId: string, id: string, permisosVisor: string[]) {
     const cliente = await this.findOne(empresaId, id);
 
     const puedeVerCitas = permisosVisor.includes('citas.leer');
     const puedeVerVentas = permisosVisor.includes('ventas.leer');
-    const puedeVerCosteos = permisosVisor.includes('costeo.leer');
     const puedeVerCuentas = permisosVisor.includes('cuentas.leer');
     const puedeVerActivos = permisosVisor.includes('activos.leer');
 
-    const [totalCitas, citas, ordenes, costeos, movimientosCuenta, activosAsignados] =
+    const [totalCitas, citas, ordenes, movimientosCuenta, activosAsignados] =
       await Promise.all([
         puedeVerCitas
           ? this.prisma.cita.count({ where: { empresaId, clienteId: id } })
@@ -119,13 +106,6 @@ export class ClientesService {
               take: 10,
             })
           : Promise.resolve<OrdenConItems[]>([]),
-        puedeVerCosteos
-          ? this.prisma.costeoProyecto.findMany({
-              where: { empresaId, clienteId: id },
-              orderBy: { creadoEn: 'desc' },
-              take: 10,
-            })
-          : Promise.resolve<CosteoProyecto[]>([]),
         puedeVerCuentas
           ? this.prisma.movimientoCuenta.findMany({
               where: { empresaId, clienteId: id },
@@ -146,20 +126,16 @@ export class ClientesService {
       (suma, orden) => suma + Number(orden.total),
       0,
     );
-    const totalGastadoCosteos = costeos
-      .filter((c) => c.estado === 'vendido' && c.precioVenta != null)
-      .reduce((suma, c) => suma + Number(c.precioVenta), 0);
 
     return {
       cliente,
       citas,
       ordenes,
-      costeos,
       movimientosCuenta,
       activosAsignados,
       resumen: {
         totalCitas,
-        totalGastado: totalGastadoVentas + totalGastadoCosteos,
+        totalGastado: totalGastadoVentas,
         activosEnPosesion: activosAsignados.length,
       },
     };
@@ -173,19 +149,6 @@ export class ClientesService {
       data: {
         ...dto,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
-      },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'cliente',
-      entidadId: cliente.id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
       },
     });
 

@@ -57,20 +57,6 @@ CREATE TABLE "Usuario" (
 );
 
 -- CreateTable
-CREATE TABLE "RegistroAuditoria" (
-    "id" TEXT NOT NULL,
-    "empresaId" TEXT NOT NULL,
-    "usuarioId" TEXT,
-    "accion" TEXT NOT NULL,
-    "entidad" TEXT NOT NULL,
-    "entidadId" TEXT,
-    "detalle" JSONB,
-    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "RegistroAuditoria_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "RefreshToken" (
     "id" TEXT NOT NULL,
     "usuarioId" TEXT NOT NULL,
@@ -146,10 +132,31 @@ CREATE TABLE "Cliente" (
     "longitud" DOUBLE PRECISION,
     "fotoUrl" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
+    "sexo" TEXT,
     "atributosExtra" JSONB,
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Cliente_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicionCorporal" (
+    "id" TEXT NOT NULL,
+    "empresaId" TEXT NOT NULL,
+    "clienteId" TEXT NOT NULL,
+    "fecha" TIMESTAMP(3) NOT NULL,
+    "peso" DECIMAL(5,2) NOT NULL,
+    "talla" DECIMAL(5,2) NOT NULL,
+    "perimetroCuello" DECIMAL(5,2),
+    "perimetroCintura" DECIMAL(5,2),
+    "perimetroCadera" DECIMAL(5,2),
+    "perimetroPecho" DECIMAL(5,2),
+    "masaMuscular" DECIMAL(5,2),
+    "notas" TEXT,
+    "usuarioId" TEXT NOT NULL,
+    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MedicionCorporal_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -421,7 +428,6 @@ CREATE TABLE "MovimientoCuenta" (
     "comprobanteUrl" TEXT,
     "clienteId" TEXT,
     "usuarioId" TEXT NOT NULL,
-    "costeoProyectoId" TEXT,
     "ordenId" TEXT,
     "ordenCompraId" TEXT,
     "pagoNominaId" TEXT,
@@ -433,62 +439,6 @@ CREATE TABLE "MovimientoCuenta" (
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "MovimientoCuenta_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Material" (
-    "id" TEXT NOT NULL,
-    "empresaId" TEXT NOT NULL,
-    "nombre" TEXT NOT NULL,
-    "calidad" TEXT,
-    "unidadMedida" TEXT NOT NULL,
-    "precioUnitario" DECIMAL(10,2) NOT NULL,
-    "activo" BOOLEAN NOT NULL DEFAULT true,
-    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "Material_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CosteoProyecto" (
-    "id" TEXT NOT NULL,
-    "empresaId" TEXT NOT NULL,
-    "nombre" TEXT NOT NULL,
-    "clienteId" TEXT,
-    "tarifaHora" DECIMAL(10,2) NOT NULL,
-    "margenPorcentaje" DECIMAL(6,2) NOT NULL DEFAULT 0,
-    "otrosCostos" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "notas" TEXT,
-    "estado" TEXT NOT NULL DEFAULT 'borrador',
-    "precioVenta" DECIMAL(10,2),
-    "costoTotalSnapshot" DECIMAL(10,2),
-    "fechaVenta" TIMESTAMP(3),
-    "usuarioId" TEXT NOT NULL,
-    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "CosteoProyecto_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CosteoParte" (
-    "id" TEXT NOT NULL,
-    "proyectoId" TEXT NOT NULL,
-    "nombre" TEXT NOT NULL,
-    "horas" DECIMAL(6,2) NOT NULL DEFAULT 0,
-    "orden" INTEGER NOT NULL DEFAULT 0,
-
-    CONSTRAINT "CosteoParte_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CosteoParteMaterial" (
-    "id" TEXT NOT NULL,
-    "parteId" TEXT NOT NULL,
-    "materialId" TEXT NOT NULL,
-    "cantidad" DECIMAL(10,2) NOT NULL,
-    "precioUnitarioSnapshot" DECIMAL(10,2) NOT NULL,
-
-    CONSTRAINT "CosteoParteMaterial_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -598,6 +548,9 @@ CREATE UNIQUE INDEX "Rol_empresaId_nombre_key" ON "Rol"("empresaId", "nombre");
 CREATE UNIQUE INDEX "Permiso_clave_key" ON "Permiso"("clave");
 
 -- CreateIndex
+CREATE INDEX "MedicionCorporal_clienteId_fecha_idx" ON "MedicionCorporal"("clienteId", "fecha");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PlanMembresia_empresaId_nombre_key" ON "PlanMembresia"("empresaId", "nombre");
 
 -- CreateIndex
@@ -640,12 +593,6 @@ ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_empresaId_fkey" FOREIGN KEY ("empr
 ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_sucursalId_fkey" FOREIGN KEY ("sucursalId") REFERENCES "Sucursal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "RegistroAuditoria" ADD CONSTRAINT "RegistroAuditoria_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "RegistroAuditoria" ADD CONSTRAINT "RegistroAuditoria_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -668,6 +615,15 @@ ALTER TABLE "RolPermiso" ADD CONSTRAINT "RolPermiso_permisoId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Cliente" ADD CONSTRAINT "Cliente_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PlanMembresia" ADD CONSTRAINT "PlanMembresia_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -805,9 +761,6 @@ ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_clienteId_fkey" 
 ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_costeoProyectoId_fkey" FOREIGN KEY ("costeoProyectoId") REFERENCES "CosteoProyecto"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_ordenId_fkey" FOREIGN KEY ("ordenId") REFERENCES "Orden"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -830,27 +783,6 @@ ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_sucursalId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "MovimientoCuenta" ADD CONSTRAINT "MovimientoCuenta_membresiaId_fkey" FOREIGN KEY ("membresiaId") REFERENCES "Membresia"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Material" ADD CONSTRAINT "Material_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoProyecto" ADD CONSTRAINT "CosteoProyecto_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoProyecto" ADD CONSTRAINT "CosteoProyecto_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoProyecto" ADD CONSTRAINT "CosteoProyecto_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoParte" ADD CONSTRAINT "CosteoParte_proyectoId_fkey" FOREIGN KEY ("proyectoId") REFERENCES "CosteoProyecto"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoParteMaterial" ADD CONSTRAINT "CosteoParteMaterial_parteId_fkey" FOREIGN KEY ("parteId") REFERENCES "CosteoParte"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CosteoParteMaterial" ADD CONSTRAINT "CosteoParteMaterial_materialId_fkey" FOREIGN KEY ("materialId") REFERENCES "Material"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Notificacion" ADD CONSTRAINT "Notificacion_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { RenovarMembresiaDto } from './dto/renovar-membresia.dto';
 import { EditarVencimientoMembresiaDto } from './dto/editar-vencimiento-membresia.dto';
 
@@ -15,10 +14,7 @@ function diasEntre(desde: Date, hasta: Date) {
 
 @Injectable()
 export class MembresiasService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findEstadoPorEmpresa(empresaId: string) {
     const [clientes, membresias] = await Promise.all([
@@ -114,19 +110,6 @@ export class MembresiasService {
       data: { empresaId, clienteId, planId: plan.id, fechaInicio, fechaVencimiento },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'membresia',
-      entidadId: membresia.id,
-      detalle: {
-        cliente: cliente.nombre,
-        plan: plan.nombre,
-        fechaVencimiento: fechaVencimiento.toISOString(),
-      },
-    });
-
     // el ingreso se registra solo, junto con el resto de movimientos de Cuentas.
     const categoria = await this.prisma.categoriaMovimiento.upsert({
       where: { empresaId_tipo_nombre: { empresaId, tipo: 'ingreso', nombre: 'Membresías' } },
@@ -176,19 +159,6 @@ export class MembresiasService {
     const actualizada = await this.prisma.membresia.update({
       where: { id: membresiaId },
       data: { fechaVencimiento },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'membresia',
-      entidadId: membresia.id,
-      detalle: {
-        cliente: membresia.cliente.nombre,
-        fechaVencimientoAnterior: fechaAnterior.toISOString(),
-        fechaVencimientoNueva: fechaVencimiento.toISOString(),
-      },
     });
 
     return actualizada;

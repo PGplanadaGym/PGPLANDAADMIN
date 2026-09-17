@@ -18,7 +18,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Backoffice Core API')
+    .setTitle('PG Planada Gym API')
     .setDescription('API del núcleo de administración reutilizable')
     .setVersion('0.1.0')
     .addBearerAuth()

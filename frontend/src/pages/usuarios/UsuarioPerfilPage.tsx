@@ -7,7 +7,6 @@ import {
   Boxes,
   Fingerprint,
   Wallet2,
-  Activity,
   Clock,
   Pencil,
   Copy,
@@ -68,21 +67,12 @@ interface PagoNomina {
   fechaPago: string
 }
 
-interface AccionAuditoria {
-  id: string
-  accion: string
-  entidad: string
-  entidadId: string | null
-  creadoEn: string
-}
-
 interface PerfilUsuario {
   usuario: Usuario
   activosAsignados: ActivoAsignado[]
   marcaciones: Marcacion[]
   pagosNomina: PagoNomina[]
   ultimoInicioSesion: string | null
-  accionesRecientes: AccionAuditoria[]
 }
 
 const ETIQUETA_MARCACION: Record<string, string> = {
@@ -90,21 +80,6 @@ const ETIQUETA_MARCACION: Record<string, string> = {
   salida: 'Salida',
   inicio_comida: 'Inicio de comida',
   fin_comida: 'Fin de comida',
-}
-
-const ACCION_LABEL: Record<string, string> = {
-  crear: 'Creó',
-  actualizar: 'Actualizó',
-  eliminar: 'Eliminó',
-  activar: 'Activó',
-  desactivar: 'Desactivó',
-}
-
-function entidadLegible(entidad: string) {
-  if (entidad.startsWith('entidad_dinamica:')) {
-    return `entidad "${entidad.split(':')[1]}"`
-  }
-  return entidad
 }
 
 function Seccion({
@@ -297,8 +272,7 @@ export function UsuarioPerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Usuario no encontrado</p>
   }
 
-  const { usuario, activosAsignados, marcaciones, pagosNomina, ultimoInicioSesion, accionesRecientes } =
-    perfil
+  const { usuario, activosAsignados, marcaciones, pagosNomina, ultimoInicioSesion } = perfil
 
   return (
     <div>
@@ -567,26 +541,11 @@ export function UsuarioPerfilPage() {
           </Seccion>
         )}
 
-        {accionesRecientes.length > 0 && (
-          <Seccion icono={Activity} titulo="Actividad reciente">
-            {accionesRecientes.map((accion) => (
-              <div key={accion.id} className="text-sm">
-                <span className="text-[var(--color-text)]">
-                  {ACCION_LABEL[accion.accion] ?? accion.accion}
-                </span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  {entidadLegible(accion.entidad)} · {tiempoRelativo(accion.creadoEn)}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
       </div>
 
       {activosAsignados.length === 0 &&
         marcaciones.length === 0 &&
-        pagosNomina.length === 0 &&
-        accionesRecientes.length === 0 && (
+        pagosNomina.length === 0 && (
           <p className="mt-6 text-sm text-[var(--color-text-faint)]">
             Este usuario todavía no tiene actividad registrada.
           </p>

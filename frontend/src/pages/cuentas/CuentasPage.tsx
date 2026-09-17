@@ -77,15 +77,12 @@ interface Movimiento {
   categoria: Categoria
   cliente: ClienteBasico | null
   usuario: { id: string; nombre: string }
-  costeoProyecto: { id: string; nombre: string; costoTotalSnapshot: string | null } | null
 }
 
 interface Resumen {
   totalIngresos: number
   totalEgresos: number
   balance: number
-  ventasDeCosteos: number
-  gananciaCosteos: number
   porMes: { mes: string; ingresos: number; egresos: number }[]
   porCategoria: { categoriaId: string; nombre: string; tipo: string; total: number }[]
 }
@@ -424,7 +421,7 @@ export function CuentasPage() {
 
       {resumen && (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-4">
               <p className="text-sm text-[var(--color-text-muted)]">Ingresos</p>
               <p className="mt-1 text-2xl font-bold text-[var(--color-serie-ingreso)]">
@@ -447,17 +444,6 @@ export function CuentasPage() {
                 {resumen.balance >= 0 ? '▲ ' : '▼ '}
                 {formatoMoneda(resumen.balance)}
               </p>
-            </div>
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-4">
-              <p className="text-sm text-[var(--color-text-muted)]">Ganancia de ventas (costeo)</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-600">
-                {formatoMoneda(resumen.gananciaCosteos)}
-              </p>
-              {resumen.ventasDeCosteos > 0 && (
-                <p className="mt-0.5 text-xs text-[var(--color-text-faint)]">
-                  sobre {formatoMoneda(resumen.ventasDeCosteos)} vendidos
-                </p>
-              )}
             </div>
           </div>
 
@@ -576,11 +562,6 @@ export function CuentasPage() {
                 <td className="px-4 py-2">{m.categoria.nombre}</td>
                 <td className="px-4 py-2 text-[var(--color-text-muted)]">
                   {m.descripcion ?? '—'}
-                  {m.costeoProyecto?.costoTotalSnapshot != null && (
-                    <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                      +{formatoMoneda(Number(m.monto) - Number(m.costeoProyecto.costoTotalSnapshot))}
-                    </span>
-                  )}
                 </td>
                 <td className="px-4 py-2 font-medium">{formatoMoneda(Number(m.monto))}</td>
                 <td className="px-4 py-2">

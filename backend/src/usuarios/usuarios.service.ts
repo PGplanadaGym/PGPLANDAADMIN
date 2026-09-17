@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { EmailService } from '../auth/email.service';
 import { generarTokenPlano, hashToken } from '../common/token.util';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -35,7 +34,6 @@ const USUARIO_SELECT = {
 export class UsuariosService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
     private readonly emailService: EmailService,
   ) {}
 
@@ -95,15 +93,6 @@ export class UsuariosService {
 
     await this.enviarInvitacion(usuario.id, usuario.nombre, usuario.email);
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'usuario',
-      entidadId: usuario.id,
-      detalle: { nombre: usuario.nombre, email: usuario.email },
-    });
-
     return this.findOne(empresaId, usuario.id);
   }
 
@@ -148,15 +137,6 @@ export class UsuariosService {
       usuario.email,
     );
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'usuario',
-      entidadId: usuario.id,
-      detalle: { accion: 'reenviar_invitacion' },
-    });
-
     // Se devuelve el link también para que el admin pueda copiarlo y compartirlo a mano
     // (ej. por WhatsApp) si el correo no llega o queda en spam.
     return { success: true, activarUrl };
@@ -196,15 +176,6 @@ export class UsuariosService {
           ]),
     ]);
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: activo ? 'activar' : 'desactivar',
-      entidad: 'usuario',
-      entidadId: usuarioId,
-      detalle: { nombre: usuario.nombre },
-    });
-
     return this.findOne(empresaId, usuarioId);
   }
 
@@ -213,21 +184,12 @@ export class UsuariosService {
    * - `pagosNomina` trae sueldos, así que solo se incluye si el visor tiene `nomina.leer` —
    *   de lo contrario cualquier rol con `usuarios.leer` (ej. "ver directorio de empleados")
    *   podría ver el historial salarial de todos sin tener permiso de Nómina.
-   * - `accionesRecientes` viene del mismo log que la página de Auditoría, así que se protege
-   *   igual: solo si el visor tiene `auditoria.leer`.
    */
   async perfilCompleto(empresaId: string, id: string, permisosVisor: string[]) {
     const usuario = await this.findOne(empresaId, id);
     const puedeVerNomina = permisosVisor.includes('nomina.leer');
-    const puedeVerAuditoria = permisosVisor.includes('auditoria.leer');
 
-    const [
-      activosAsignados,
-      marcaciones,
-      pagosNomina,
-      ultimaSesion,
-      accionesRecientes,
-    ] = await Promise.all([
+    const [activosAsignados, marcaciones, pagosNomina, ultimaSesion] = await Promise.all([
       this.prisma.asignacionActivo.findMany({
         where: { empresaId, usuarioId: id, fechaDevolucion: null },
         include: { activo: { select: { id: true, nombre: true } } },
@@ -250,13 +212,6 @@ export class UsuariosService {
         orderBy: { inicioSesionEn: 'desc' },
         select: { inicioSesionEn: true },
       }),
-      puedeVerAuditoria
-        ? this.prisma.registroAuditoria.findMany({
-            where: { empresaId, usuarioId: id },
-            orderBy: { creadoEn: 'desc' },
-            take: 10,
-          })
-        : Promise.resolve([]),
     ]);
 
     return {
@@ -265,7 +220,6 @@ export class UsuariosService {
       marcaciones,
       pagosNomina,
       ultimoInicioSesion: ultimaSesion?.inicioSesionEn ?? null,
-      accionesRecientes,
     };
   }
 
@@ -290,19 +244,6 @@ export class UsuariosService {
         cargo: dto.cargo,
         telefono: dto.telefono,
         bio: dto.bio,
-      },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'usuario',
-      entidadId: usuarioId,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
       },
     });
 
@@ -361,15 +302,6 @@ export class UsuariosService {
       }),
     ]);
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'usuario',
-      entidadId: usuarioId,
-      detalle: { rolIds: dto.rolIds },
-    });
-
     return this.findOne(empresaId, usuarioId);
   }
 
@@ -398,15 +330,6 @@ export class UsuariosService {
     await this.prisma.usuario.update({
       where: { id: usuarioId },
       data: { sucursalId },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'usuario',
-      entidadId: usuarioId,
-      detalle: { sucursalId },
     });
 
     return this.findOne(empresaId, usuarioId);

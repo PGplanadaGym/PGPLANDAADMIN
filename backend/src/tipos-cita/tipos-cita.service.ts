@@ -1,15 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateTipoCitaDto } from './dto/create-tipo-cita.dto';
 import { UpdateTipoCitaDto } from './dto/update-tipo-cita.dto';
 
 @Injectable()
 export class TiposCitaService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private readonly includeTipoCita = {
     recursos: { select: { id: true, nombre: true } },
@@ -49,15 +45,6 @@ export class TiposCitaService {
       },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'tipo_cita',
-      entidadId: tipoCita.id,
-      detalle: { nombre: tipoCita.nombre },
-    });
-
     return tipoCita;
   }
 
@@ -65,19 +52,6 @@ export class TiposCitaService {
     await this.findOne(empresaId, id);
 
     const tipoCita = await this.prisma.tipoCita.update({ where: { id }, data: dto });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'tipo_cita',
-      entidadId: id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
-      },
-    });
 
     return tipoCita;
   }

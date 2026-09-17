@@ -21,7 +21,6 @@ import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
-import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
 import { CitasPage } from './pages/citas/CitasPage'
 import { RecursosPage } from './pages/recursos/RecursosPage'
 import { TiposCitaPage } from './pages/tipos-cita/TiposCitaPage'
@@ -31,9 +30,6 @@ import { AsistenciaPage } from './pages/asistencia/AsistenciaPage'
 import { AsistenciaReportePage } from './pages/asistencia/AsistenciaReportePage'
 import { RolesPermisosPage } from './pages/roles/RolesPermisosPage'
 import { CuentasPage } from './pages/cuentas/CuentasPage'
-import { MaterialesPage } from './pages/costeo/MaterialesPage'
-import { CosteosPage } from './pages/costeo/CosteosPage'
-import { CosteoEditorPage } from './pages/costeo/CosteoEditorPage'
 import { VentasPage } from './pages/ventas/VentasPage'
 import { ProveedoresPage } from './pages/proveedores/ProveedoresPage'
 import { ProveedorPerfilPage } from './pages/proveedores/ProveedorPerfilPage'
@@ -76,12 +72,6 @@ function App() {
           meta: { label: 'Cuentas' },
         },
         {
-          name: 'costeo',
-          list: '/costeos',
-          create: '/costeos/nuevo',
-          meta: { label: 'Costeo' },
-        },
-        {
           name: 'clientes',
           list: '/clientes',
           create: '/clientes/nuevo',
@@ -92,11 +82,6 @@ function App() {
           name: 'empresas',
           list: '/empresa',
           meta: { label: 'Mi empresa' },
-        },
-        {
-          name: 'auditoria',
-          list: '/auditoria',
-          meta: { label: 'Actividad' },
         },
         {
           name: 'citas',
@@ -184,15 +169,10 @@ function App() {
           <Route path="/usuarios/:id" element={<UsuarioPerfilPage />} />
           <Route path="/roles" element={<RolesPermisosPage />} />
           <Route path="/cuentas" element={<CuentasPage />} />
-          <Route path="/materiales" element={<MaterialesPage />} />
-          <Route path="/costeos" element={<CosteosPage />} />
-          <Route path="/costeos/nuevo" element={<CosteoEditorPage />} />
-          <Route path="/costeos/:id" element={<CosteoEditorPage />} />
           <Route path="/clientes" element={<ClientesListPage />} />
           <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
           <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
-          <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />
           <Route path="/recursos" element={<RecursosPage />} />
           <Route path="/tipos-cita" element={<TiposCitaPage />} />
