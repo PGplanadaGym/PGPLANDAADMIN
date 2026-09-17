@@ -253,7 +253,7 @@ export function SeguimientoFisico({
         </p>
       ) : (
         <>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div>
               <p className="text-xs text-[var(--color-text-muted)]">Peso actual</p>
               <p className="text-lg font-bold text-[var(--color-text)]">
@@ -295,6 +295,15 @@ export function SeguimientoFisico({
                   ? `${ultima!.calculos.porcentajeGrasa}%`
                   : '—'}
               </p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--color-text-muted)]">% Masa muscular</p>
+              <p className="text-lg font-bold text-[var(--color-text)]">
+                {ultima!.masaMuscular != null ? `${Number(ultima!.masaMuscular).toFixed(1)}%` : '—'}
+              </p>
+              {ultima!.masaMuscular == null && (
+                <p className="text-xs text-[var(--color-text-faint)]">Dato manual, no registrado</p>
+              )}
             </div>
           </div>
 
@@ -375,6 +384,7 @@ export function SeguimientoFisico({
                   <th className="pb-1 pr-3 font-medium">Peso</th>
                   <th className="pb-1 pr-3 font-medium">IMC</th>
                   <th className="pb-1 pr-3 font-medium">% Grasa</th>
+                  <th className="pb-1 pr-3 font-medium">% Músculo</th>
                   <th className="pb-1 pr-3 font-medium"></th>
                 </tr>
               </thead>
@@ -392,6 +402,9 @@ export function SeguimientoFisico({
                     </td>
                     <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">
                       {m.calculos.porcentajeGrasa != null ? `${m.calculos.porcentajeGrasa}%` : '—'}
+                    </td>
+                    <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">
+                      {m.masaMuscular != null ? `${Number(m.masaMuscular).toFixed(1)}%` : '—'}
                     </td>
                     <td className="py-1.5 pr-3">
                       <CanAccess resource="mediciones" action="edit">
