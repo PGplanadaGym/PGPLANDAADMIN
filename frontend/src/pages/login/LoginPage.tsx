@@ -38,7 +38,7 @@ export function LoginPage() {
           <img src={branding.logoUrl} alt={branding.nombre} className="h-10" />
         ) : (
           <h1 className="text-xl font-bold text-[var(--color-text)]">
-            {branding?.nombre ?? 'Backoffice Core'}
+            {branding?.nombre ?? 'PG Planada Gym'}
           </h1>
         )}
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">Inicia sesión para continuar</p>
