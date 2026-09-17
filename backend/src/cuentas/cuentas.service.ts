@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateCategoriaMovimientoDto } from './dto/create-categoria-movimiento.dto';
 import { CreateMovimientoCuentaDto } from './dto/create-movimiento-cuenta.dto';
 import { UpdateMovimientoCuentaDto } from './dto/update-movimiento-cuenta.dto';
@@ -11,10 +10,7 @@ const SELECT_USUARIO_BASICO = { id: true, nombre: true, email: true } as const;
 
 @Injectable()
 export class CuentasService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAllCategorias(empresaId: string, tipo?: string) {
     return this.prisma.categoriaMovimiento.findMany({
@@ -101,15 +97,6 @@ export class CuentasService {
       },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'movimiento_cuenta',
-      entidadId: movimiento.id,
-      detalle: { tipo: dto.tipo, monto: dto.monto },
-    });
-
     return movimiento;
   }
 
@@ -149,28 +136,12 @@ export class CuentasService {
       },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'movimiento_cuenta',
-      entidadId: id,
-    });
-
     return movimiento;
   }
 
   async removeMovimiento(empresaId: string, actorId: string, id: string) {
     await this.findOneMovimiento(empresaId, id);
     await this.prisma.movimientoCuenta.delete({ where: { id } });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'movimiento_cuenta',
-      entidadId: id,
-    });
 
     return { success: true };
   }

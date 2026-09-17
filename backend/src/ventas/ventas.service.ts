@@ -7,7 +7,6 @@ import {
 import { subMonths } from 'date-fns';
 import type { Prisma, ProductoServicio } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { CreateOrdenDto } from './dto/create-orden.dto';
 import { ConfirmarOrdenDto } from './dto/confirmar-orden.dto';
@@ -39,7 +38,6 @@ const INCLUDE_ORDEN = {
 export class VentasService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
@@ -245,15 +243,6 @@ export class VentasService {
       return orden.id;
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'venta',
-      entidadId: ordenId,
-      detalle: { total, enEspera },
-    });
-
     return this.findOne(empresaId, ordenId);
   }
 
@@ -302,15 +291,6 @@ export class VentasService {
       await tx.orden.update({ where: { id }, data: { estado: 'completada' } });
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'venta',
-      entidadId: id,
-      detalle: { confirmada: true },
-    });
-
     return this.findOne(empresaId, id);
   }
 
@@ -350,14 +330,6 @@ export class VentasService {
 
       // El ingreso vinculado en Cuentas se borra en cascada (FK ordenId con onDelete: Cascade).
       await tx.orden.delete({ where: { id } });
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'venta',
-      entidadId: id,
     });
 
     return { success: true };

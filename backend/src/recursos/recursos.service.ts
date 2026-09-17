@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateRecursoDto } from './dto/create-recurso.dto';
 import { UpdateRecursoDto } from './dto/update-recurso.dto';
 import { SetHorariosDto } from './dto/horario.dto';
@@ -9,10 +8,7 @@ import { SetTiposCitaDto } from './dto/set-tipos-cita.dto';
 
 @Injectable()
 export class RecursosService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private readonly includeRecurso = {
     horarios: true,
@@ -74,15 +70,6 @@ export class RecursosService {
       },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'recurso',
-      entidadId: recurso.id,
-      detalle: { nombre: recurso.nombre },
-    });
-
     return recurso;
   }
 
@@ -102,19 +89,6 @@ export class RecursosService {
     const recurso = await this.prisma.recurso.update({
       where: { id },
       data: { ...dto, usuarioId },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'recurso',
-      entidadId: id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
-      },
     });
 
     return recurso;

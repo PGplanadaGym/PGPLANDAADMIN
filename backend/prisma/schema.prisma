@@ -32,7 +32,6 @@ model Empresa {
   clientes             Cliente[]
   productosServicio    ProductoServicio[]
   ordenes              Orden[]
-  registrosAuditoria   RegistroAuditoria[]
   recursos             Recurso[]
   tiposCita            TipoCita[]
   citas                Cita[]
@@ -99,7 +98,6 @@ model Usuario {
   roles                  UsuarioRol[]
   refreshTokens          RefreshToken[]
   passwordResetTokens    PasswordResetToken[]
-  registrosAuditoria     RegistroAuditoria[]
   activosAsignados       AsignacionActivo[]   @relation("ActivoTitular")
   asignacionesRealizadas AsignacionActivo[]   @relation("ActivoAsignadoPor")
   movimientosStock       MovimientoStock[]
@@ -113,19 +111,6 @@ model Usuario {
   recursosVinculados     Recurso[]
   mantenimientosActivo   MantenimientoActivo[]
   sucursalesEncargado    Sucursal[]           @relation("SucursalEncargado")
-}
-
-model RegistroAuditoria {
-  id        String   @id @default(uuid())
-  empresaId String
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
-  usuarioId String?
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
-  accion    String // "crear" | "actualizar" | "eliminar" | "activar" | "desactivar"
-  entidad   String // "usuario" | "cliente" | "modulo" | "empresa" | "rol" | "entidad_dinamica:<clave>"
-  entidadId String?
-  detalle   Json?
-  creadoEn  DateTime @default(now())
 }
 
 model RefreshToken {

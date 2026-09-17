@@ -12,7 +12,6 @@ import {
   Wallet,
   Fingerprint,
   ClipboardList,
-  Activity,
   Building2,
   ShoppingCart,
   Truck,
@@ -120,6 +119,5 @@ export const NAV_ITEMS: NavEntry[] = [
       },
     ],
   },
-  { to: '/auditoria', label: 'Actividad', resource: 'auditoria', icon: Activity },
   { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
 ]

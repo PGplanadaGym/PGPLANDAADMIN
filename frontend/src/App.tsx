@@ -21,7 +21,6 @@ import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
 import { EmpresaPage } from './pages/empresa/EmpresaPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
-import { AuditoriaPage } from './pages/auditoria/AuditoriaPage'
 import { CitasPage } from './pages/citas/CitasPage'
 import { RecursosPage } from './pages/recursos/RecursosPage'
 import { TiposCitaPage } from './pages/tipos-cita/TiposCitaPage'
@@ -83,11 +82,6 @@ function App() {
           name: 'empresas',
           list: '/empresa',
           meta: { label: 'Mi empresa' },
-        },
-        {
-          name: 'auditoria',
-          list: '/auditoria',
-          meta: { label: 'Actividad' },
         },
         {
           name: 'citas',
@@ -179,7 +173,6 @@ function App() {
           <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
           <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
           <Route path="/empresa" element={<EmpresaPage />} />
-          <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/citas" element={<CitasPage />} />
           <Route path="/recursos" element={<RecursosPage />} />
           <Route path="/tipos-cita" element={<TiposCitaPage />} />

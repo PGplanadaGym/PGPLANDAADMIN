@@ -57,20 +57,6 @@ CREATE TABLE "Usuario" (
 );
 
 -- CreateTable
-CREATE TABLE "RegistroAuditoria" (
-    "id" TEXT NOT NULL,
-    "empresaId" TEXT NOT NULL,
-    "usuarioId" TEXT,
-    "accion" TEXT NOT NULL,
-    "entidad" TEXT NOT NULL,
-    "entidadId" TEXT,
-    "detalle" JSONB,
-    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "RegistroAuditoria_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "RefreshToken" (
     "id" TEXT NOT NULL,
     "usuarioId" TEXT NOT NULL,
@@ -581,12 +567,6 @@ ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_empresaId_fkey" FOREIGN KEY ("empr
 
 -- AddForeignKey
 ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_sucursalId_fkey" FOREIGN KEY ("sucursalId") REFERENCES "Sucursal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "RegistroAuditoria" ADD CONSTRAINT "RegistroAuditoria_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "RegistroAuditoria" ADD CONSTRAINT "RegistroAuditoria_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

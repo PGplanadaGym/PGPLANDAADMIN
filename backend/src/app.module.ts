@@ -9,7 +9,6 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { RolesPermisosModule } from './roles-permisos/roles-permisos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { AuditoriaModule } from './auditoria/auditoria.module';
 import { RecursosModule } from './recursos/recursos.module';
 import { TiposCitaModule } from './tipos-cita/tipos-cita.module';
 import { CitasModule } from './citas/citas.module';
@@ -31,7 +30,6 @@ import { MembresiasModule } from './membresias/membresias.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     CommonModule,
-    AuditoriaModule,
     NotificacionesModule,
     AuthModule,
     EmpresasModule,

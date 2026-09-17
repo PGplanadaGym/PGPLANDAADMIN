@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreatePagoNominaDto } from './dto/create-pago-nomina.dto';
 import { UpdatePagoNominaDto } from './dto/update-pago-nomina.dto';
 
@@ -19,10 +18,7 @@ const INCLUDE_PAGO = {
 
 @Injectable()
 export class NominaService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(empresaId: string, periodo?: string) {
     return this.prisma.pagoNomina.findMany({
@@ -103,19 +99,6 @@ export class NominaService {
       return pago.id;
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'pago-nomina',
-      entidadId: pagoId,
-      detalle: {
-        empleadoId: dto.empleadoId,
-        periodo: dto.periodo,
-        totalPagado,
-      },
-    });
-
     return this.findOne(empresaId, pagoId);
   }
 
@@ -155,15 +138,6 @@ export class NominaService {
       }
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'pago-nomina',
-      entidadId: id,
-      detalle: { totalPagado },
-    });
-
     return this.findOne(empresaId, id);
   }
 
@@ -172,14 +146,6 @@ export class NominaService {
 
     // El egreso vinculado en Cuentas se borra en cascada (FK pagoNominaId con onDelete: Cascade).
     await this.prisma.pagoNomina.delete({ where: { id } });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'pago-nomina',
-      entidadId: id,
-    });
 
     return { success: true };
   }

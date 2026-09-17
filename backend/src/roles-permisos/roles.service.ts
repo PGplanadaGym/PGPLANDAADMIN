@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
 import { AsignarPermisosDto } from './dto/asignar-permisos.dto';
@@ -19,10 +18,7 @@ const PERMISOS_CRITICOS = ['roles.actualizar', 'usuarios.actualizar'];
 
 @Injectable()
 export class RolesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(empresaId: string) {
     return this.prisma.rol.findMany({
@@ -59,15 +55,6 @@ export class RolesService {
       data: { empresaId, nombre: dto.nombre, descripcion: dto.descripcion },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'rol',
-      entidadId: rol.id,
-      detalle: { nombre: rol.nombre },
-    });
-
     return rol;
   }
 
@@ -96,15 +83,6 @@ export class RolesService {
       data: { nombre: dto.nombre, descripcion: dto.descripcion },
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'rol',
-      entidadId: rolId,
-      detalle: { nombre: dto.nombre, descripcion: dto.descripcion },
-    });
-
     return this.findOne(empresaId, rolId);
   }
 
@@ -127,15 +105,6 @@ export class RolesService {
       this.prisma.rolPermiso.deleteMany({ where: { rolId } }),
       this.prisma.rol.delete({ where: { id: rolId } }),
     ]);
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'rol',
-      entidadId: rolId,
-      detalle: { nombre: rol.nombre },
-    });
 
     return { success: true };
   }
@@ -202,15 +171,6 @@ export class RolesService {
         data: dto.permisoIds.map((permisoId) => ({ rolId, permisoId })),
       }),
     ]);
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'rol',
-      entidadId: rolId,
-      detalle: { permisoIds: dto.permisoIds },
-    });
 
     return this.findOne(empresaId, rolId);
   }

@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { toZonedTime } from 'date-fns-tz';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { UpdateCitaDto } from './dto/update-cita.dto';
@@ -23,7 +22,6 @@ const INCLUDE_CITA = {
 export class CitasService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
@@ -246,14 +244,6 @@ export class CitasService {
       include: INCLUDE_CITA,
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'cita',
-      entidadId: cita.id,
-    });
-
     if (cita.recurso.usuarioId) {
       await this.notificacionesService.crear({
         empresaId,
@@ -325,14 +315,6 @@ export class CitasService {
       include: INCLUDE_CITA,
     });
 
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'cita',
-      entidadId: id,
-    });
-
     return cita;
   }
 
@@ -340,14 +322,6 @@ export class CitasService {
     await this.findOne(empresaId, id);
 
     await this.prisma.cita.delete({ where: { id } });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'eliminar',
-      entidad: 'cita',
-      entidadId: id,
-    });
 
     return { success: true };
   }
@@ -368,15 +342,6 @@ export class CitasService {
       where: { id },
       data: { estado: dto.estado },
       include: INCLUDE_CITA,
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'cita',
-      entidadId: id,
-      detalle: { estado: dto.estado },
     });
 
     return cita;

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -35,10 +34,7 @@ type AsignacionConActivo = Prisma.AsignacionActivoGetPayload<{
 
 @Injectable()
 export class ClientesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly auditoriaService: AuditoriaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(empresaId: string) {
     return this.prisma.cliente.findMany({ where: { empresaId, activo: true } });
@@ -68,15 +64,6 @@ export class ClientesService {
         fotoUrl: dto.fotoUrl,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'crear',
-      entidad: 'cliente',
-      entidadId: cliente.id,
-      detalle: { nombre: cliente.nombre },
     });
 
     return cliente;
@@ -161,19 +148,6 @@ export class ClientesService {
       data: {
         ...dto,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
-      },
-    });
-
-    await this.auditoriaService.registrar({
-      empresaId,
-      usuarioId: actorId,
-      accion: 'actualizar',
-      entidad: 'cliente',
-      entidadId: cliente.id,
-      detalle: {
-        camposEditados: Object.entries(dto)
-          .filter(([, valor]) => valor !== undefined)
-          .map(([clave]) => clave),
       },
     });
 
