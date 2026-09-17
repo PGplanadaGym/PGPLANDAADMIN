@@ -51,7 +51,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
       orderBy: { fecha: 'desc' },
       take: 500,
@@ -65,7 +64,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
     });
     if (!movimiento) {
@@ -100,7 +98,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
     });
 
@@ -149,7 +146,6 @@ export class CuentasService {
         categoria: true,
         cliente: { select: { id: true, nombre: true } },
         usuario: { select: SELECT_USUARIO_BASICO },
-        costeoProyecto: { select: { id: true, nombre: true, costoTotalSnapshot: true } },
       },
     });
 
@@ -185,13 +181,11 @@ export class CuentasService {
 
     const movimientos = await this.prisma.movimientoCuenta.findMany({
       where: { empresaId, fecha: { gte: rangoDesde, lte: rangoHasta } },
-      include: { categoria: true, costeoProyecto: { select: { costoTotalSnapshot: true } } },
+      include: { categoria: true },
     });
 
     let totalIngresos = 0;
     let totalEgresos = 0;
-    let gananciaCosteos = 0;
-    let ventasDeCosteos = 0;
     const porMesMap = new Map<string, { mes: string; ingresos: number; egresos: number }>();
     const porCategoriaMap = new Map<
       string,
@@ -227,14 +221,6 @@ export class CuentasService {
         bucketMes.egresos += monto;
       }
       bucketCategoria.total += monto;
-
-      // Un costeo vendido puede generar dos movimientos (el ingreso de la venta y el
-      // egreso del costo de materiales); la ganancia solo se calcula una vez, a
-      // partir del lado del ingreso.
-      if (movimiento.tipo === 'ingreso' && movimiento.costeoProyecto?.costoTotalSnapshot != null) {
-        ventasDeCosteos += monto;
-        gananciaCosteos += monto - Number(movimiento.costeoProyecto.costoTotalSnapshot);
-      }
     }
 
     return {
@@ -243,8 +229,6 @@ export class CuentasService {
       totalIngresos,
       totalEgresos,
       balance: totalIngresos - totalEgresos,
-      ventasDeCosteos,
-      gananciaCosteos,
       porMes: [...porMesMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v),
       porCategoria: [...porCategoriaMap.values()].sort((a, b) => b.total - a.total),
     };

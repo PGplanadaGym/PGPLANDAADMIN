@@ -17,7 +17,6 @@ import { ActivosModule } from './activos/activos.module';
 import { ProductosModule } from './productos/productos.module';
 import { AsistenciaModule } from './asistencia/asistencia.module';
 import { CuentasModule } from './cuentas/cuentas.module';
-import { CosteoModule } from './costeo/costeo.module';
 import { VentasModule } from './ventas/ventas.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -47,7 +46,6 @@ import { MembresiasModule } from './membresias/membresias.module';
     ProductosModule,
     AsistenciaModule,
     CuentasModule,
-    CosteoModule,
     VentasModule,
     DashboardModule,
     ProveedoresModule,

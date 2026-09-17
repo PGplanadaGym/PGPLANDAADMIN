@@ -215,11 +215,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
               Nuevo proveedor
             </Command.Item>
           )}
-          {tienePermiso('costeo.crear') && (
-            <Command.Item onSelect={() => ir('/costeos/nuevo')}>
-              Nuevo costeo
-            </Command.Item>
-          )}
           <Command.Item onSelect={() => ir('/perfil')}>Mi perfil</Command.Item>
           <Command.Item
             onSelect={() => {

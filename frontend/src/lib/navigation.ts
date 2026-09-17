@@ -10,8 +10,6 @@ import {
   Boxes,
   Package,
   Wallet,
-  Calculator,
-  Layers,
   Fingerprint,
   ClipboardList,
   Activity,
@@ -101,14 +99,6 @@ export const NAV_ITEMS: NavEntry[] = [
     children: [
       { to: '/cuentas', label: 'Movimientos', resource: 'cuentas', icon: Wallet },
       { to: '/reportes', label: 'Reportes', resource: 'cuentas', icon: BarChart3 },
-    ],
-  },
-  {
-    label: 'Costeo',
-    icon: Calculator,
-    children: [
-      { to: '/costeos', label: 'Proyectos', resource: 'costeo', icon: Calculator },
-      { to: '/materiales', label: 'Materiales', resource: 'costeo', icon: Layers },
     ],
   },
   {

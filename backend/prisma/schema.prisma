@@ -43,8 +43,6 @@ model Empresa {
   marcaciones          Marcacion[]
   categoriasMovimiento CategoriaMovimiento[]
   movimientosCuenta    MovimientoCuenta[]
-  materiales           Material[]
-  costeos              CosteoProyecto[]
   notificaciones       Notificacion[]
   proveedores          Proveedor[]
   ordenesCompra        OrdenCompra[]
@@ -107,7 +105,6 @@ model Usuario {
   movimientosStock       MovimientoStock[]
   marcaciones            Marcacion[]
   movimientosCuenta      MovimientoCuenta[]
-  costeos                CosteoProyecto[]
   ordenes                Orden[]
   notificaciones         Notificacion[]
   ordenesCompra          OrdenCompra[]
@@ -216,7 +213,6 @@ model Cliente {
   citas             Cita[]
   activosAsignados  AsignacionActivo[]
   movimientosCuenta MovimientoCuenta[]
-  costeos           CosteoProyecto[]
   membresias        Membresia[]
 }
 
@@ -540,8 +536,6 @@ model MovimientoCuenta {
   cliente           Cliente?            @relation(fields: [clienteId], references: [id])
   usuarioId         String
   usuario           Usuario             @relation(fields: [usuarioId], references: [id])
-  costeoProyectoId  String?
-  costeoProyecto    CosteoProyecto?     @relation(fields: [costeoProyectoId], references: [id], onDelete: Cascade)
   ordenId           String?
   orden             Orden?              @relation(fields: [ordenId], references: [id], onDelete: Cascade)
   ordenCompraId     String?
@@ -559,66 +553,6 @@ model MovimientoCuenta {
   membresiaId       String?
   membresia         Membresia?          @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
   creadoEn          DateTime            @default(now())
-}
-
-// ---------- COSTEO (calculadora de costos por partes y materiales, ej. cosplay) ----------
-
-model Material {
-  id             String   @id @default(uuid())
-  empresaId      String
-  empresa        Empresa  @relation(fields: [empresaId], references: [id])
-  nombre         String
-  calidad        String?
-  unidadMedida   String
-  precioUnitario Decimal  @db.Decimal(10, 2)
-  activo         Boolean  @default(true)
-  creadoEn       DateTime @default(now())
-
-  lineas CosteoParteMaterial[]
-}
-
-model CosteoProyecto {
-  id                 String    @id @default(uuid())
-  empresaId          String
-  empresa            Empresa   @relation(fields: [empresaId], references: [id])
-  nombre             String
-  clienteId          String?
-  cliente            Cliente?  @relation(fields: [clienteId], references: [id])
-  tarifaHora         Decimal   @db.Decimal(10, 2)
-  margenPorcentaje   Decimal   @default(0) @db.Decimal(6, 2)
-  otrosCostos        Decimal   @default(0) @db.Decimal(10, 2)
-  notas              String?
-  estado             String    @default("borrador") // "borrador" | "vendido"
-  precioVenta        Decimal?  @db.Decimal(10, 2)
-  costoTotalSnapshot Decimal?  @db.Decimal(10, 2) // costo real al momento de vender, para calcular la ganancia sin recalcular partes/materiales
-  fechaVenta         DateTime?
-  usuarioId          String
-  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
-  creadoEn           DateTime  @default(now())
-
-  partes            CosteoParte[]
-  movimientosCuenta MovimientoCuenta[]
-}
-
-model CosteoParte {
-  id         String         @id @default(uuid())
-  proyectoId String
-  proyecto   CosteoProyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
-  nombre     String
-  horas      Decimal        @default(0) @db.Decimal(6, 2)
-  orden      Int            @default(0)
-
-  materiales CosteoParteMaterial[]
-}
-
-model CosteoParteMaterial {
-  id                     String      @id @default(uuid())
-  parteId                String
-  parte                  CosteoParte @relation(fields: [parteId], references: [id], onDelete: Cascade)
-  materialId             String
-  material               Material    @relation(fields: [materialId], references: [id])
-  cantidad               Decimal     @db.Decimal(10, 2)
-  precioUnitarioSnapshot Decimal     @db.Decimal(10, 2)
 }
 
 // ---------- NOTIFICACIONES (centro de notificaciones dentro de la app) ----------

@@ -383,7 +383,7 @@ export class CitasService {
   }
 
   /**
-   * Registra el cobro de una cita como ingreso en Cuentas — igual que Ventas/Costeo, es
+   * Registra el cobro de una cita como ingreso en Cuentas — igual que Ventas, es
    * opcional (el estado "completada" no obliga a cobrar aquí). Si ya se registró un cobro
    * para esta misma cita, no se permite duplicarlo.
    */

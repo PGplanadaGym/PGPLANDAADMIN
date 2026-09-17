@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   CalendarDays,
   ShoppingBag,
-  Calculator,
   Wallet,
   Boxes,
   Pencil,
@@ -60,14 +59,6 @@ interface Orden {
   items: OrdenItem[]
 }
 
-interface Costeo {
-  id: string
-  nombre: string
-  estado: string
-  precioVenta: string | null
-  creadoEn: string
-}
-
 interface MovimientoCuenta {
   id: string
   tipo: string
@@ -87,7 +78,6 @@ interface Perfil {
   cliente: Cliente
   citas: Cita[]
   ordenes: Orden[]
-  costeos: Costeo[]
   movimientosCuenta: MovimientoCuenta[]
   activosAsignados: ActivoAsignado[]
   resumen: { totalCitas: number; totalGastado: number; activosEnPosesion: number }
@@ -200,7 +190,7 @@ export function ClientePerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Cliente no encontrado</p>
   }
 
-  const { cliente, citas, ordenes, costeos, movimientosCuenta, activosAsignados, resumen } = perfil
+  const { cliente, citas, ordenes, movimientosCuenta, activosAsignados, resumen } = perfil
 
   return (
     <div>
@@ -350,20 +340,6 @@ export function ClientePerfilPage() {
           </Seccion>
         )}
 
-        {costeos.length > 0 && (
-          <Seccion icono={Calculator} titulo="Costeos">
-            {costeos.map((costeo) => (
-              <div key={costeo.id} className="text-sm">
-                <span className="text-[var(--color-text)]">{costeo.nombre}</span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {costeo.estado}
-                  {costeo.precioVenta ? ` · $${Number(costeo.precioVenta).toFixed(2)}` : ''}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
         {movimientosCuenta.length > 0 && (
           <Seccion icono={Wallet} titulo="Movimientos en Cuentas">
             {movimientosCuenta.map((mov) => (
@@ -397,7 +373,6 @@ export function ClientePerfilPage() {
 
       {citas.length === 0 &&
         ordenes.length === 0 &&
-        costeos.length === 0 &&
         movimientosCuenta.length === 0 &&
         activosAsignados.length === 0 && (
           <p className="mt-6 text-sm text-[var(--color-text-faint)]">

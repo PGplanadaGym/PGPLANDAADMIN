@@ -210,23 +210,6 @@ async function main() {
     });
   }
 
-  const materialesDemo: Array<[string, string | null, string, number]> = [
-    ['Tela Lycra', 'Estándar', 'metro', 15],
-    ['Tela Lycra', 'Premium', 'metro', 35],
-    ['Goma EVA 5mm', null, 'pliego', 12],
-    ['Pintura acrílica', null, 'unidad', 8],
-  ];
-  for (const [nombre, calidad, unidadMedida, precioUnitario] of materialesDemo) {
-    const existente = await prisma.material.findFirst({
-      where: { empresaId: empresa.id, nombre, calidad },
-    });
-    if (!existente) {
-      await prisma.material.create({
-        data: { empresaId: empresa.id, nombre, calidad, unidadMedida, precioUnitario },
-      });
-    }
-  }
-
   console.log('Seed completo:');
   console.log(`  Rol Admin id: ${rolAdmin.id}`);
   console.log('  admin@demo.local / Admin123!  (rol Admin, todos los permisos)');
@@ -234,7 +217,6 @@ async function main() {
   console.log(`  Citas: recurso "${recurso.nombre}", tipo de cita "${tipoCita.nombre}"`);
   console.log('  Inventario: activo "Laptop Dell Latitude #001" (asignado al admin), producto "Papel bond A4 (paquete)" (stock 20)');
   console.log('  Cuentas: 3 categorías y 4 movimientos de ejemplo');
-  console.log('  Costeo: 4 materiales de ejemplo (tela, goma EVA, pintura)');
 }
 
 main()
