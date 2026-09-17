@@ -72,6 +72,35 @@ function mensajeError(error: unknown, fallback: string) {
   )
 }
 
+/** Mismo método naval de EE.UU. que usa el backend — solo para dar una vista previa
+ * en vivo mientras se llena el formulario, antes de guardar. */
+function calcularGrasaPreview(
+  sexo: string | null,
+  cuello: string,
+  cintura: string,
+  cadera: string,
+  talla: string,
+): number | null {
+  const t = Number(talla)
+  const c = Number(cuello)
+  const ci = Number(cintura)
+  if (!sexo || !t || !c || !ci) return null
+
+  if (sexo === 'M') {
+    const diferencia = ci - c
+    if (diferencia <= 0) return null
+    const valor = 495 / (1.0324 - 0.19077 * Math.log10(diferencia) + 0.15456 * Math.log10(t)) - 450
+    return Math.round(valor * 10) / 10
+  }
+
+  const ca = Number(cadera)
+  if (!ca) return null
+  const suma = ci + ca - c
+  if (suma <= 0) return null
+  const valor = 495 / (1.29579 - 0.35004 * Math.log10(suma) + 0.221 * Math.log10(t)) - 450
+  return Math.round(valor * 10) / 10
+}
+
 function claseClasificacion(clasificacion: string) {
   if (clasificacion === 'Normal') return 'bg-emerald-100 text-emerald-700'
   if (clasificacion === 'Bajo peso') return 'bg-sky-100 text-sky-700'
@@ -81,11 +110,12 @@ function claseClasificacion(clasificacion: string) {
 
 export function SeguimientoFisico({
   clienteId,
-  tieneSexo,
+  sexo,
 }: {
   clienteId: string
-  tieneSexo: boolean
+  sexo: string | null
 }) {
+  const tieneSexo = !!sexo
   const { confirmar, dialog } = useConfirm()
   const [mediciones, setMediciones] = useState<Medicion[] | null>(null)
   const [modalAbierto, setModalAbierto] = useState(false)
@@ -461,18 +491,20 @@ export function SeguimientoFisico({
                   className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs text-[var(--color-text-muted)]">
-                  Cadera (cm)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={form.perimetroCadera}
-                  onChange={(e) => setForm({ ...form, perimetroCadera: e.target.value })}
-                  className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-                />
-              </div>
+              {sexo !== 'M' && (
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--color-text-muted)]">
+                    Cadera (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.perimetroCadera}
+                    onChange={(e) => setForm({ ...form, perimetroCadera: e.target.value })}
+                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+                  />
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-xs text-[var(--color-text-muted)]">
                   Pecho (cm)
@@ -485,6 +517,23 @@ export function SeguimientoFisico({
                   className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                 />
               </div>
+
+              {(() => {
+                const grasaPreview = calcularGrasaPreview(
+                  sexo,
+                  form.perimetroCuello,
+                  form.perimetroCintura,
+                  form.perimetroCadera,
+                  form.talla,
+                )
+                return grasaPreview != null ? (
+                  <div className="col-span-2 rounded-lg bg-[var(--color-bg-subtle)] px-3 py-2 text-sm">
+                    <span className="text-[var(--color-text-muted)]">% de grasa estimado: </span>
+                    <span className="font-semibold text-[var(--color-text)]">{grasaPreview}%</span>
+                  </div>
+                ) : null
+              })()}
+
               <div className="col-span-2">
                 <label className="mb-1 block text-xs text-[var(--color-text-muted)]">
                   % Masa muscular (opcional, si tienen báscula de bioimpedancia)

@@ -312,7 +312,7 @@ export function ClientePerfilPage() {
         </div>
       </div>
 
-      <SeguimientoFisico clienteId={cliente.id} tieneSexo={!!cliente.sexo} />
+      <SeguimientoFisico clienteId={cliente.id} sexo={cliente.sexo} />
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {citas.length > 0 && (
