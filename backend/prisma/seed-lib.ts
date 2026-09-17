@@ -59,6 +59,10 @@ export const CATALOGO_PERMISOS = [
   { clave: 'membresias.leer', etiqueta: 'Ver membresías de socios' },
   { clave: 'membresias.crear', etiqueta: 'Renovar membresías' },
   { clave: 'membresias.actualizar', etiqueta: 'Editar planes de membresía' },
+  { clave: 'mediciones.leer', etiqueta: 'Ver seguimiento físico de clientes' },
+  { clave: 'mediciones.crear', etiqueta: 'Registrar mediciones corporales' },
+  { clave: 'mediciones.actualizar', etiqueta: 'Editar mediciones corporales' },
+  { clave: 'mediciones.eliminar', etiqueta: 'Eliminar mediciones corporales' },
 ];
 
 interface SeedEmpresaBaseOptions {

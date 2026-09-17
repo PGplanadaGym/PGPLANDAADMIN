@@ -15,6 +15,7 @@ interface ClienteDetalle {
   notas: string | null
   etiqueta: string | null
   fotoUrl: string | null
+  sexo: string | null
 }
 
 const SUGERENCIAS_ETIQUETA = ['VIP', 'Frecuente', 'Moroso', 'Nuevo']
@@ -40,6 +41,7 @@ export function ClienteFormPage() {
   const [notas, setNotas] = useState('')
   const [etiqueta, setEtiqueta] = useState('')
   const [fotoUrl, setFotoUrl] = useState('')
+  const [sexo, setSexo] = useState('')
 
   const [errorNombre, setErrorNombre] = useState('')
   const [errorEmail, setErrorEmail] = useState('')
@@ -55,6 +57,7 @@ export function ClienteFormPage() {
         setNotas(data.notas ?? '')
         setEtiqueta(data.etiqueta ?? '')
         setFotoUrl(data.fotoUrl ?? '')
+        setSexo(data.sexo ?? '')
       })
       .catch(() => toast.error('No se pudo cargar el cliente'))
       .finally(() => setCargando(false))
@@ -88,6 +91,7 @@ export function ClienteFormPage() {
         notas: notas || undefined,
         etiqueta: etiqueta || undefined,
         fotoUrl: fotoUrl || undefined,
+        sexo: sexo || undefined,
       }
       if (esNuevo) {
         await axiosInstance.post('/clientes', payload)
@@ -163,6 +167,24 @@ export function ClienteFormPage() {
             onChange={(e) => setTelefono(e.target.value)}
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+            Sexo (opcional)
+          </label>
+          <select
+            value={sexo}
+            onChange={(e) => setSexo(e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+          >
+            <option value="">Prefiere no decir</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+          <p className="mt-1 text-xs text-[var(--color-text-faint)]">
+            Solo se usa para calcular el % de grasa corporal en Seguimiento físico.
+          </p>
         </div>
 
         <div>

@@ -62,6 +62,7 @@ export class ClientesService {
         notas: dto.notas,
         etiqueta: dto.etiqueta,
         fotoUrl: dto.fotoUrl,
+        sexo: dto.sexo,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
     });

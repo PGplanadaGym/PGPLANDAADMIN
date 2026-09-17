@@ -132,10 +132,31 @@ CREATE TABLE "Cliente" (
     "longitud" DOUBLE PRECISION,
     "fotoUrl" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
+    "sexo" TEXT,
     "atributosExtra" JSONB,
     "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Cliente_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicionCorporal" (
+    "id" TEXT NOT NULL,
+    "empresaId" TEXT NOT NULL,
+    "clienteId" TEXT NOT NULL,
+    "fecha" TIMESTAMP(3) NOT NULL,
+    "peso" DECIMAL(5,2) NOT NULL,
+    "talla" DECIMAL(5,2) NOT NULL,
+    "perimetroCuello" DECIMAL(5,2),
+    "perimetroCintura" DECIMAL(5,2),
+    "perimetroCadera" DECIMAL(5,2),
+    "perimetroPecho" DECIMAL(5,2),
+    "masaMuscular" DECIMAL(5,2),
+    "notas" TEXT,
+    "usuarioId" TEXT NOT NULL,
+    "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MedicionCorporal_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -527,6 +548,9 @@ CREATE UNIQUE INDEX "Rol_empresaId_nombre_key" ON "Rol"("empresaId", "nombre");
 CREATE UNIQUE INDEX "Permiso_clave_key" ON "Permiso"("clave");
 
 -- CreateIndex
+CREATE INDEX "MedicionCorporal_clienteId_fecha_idx" ON "MedicionCorporal"("clienteId", "fecha");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PlanMembresia_empresaId_nombre_key" ON "PlanMembresia"("empresaId", "nombre");
 
 -- CreateIndex
@@ -591,6 +615,15 @@ ALTER TABLE "RolPermiso" ADD CONSTRAINT "RolPermiso_permisoId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Cliente" ADD CONSTRAINT "Cliente_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MedicionCorporal" ADD CONSTRAINT "MedicionCorporal_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PlanMembresia" ADD CONSTRAINT "PlanMembresia_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

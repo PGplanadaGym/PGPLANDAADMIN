@@ -50,6 +50,7 @@ model Empresa {
   categoriasProducto   CategoriaProducto[]
   planesMembresia      PlanMembresia[]
   membresias           Membresia[]
+  medicionesCorporales MedicionCorporal[]
 }
 
 model Sucursal {
@@ -111,6 +112,7 @@ model Usuario {
   recursosVinculados     Recurso[]
   mantenimientosActivo   MantenimientoActivo[]
   sucursalesEncargado    Sucursal[]           @relation("SucursalEncargado")
+  medicionesCorporales   MedicionCorporal[]
 }
 
 model RefreshToken {
@@ -191,14 +193,44 @@ model Cliente {
   longitud       Float?
   fotoUrl        String?
   activo         Boolean  @default(true)
+  // "M" | "F" | null — solo se usa para calcular el % de grasa corporal (fórmula naval,
+  // que difiere por sexo). Opcional: sin este dato simplemente no se calcula ese campo.
+  sexo           String?
   atributosExtra Json?
   creadoEn       DateTime @default(now())
 
-  ordenes           Orden[]
-  citas             Cita[]
-  activosAsignados  AsignacionActivo[]
-  movimientosCuenta MovimientoCuenta[]
-  membresias        Membresia[]
+  ordenes             Orden[]
+  citas               Cita[]
+  activosAsignados    AsignacionActivo[]
+  movimientosCuenta   MovimientoCuenta[]
+  membresias          Membresia[]
+  medicionesCorporales MedicionCorporal[]
+}
+
+// ---------- SEGUIMIENTO FÍSICO (mediciones corporales tomadas a mano, ej. gimnasios) ----------
+
+model MedicionCorporal {
+  id               String   @id @default(uuid())
+  empresaId        String
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  clienteId        String
+  cliente          Cliente  @relation(fields: [clienteId], references: [id])
+  fecha            DateTime
+  peso             Decimal  @db.Decimal(5, 2) // kg
+  talla            Decimal  @db.Decimal(5, 2) // cm
+  perimetroCuello  Decimal? @db.Decimal(5, 2) // cm — con cintura(+cadera si es mujer), permite calcular % de grasa
+  perimetroCintura Decimal? @db.Decimal(5, 2)
+  perimetroCadera  Decimal? @db.Decimal(5, 2)
+  perimetroPecho   Decimal? @db.Decimal(5, 2)
+  // % de masa muscular: dato manual opcional (solo si el gimnasio consigue una báscula de
+  // bioimpedancia algún día) — no existe una fórmula confiable con cinta métrica para esto.
+  masaMuscular     Decimal? @db.Decimal(5, 2)
+  notas            String?
+  usuarioId        String
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn         DateTime @default(now())
+
+  @@index([clienteId, fecha])
 }
 
 // ---------- MEMBRESÍAS (suscripciones de socios, ej. gimnasios/academias) ----------

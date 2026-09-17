@@ -23,6 +23,7 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
 import { SucursalesModule } from './sucursales/sucursales.module';
 import { NominaModule } from './nomina/nomina.module';
 import { MembresiasModule } from './membresias/membresias.module';
+import { MedicionesModule } from './mediciones/mediciones.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { MembresiasModule } from './membresias/membresias.module';
     SucursalesModule,
     NominaModule,
     MembresiasModule,
+    MedicionesModule,
   ],
 })
 export class AppModule {}

@@ -20,6 +20,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { MapaSeleccionUbicacion } from '../../components/ui/MapaSeleccionUbicacion'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
+import { SeguimientoFisico } from './SeguimientoFisico'
 
 interface Cliente {
   id: string
@@ -31,6 +32,7 @@ interface Cliente {
   latitud: number | null
   longitud: number | null
   activo: boolean
+  sexo: string | null
 }
 
 function mensajeError(error: unknown, fallback: string) {
@@ -309,6 +311,8 @@ export function ClientePerfilPage() {
           <p className="text-lg font-bold text-[var(--color-text)]">{resumen.activosEnPosesion}</p>
         </div>
       </div>
+
+      <SeguimientoFisico clienteId={cliente.id} tieneSexo={!!cliente.sexo} />
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {citas.length > 0 && (

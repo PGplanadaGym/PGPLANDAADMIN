@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEmail,
+  IsIn,
   IsNumber,
   IsObject,
   IsOptional,
@@ -40,6 +41,11 @@ export class UpdateClienteDto {
   @IsOptional()
   @IsString()
   fotoUrl?: string;
+
+  @ApiProperty({ required: false, enum: ['M', 'F'] })
+  @IsOptional()
+  @IsIn(['M', 'F'])
+  sexo?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
