@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { MembresiasService } from '../membresias/membresias.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -34,10 +35,30 @@ type AsignacionConActivo = Prisma.AsignacionActivoGetPayload<{
 
 @Injectable()
 export class ClientesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly membresiasService: MembresiasService,
+  ) {}
 
-  findAll(empresaId: string) {
-    return this.prisma.cliente.findMany({ where: { empresaId, activo: true } });
+  async findAll(empresaId: string, permisosVisor: string[]) {
+    const clientes = await this.prisma.cliente.findMany({ where: { empresaId, activo: true } });
+
+    if (!permisosVisor.includes('membresias.leer')) {
+      return clientes.map((cliente) => ({ ...cliente, estadoMembresia: null }));
+    }
+
+    const estados = await this.membresiasService.findEstadoPorEmpresa(empresaId);
+    const estadoPorCliente = new Map(estados.map((e) => [e.cliente.id, e]));
+
+    return clientes.map((cliente) => {
+      const fila = estadoPorCliente.get(cliente.id);
+      return {
+        ...cliente,
+        estadoMembresia: fila
+          ? { estado: fila.estado, diasRestantes: fila.diasRestantes, plan: fila.membresia?.plan ?? null }
+          : null,
+      };
+    });
   }
 
   async findOne(empresaId: string, id: string) {
@@ -84,48 +105,73 @@ export class ClientesService {
     const puedeVerVentas = permisosVisor.includes('ventas.leer');
     const puedeVerCuentas = permisosVisor.includes('cuentas.leer');
     const puedeVerActivos = permisosVisor.includes('activos.leer');
+    const puedeVerMembresias = permisosVisor.includes('membresias.leer');
 
-    const [totalCitas, citas, ordenes, movimientosCuenta, activosAsignados] =
-      await Promise.all([
-        puedeVerCitas
-          ? this.prisma.cita.count({ where: { empresaId, clienteId: id } })
-          : Promise.resolve(0),
-        puedeVerCitas
-          ? this.prisma.cita.findMany({
-              where: { empresaId, clienteId: id },
-              include: INCLUDE_CITA,
-              orderBy: { fechaInicio: 'desc' },
-              take: 10,
-            })
-          : Promise.resolve<CitaConDetalle[]>([]),
-        puedeVerVentas
-          ? this.prisma.orden.findMany({
-              where: { empresaId, clienteId: id },
-              include: INCLUDE_ORDEN,
-              orderBy: { creadoEn: 'desc' },
-              take: 10,
-            })
-          : Promise.resolve<OrdenConItems[]>([]),
-        puedeVerCuentas
-          ? this.prisma.movimientoCuenta.findMany({
-              where: { empresaId, clienteId: id },
-              include: INCLUDE_MOVIMIENTO_CUENTA,
-              orderBy: { fecha: 'desc' },
-              take: 10,
-            })
-          : Promise.resolve<MovimientoConCategoria[]>([]),
-        puedeVerActivos
-          ? this.prisma.asignacionActivo.findMany({
-              where: { empresaId, clienteId: id, fechaDevolucion: null },
-              include: INCLUDE_ASIGNACION_ACTIVO,
-            })
-          : Promise.resolve<AsignacionConActivo[]>([]),
-      ]);
+    const [
+      totalCitas,
+      citas,
+      ordenes,
+      movimientosCuenta,
+      activosAsignados,
+      estadoMembresia,
+      sumaVentas,
+      sumaOtrosIngresos,
+    ] = await Promise.all([
+      puedeVerCitas
+        ? this.prisma.cita.count({ where: { empresaId, clienteId: id } })
+        : Promise.resolve(0),
+      puedeVerCitas
+        ? this.prisma.cita.findMany({
+            where: { empresaId, clienteId: id },
+            include: INCLUDE_CITA,
+            orderBy: { fechaInicio: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve<CitaConDetalle[]>([]),
+      puedeVerVentas
+        ? this.prisma.orden.findMany({
+            where: { empresaId, clienteId: id },
+            include: INCLUDE_ORDEN,
+            orderBy: { creadoEn: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve<OrdenConItems[]>([]),
+      puedeVerCuentas
+        ? this.prisma.movimientoCuenta.findMany({
+            where: { empresaId, clienteId: id },
+            include: INCLUDE_MOVIMIENTO_CUENTA,
+            orderBy: { fecha: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve<MovimientoConCategoria[]>([]),
+      puedeVerActivos
+        ? this.prisma.asignacionActivo.findMany({
+            where: { empresaId, clienteId: id, fechaDevolucion: null },
+            include: INCLUDE_ASIGNACION_ACTIVO,
+          })
+        : Promise.resolve<AsignacionConActivo[]>([]),
+      puedeVerMembresias
+        ? this.membresiasService.estadoDeCliente(empresaId, id)
+        : Promise.resolve(null),
+      // Suma de TODAS las ventas completadas (no solo las 10 más recientes que se muestran).
+      puedeVerVentas
+        ? this.prisma.orden.aggregate({
+            where: { empresaId, clienteId: id, estado: 'completada' },
+            _sum: { total: true },
+          })
+        : Promise.resolve({ _sum: { total: null } }),
+      // Ingresos en Cuentas que NO vienen de una venta (membresías, cobros manuales, etc.) —
+      // se excluye `ordenId` para no contar dos veces el mismo dinero de una venta.
+      puedeVerCuentas
+        ? this.prisma.movimientoCuenta.aggregate({
+            where: { empresaId, clienteId: id, tipo: 'ingreso', ordenId: null },
+            _sum: { monto: true },
+          })
+        : Promise.resolve({ _sum: { monto: null } }),
+    ]);
 
-    const totalGastadoVentas = ordenes.reduce(
-      (suma, orden) => suma + Number(orden.total),
-      0,
-    );
+    const totalGastado =
+      Number(sumaVentas._sum.total ?? 0) + Number(sumaOtrosIngresos._sum.monto ?? 0);
 
     return {
       cliente,
@@ -133,9 +179,10 @@ export class ClientesService {
       ordenes,
       movimientosCuenta,
       activosAsignados,
+      estadoMembresia,
       resumen: {
         totalCitas,
-        totalGastado: totalGastadoVentas,
+        totalGastado,
         activosEnPosesion: activosAsignados.length,
       },
     };

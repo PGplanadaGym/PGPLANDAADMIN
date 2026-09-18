@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -17,6 +17,9 @@ import { axiosInstance } from '../../lib/axios'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { Avatar } from '../../components/ui/Avatar'
+import { Tabs } from '../../components/ui/Tabs'
+import { EstadoMembresiaBadge, type EstadoMembresia } from '../../components/ui/EstadoMembresiaBadge'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { MapaSeleccionUbicacion } from '../../components/ui/MapaSeleccionUbicacion'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
@@ -33,6 +36,7 @@ interface Cliente {
   longitud: number | null
   activo: boolean
   sexo: string | null
+  fotoUrl: string | null
 }
 
 function mensajeError(error: unknown, fallback: string) {
@@ -76,12 +80,19 @@ interface ActivoAsignado {
   activo: { id: string; nombre: string }
 }
 
+interface EstadoMembresiaCliente {
+  membresia: { plan: string; fechaVencimiento: string } | null
+  diasRestantes: number | null
+  estado: EstadoMembresia
+}
+
 interface Perfil {
   cliente: Cliente
   citas: Cita[]
   ordenes: Orden[]
   movimientosCuenta: MovimientoCuenta[]
   activosAsignados: ActivoAsignado[]
+  estadoMembresia: EstadoMembresiaCliente | null
   resumen: { totalCitas: number; totalGastado: number; activosEnPosesion: number }
 }
 
@@ -105,9 +116,20 @@ function Seccion({
   )
 }
 
+const TABS = [
+  { id: 'seguimiento', label: 'Seguimiento físico' },
+  { id: 'actividad', label: 'Actividad' },
+  { id: 'ubicacion', label: 'Ubicación' },
+]
+
 export function ClientePerfilPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabActiva = useMemo(() => {
+    const valor = searchParams.get('tab')
+    return TABS.some((t) => t.id === valor) ? (valor as string) : 'seguimiento'
+  }, [searchParams])
   const { confirmar, dialog } = useConfirm()
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [cargando, setCargando] = useState(true)
@@ -192,7 +214,8 @@ export function ClientePerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Cliente no encontrado</p>
   }
 
-  const { cliente, citas, ordenes, movimientosCuenta, activosAsignados, resumen } = perfil
+  const { cliente, citas, ordenes, movimientosCuenta, activosAsignados, estadoMembresia, resumen } =
+    perfil
 
   return (
     <div>
@@ -207,26 +230,29 @@ export function ClientePerfilPage() {
       </Link>
 
       <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">{cliente.nombre}</h1>
-            {cliente.etiqueta && (
-              <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
-                {cliente.etiqueta}
-              </span>
-            )}
-            {!cliente.activo && (
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                Archivado
-              </span>
+        <div className="flex items-start gap-3">
+          <Avatar nombre={cliente.nombre} fotoUrl={cliente.fotoUrl} size={64} />
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-[var(--color-text)]">{cliente.nombre}</h1>
+              {cliente.etiqueta && (
+                <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+                  {cliente.etiqueta}
+                </span>
+              )}
+              {!cliente.activo && (
+                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                  Archivado
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              {cliente.email ?? 'Sin email'} · {cliente.telefono ?? 'Sin teléfono'}
+            </p>
+            {cliente.notas && (
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{cliente.notas}</p>
             )}
           </div>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            {cliente.email ?? 'Sin email'} · {cliente.telefono ?? 'Sin teléfono'}
-          </p>
-          {cliente.notas && (
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{cliente.notas}</p>
-          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
@@ -295,7 +321,7 @@ export function ClientePerfilPage() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
           <p className="text-xs text-[var(--color-text-muted)]">Total gastado</p>
           <p className="text-lg font-bold text-[var(--color-text)]">
@@ -310,108 +336,141 @@ export function ClientePerfilPage() {
           <p className="text-xs text-[var(--color-text-muted)]">Activos en su poder</p>
           <p className="text-lg font-bold text-[var(--color-text)]">{resumen.activosEnPosesion}</p>
         </div>
-      </div>
-
-      <SeguimientoFisico clienteId={cliente.id} sexo={cliente.sexo} />
-
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {citas.length > 0 && (
-          <Seccion icono={CalendarDays} titulo="Citas recientes">
-            {citas.map((cita) => (
-              <div key={cita.id} className="text-sm">
-                <span className="text-[var(--color-text)]">{cita.tipoCita.nombre}</span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {new Date(cita.fechaInicio).toLocaleString()} · {cita.estado}
-                </span>
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
+          <p className="text-xs text-[var(--color-text-muted)]">Membresía</p>
+          {estadoMembresia ? (
+            <>
+              <div className="mt-0.5">
+                <EstadoMembresiaBadge estado={estadoMembresia.estado} />
               </div>
-            ))}
-          </Seccion>
-        )}
-
-        {ordenes.length > 0 && (
-          <Seccion icono={ShoppingBag} titulo="Ventas recientes">
-            {ordenes.map((orden) => (
-              <div key={orden.id} className="text-sm">
-                <span className="font-medium text-[var(--color-text)]">
-                  ${Number(orden.total).toFixed(2)}
-                </span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {new Date(orden.creadoEn).toLocaleDateString()} ·{' '}
-                  {orden.items.map((i) => `${i.cantidad}× ${i.producto.nombre}`).join(', ')}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-        {movimientosCuenta.length > 0 && (
-          <Seccion icono={Wallet} titulo="Movimientos en Cuentas">
-            {movimientosCuenta.map((mov) => (
-              <div key={mov.id} className="text-sm">
-                <span
-                  className={mov.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}
-                >
-                  {mov.tipo === 'ingreso' ? '+' : '-'}${Number(mov.monto).toFixed(2)}
-                </span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {mov.categoria.nombre} · {new Date(mov.fecha).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-        {activosAsignados.length > 0 && (
-          <Seccion icono={Boxes} titulo="Activos en su poder">
-            {activosAsignados.map((asignacion) => (
-              <div key={asignacion.id} className="text-sm">
-                <span className="text-[var(--color-text)]">{asignacion.activo.nombre}</span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · desde {new Date(asignacion.fechaAsignacion).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-      </div>
-
-      {citas.length === 0 &&
-        ordenes.length === 0 &&
-        movimientosCuenta.length === 0 &&
-        activosAsignados.length === 0 && (
-          <p className="mt-6 text-sm text-[var(--color-text-faint)]">
-            Este cliente todavía no tiene actividad registrada.
-          </p>
-        )}
-
-      <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
-            <MapPin size={16} />
-            Ubicación
-          </h2>
-          <CanAccess resource="clientes" action="edit">
-            <button
-              type="button"
-              onClick={abrirModalUbicacion}
-              className="text-xs text-[var(--color-primario-legible)] hover:underline"
-            >
-              {cliente.latitud != null ? 'Editar ubicación' : 'Agregar ubicación'}
-            </button>
-          </CanAccess>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                {estadoMembresia.membresia
+                  ? `${estadoMembresia.membresia.plan} · vence el ${new Date(estadoMembresia.membresia.fechaVencimiento).toLocaleDateString()}`
+                  : 'Sin plan asignado'}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-[var(--color-text-faint)]">—</p>
+          )}
         </div>
+      </div>
 
-        {cliente.latitud != null && cliente.longitud != null ? (
-          <div className="mt-3">
-            <MapaMarcaciones
-              puntos={[{ id: cliente.id, lat: cliente.latitud, lng: cliente.longitud, titulo: cliente.nombre }]}
-            />
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-[var(--color-text-faint)]">
-            Este cliente todavía no tiene una ubicación registrada.
-          </p>
-        )}
+      <div className="mt-4">
+        <Tabs tabs={TABS} value={tabActiva} onChange={(id) => setSearchParams({ tab: id })} />
+
+        <div className="mt-4">
+          {tabActiva === 'seguimiento' && (
+            <SeguimientoFisico clienteId={cliente.id} sexo={cliente.sexo} />
+          )}
+
+          {tabActiva === 'actividad' && (
+            <>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {citas.length > 0 && (
+                  <Seccion icono={CalendarDays} titulo="Citas recientes">
+                    {citas.map((cita) => (
+                      <div key={cita.id} className="text-sm">
+                        <span className="text-[var(--color-text)]">{cita.tipoCita.nombre}</span>{' '}
+                        <span className="text-[var(--color-text-muted)]">
+                          · {new Date(cita.fechaInicio).toLocaleString()} · {cita.estado}
+                        </span>
+                      </div>
+                    ))}
+                  </Seccion>
+                )}
+
+                {ordenes.length > 0 && (
+                  <Seccion icono={ShoppingBag} titulo="Ventas recientes">
+                    {ordenes.map((orden) => (
+                      <div key={orden.id} className="text-sm">
+                        <span className="font-medium text-[var(--color-text)]">
+                          ${Number(orden.total).toFixed(2)}
+                        </span>{' '}
+                        <span className="text-[var(--color-text-muted)]">
+                          · {new Date(orden.creadoEn).toLocaleDateString()} ·{' '}
+                          {orden.items.map((i) => `${i.cantidad}× ${i.producto.nombre}`).join(', ')}
+                        </span>
+                      </div>
+                    ))}
+                  </Seccion>
+                )}
+
+                {movimientosCuenta.length > 0 && (
+                  <Seccion icono={Wallet} titulo="Movimientos en Cuentas">
+                    {movimientosCuenta.map((mov) => (
+                      <div key={mov.id} className="text-sm">
+                        <span
+                          className={mov.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}
+                        >
+                          {mov.tipo === 'ingreso' ? '+' : '-'}${Number(mov.monto).toFixed(2)}
+                        </span>{' '}
+                        <span className="text-[var(--color-text-muted)]">
+                          · {mov.categoria.nombre} · {new Date(mov.fecha).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ))}
+                  </Seccion>
+                )}
+
+                {activosAsignados.length > 0 && (
+                  <Seccion icono={Boxes} titulo="Activos en su poder">
+                    {activosAsignados.map((asignacion) => (
+                      <div key={asignacion.id} className="text-sm">
+                        <span className="text-[var(--color-text)]">{asignacion.activo.nombre}</span>{' '}
+                        <span className="text-[var(--color-text-muted)]">
+                          · desde {new Date(asignacion.fechaAsignacion).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ))}
+                  </Seccion>
+                )}
+              </div>
+
+              {citas.length === 0 &&
+                ordenes.length === 0 &&
+                movimientosCuenta.length === 0 &&
+                activosAsignados.length === 0 && (
+                  <p className="mt-2 text-sm text-[var(--color-text-faint)]">
+                    Este cliente todavía no tiene actividad registrada.
+                  </p>
+                )}
+            </>
+          )}
+
+          {tabActiva === 'ubicacion' && (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+                  <MapPin size={16} />
+                  Ubicación
+                </h2>
+                <CanAccess resource="clientes" action="edit">
+                  <button
+                    type="button"
+                    onClick={abrirModalUbicacion}
+                    className="text-xs text-[var(--color-primario-legible)] hover:underline"
+                  >
+                    {cliente.latitud != null ? 'Editar ubicación' : 'Agregar ubicación'}
+                  </button>
+                </CanAccess>
+              </div>
+
+              {cliente.latitud != null && cliente.longitud != null ? (
+                <div className="mt-3">
+                  <MapaMarcaciones
+                    puntos={[
+                      { id: cliente.id, lat: cliente.latitud, lng: cliente.longitud, titulo: cliente.nombre },
+                    ]}
+                  />
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-[var(--color-text-faint)]">
+                  Este cliente todavía no tiene una ubicación registrada.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -29,7 +29,7 @@ export class ClientesController {
   @CheckPermissions('clientes.leer')
   @Get()
   findAll(@CurrentUser() user: RequestUser) {
-    return this.clientesService.findAll(user.empresaId);
+    return this.clientesService.findAll(user.empresaId, user.permisos);
   }
 
   @CheckPermissions('clientes.leer')

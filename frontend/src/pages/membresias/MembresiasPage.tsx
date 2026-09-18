@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import { useGetIdentity } from '@refinedev/core'
+import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
@@ -14,6 +15,11 @@ import { buildAbility } from '../../ability/ability'
 import { mensajeError } from '../../lib/errores'
 import type { Identity } from '../../lib/identity'
 import { Avatar } from '../../components/ui/Avatar'
+import {
+  EstadoMembresiaBadge,
+  ESTADO_MEMBRESIA_LABEL as ESTADO_LABEL,
+  type EstadoMembresia as EstadoMembresiaTipo,
+} from '../../components/ui/EstadoMembresiaBadge'
 
 interface EstadoMembresia {
   cliente: { id: string; nombre: string; email: string | null; fotoUrl: string | null }
@@ -25,7 +31,7 @@ interface EstadoMembresia {
     duracionDias: number
   } | null
   diasRestantes: number | null
-  estado: 'activo' | 'por_vencer' | 'vencido' | 'sin_membresia'
+  estado: EstadoMembresiaTipo
 }
 
 interface PlanMembresia {
@@ -34,20 +40,6 @@ interface PlanMembresia {
   duracionDias: number
   precio: string
   activo: boolean
-}
-
-const ESTADO_LABEL: Record<string, string> = {
-  activo: 'Activo',
-  por_vencer: 'Por vencer',
-  vencido: 'Vencido',
-  sin_membresia: 'Sin membresía',
-}
-
-const ESTADO_COLOR: Record<string, string> = {
-  activo: 'bg-emerald-100 text-emerald-700',
-  por_vencer: 'bg-amber-100 text-amber-700',
-  vencido: 'bg-red-100 text-red-700',
-  sin_membresia: 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]',
 }
 
 function porcentajeRestante(fila: EstadoMembresia) {
@@ -77,6 +69,7 @@ function mensajeAviso(fila: EstadoMembresia) {
 }
 
 export function MembresiasPage() {
+  const navigate = useNavigate()
   const { data: identity } = useGetIdentity<Identity>()
   const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
   const puedeRenovar = ability.can('membresias.crear', 'all')
@@ -319,7 +312,8 @@ export function MembresiasPage() {
               return (
                 <div
                   key={fila.cliente.id}
-                  className="flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]"
+                  onClick={() => navigate(`/clientes/${fila.cliente.id}`)}
+                  className="flex cursor-pointer flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)] transition-colors hover:border-[var(--color-primario)]"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar nombre={fila.cliente.nombre} fotoUrl={fila.cliente.fotoUrl} size={48} />
@@ -333,11 +327,7 @@ export function MembresiasPage() {
                         </p>
                       )}
                     </div>
-                    <span
-                      className={`ml-auto shrink-0 rounded px-2 py-0.5 text-xs font-medium ${ESTADO_COLOR[fila.estado]}`}
-                    >
-                      {ESTADO_LABEL[fila.estado]}
-                    </span>
+                    <EstadoMembresiaBadge estado={fila.estado} className="ml-auto" />
                   </div>
 
                   <div className="mt-3 text-sm text-[var(--color-text-muted)]">
@@ -372,7 +362,10 @@ export function MembresiasPage() {
                     {puedeRenovar && (
                       <button
                         type="button"
-                        onClick={() => abrirRenovar(fila)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          abrirRenovar(fila)
+                        }}
                         disabled={planes.length === 0}
                         className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-40"
                       >
@@ -382,7 +375,10 @@ export function MembresiasPage() {
                     {puedeAdministrarPlanes && fila.membresia && (
                       <button
                         type="button"
-                        onClick={() => abrirEditar(fila)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          abrirEditar(fila)
+                        }}
                         className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]"
                       >
                         Editar fecha

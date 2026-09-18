@@ -10,5 +10,6 @@ import { AvisosMembresiaService } from './avisos-membresia.service';
   imports: [AuthModule],
   controllers: [PlanesMembresiaController, MembresiasController],
   providers: [PlanesMembresiaService, MembresiasService, AvisosMembresiaService],
+  exports: [MembresiasService],
 })
 export class MembresiasModule {}

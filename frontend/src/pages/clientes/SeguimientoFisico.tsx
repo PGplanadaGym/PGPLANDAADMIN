@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CanAccess } from '@refinedev/core'
-import { Ruler, Plus, Pencil, Trash2, X } from 'lucide-react'
+import { Ruler, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import {
   CartesianGrid,
   Line,
@@ -15,6 +15,7 @@ import {
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
+import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 
 interface Calculos {
@@ -121,6 +122,7 @@ export function SeguimientoFisico({
   const [modalAbierto, setModalAbierto] = useState(false)
   const [form, setForm] = useState<FormularioMedicion>(FORMULARIO_VACIO)
   const [guardando, setGuardando] = useState(false)
+  const [mostrarPerimetros, setMostrarPerimetros] = useState(false)
 
   const cargar = () =>
     axiosInstance
@@ -206,7 +208,7 @@ export function SeguimientoFisico({
   }
 
   if (mediciones === null) {
-    return null
+    return <CargandoPantalla minHeight={200} />
   }
 
   const ultima = mediciones[mediciones.length - 1] ?? null
@@ -221,7 +223,7 @@ export function SeguimientoFisico({
   const hayDatosGrasa = datosGrafica.some((d) => d.grasa != null)
 
   return (
-    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
+    <div>
       {dialog}
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
@@ -253,8 +255,8 @@ export function SeguimientoFisico({
         </p>
       ) : (
         <>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <div>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">Peso actual</p>
               <p className="text-lg font-bold text-[var(--color-text)]">
                 {Number(ultima!.peso).toFixed(1)} kg
@@ -268,7 +270,7 @@ export function SeguimientoFisico({
                 </p>
               )}
             </div>
-            <div>
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">IMC</p>
               <p className="text-lg font-bold text-[var(--color-text)]">{ultima!.calculos.imc}</p>
               <span
@@ -277,7 +279,7 @@ export function SeguimientoFisico({
                 {ultima!.calculos.clasificacionImc}
               </span>
             </div>
-            <div>
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">Peso ideal</p>
               <p className="text-lg font-bold text-[var(--color-text)]">
                 {ultima!.calculos.pesoIdealMin}–{ultima!.calculos.pesoIdealMax} kg
@@ -288,7 +290,7 @@ export function SeguimientoFisico({
                 </p>
               )}
             </div>
-            <div>
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">% Grasa corporal (est.)</p>
               <p className="text-lg font-bold text-[var(--color-text)]">
                 {ultima!.calculos.porcentajeGrasa != null
@@ -296,7 +298,7 @@ export function SeguimientoFisico({
                   : '—'}
               </p>
             </div>
-            <div>
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">% Masa muscular</p>
               <p className="text-lg font-bold text-[var(--color-text)]">
                 {ultima!.masaMuscular != null ? `${Number(ultima!.masaMuscular).toFixed(1)}%` : '—'}
@@ -366,7 +368,7 @@ export function SeguimientoFisico({
                     type="monotone"
                     dataKey="grasa"
                     name="% Grasa"
-                    stroke="var(--color-serie-egreso)"
+                    stroke="var(--color-serie-grasa)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     connectNulls
@@ -430,6 +432,54 @@ export function SeguimientoFisico({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-[var(--color-border)]">
+            <button
+              type="button"
+              onClick={() => setMostrarPerimetros((v) => !v)}
+              className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-[var(--color-text)]"
+            >
+              Perímetros corporales
+              {mostrarPerimetros ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {mostrarPerimetros && (
+              <div className="overflow-x-auto border-t border-[var(--color-border)] p-3">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-[var(--color-text-muted)]">
+                      <th className="pb-1 pr-3 font-medium">Fecha</th>
+                      <th className="pb-1 pr-3 font-medium">Cuello</th>
+                      <th className="pb-1 pr-3 font-medium">Cintura</th>
+                      <th className="pb-1 pr-3 font-medium">Cadera</th>
+                      <th className="pb-1 pr-3 font-medium">Pecho</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...mediciones].reverse().map((m) => (
+                      <tr key={m.id} className="border-t border-[var(--color-border)]">
+                        <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">
+                          {new Date(m.fecha).toLocaleDateString()}
+                        </td>
+                        <td className="py-1.5 pr-3 text-[var(--color-text)]">
+                          {m.perimetroCuello != null ? `${Number(m.perimetroCuello).toFixed(1)} cm` : '—'}
+                        </td>
+                        <td className="py-1.5 pr-3 text-[var(--color-text)]">
+                          {m.perimetroCintura != null ? `${Number(m.perimetroCintura).toFixed(1)} cm` : '—'}
+                        </td>
+                        <td className="py-1.5 pr-3 text-[var(--color-text)]">
+                          {m.perimetroCadera != null ? `${Number(m.perimetroCadera).toFixed(1)} cm` : '—'}
+                        </td>
+                        <td className="py-1.5 pr-3 text-[var(--color-text)]">
+                          {m.perimetroPecho != null ? `${Number(m.perimetroPecho).toFixed(1)} cm` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       )}

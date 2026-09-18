@@ -1,11 +1,20 @@
-import { CanAccess, useTable } from '@refinedev/core'
+import { useEffect, useState } from 'react'
+import { CanAccess } from '@refinedev/core'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { axiosInstance } from '../../lib/axios'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { PrimaryLinkButton } from '../../components/ui/PrimaryButton'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
+import { Avatar } from '../../components/ui/Avatar'
+import {
+  EstadoMembresiaBadge,
+  ESTADO_MEMBRESIA_LABEL,
+  type EstadoMembresia,
+} from '../../components/ui/EstadoMembresiaBadge'
 
 interface Cliente {
   id: string
@@ -13,13 +22,25 @@ interface Cliente {
   email: string | null
   telefono: string | null
   etiqueta: string | null
+  fotoUrl: string | null
+  sexo: string | null
   creadoEn: string
+  estadoMembresia: { estado: EstadoMembresia; diasRestantes: number | null; plan: string | null } | null
 }
 
 export function ClientesListPage() {
   const navigate = useNavigate()
-  const { tableQuery } = useTable<Cliente>({ resource: 'clientes' })
-  const clientes = tableQuery.data?.data ?? []
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    setCargando(true)
+    axiosInstance
+      .get<Cliente[]>('/clientes')
+      .then(({ data }) => setClientes(data))
+      .catch(() => toast.error('No se pudo cargar la lista de clientes'))
+      .finally(() => setCargando(false))
+  }, [])
 
   const {
     query,
@@ -30,14 +51,27 @@ export function ClientesListPage() {
     setPagina,
     totalPaginas,
     totalFiltrados,
-  } = useBusquedaPaginada(clientes, (c) => `${c.nombre} ${c.email ?? ''}`)
+  } = useBusquedaPaginada(clientes, (c) => `${c.nombre} ${c.email ?? ''} ${c.etiqueta ?? ''}`)
+
+  const filasCSV = filtrados.map((c) => ({
+    nombre: c.nombre,
+    email: c.email ?? '',
+    telefono: c.telefono ?? '',
+    etiqueta: c.etiqueta ?? '',
+    estadoMembresia: c.estadoMembresia ? ESTADO_MEMBRESIA_LABEL[c.estadoMembresia.estado] : '',
+    creado: new Date(c.creadoEn).toLocaleDateString(),
+  }))
+
+  if (cargando) {
+    return <CargandoPantalla minHeight={300} />
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Clientes</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <ExportarCSVButton nombreArchivo="clientes.csv" filas={filtrados} />
+          <ExportarCSVButton nombreArchivo="clientes.csv" filas={filasCSV} />
           <CanAccess resource="clientes" action="create">
             <PrimaryLinkButton to="/clientes/nuevo">Nuevo cliente</PrimaryLinkButton>
           </CanAccess>
@@ -45,65 +79,58 @@ export function ClientesListPage() {
       </div>
 
       <div className="mt-4">
-        <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nombre o email…" />
+        <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nombre, email o etiqueta…" />
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)]">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]">
-            <tr>
-              <th className="px-4 py-2">Nombre</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Teléfono</th>
-              <th className="px-4 py-2">Etiqueta</th>
-              <th className="px-4 py-2">Creado</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-3">
+        {pageItems.length === 0 ? (
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6 text-center text-sm text-[var(--color-text-faint)] shadow-[var(--sombra-sm)]">
+            {query ? 'Sin resultados para tu búsqueda' : 'Sin clientes todavía'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {pageItems.map((cliente) => (
-              <tr
+              <div
                 key={cliente.id}
                 onClick={() => navigate(`/clientes/${cliente.id}`)}
-                className="cursor-pointer border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]"
+                className="flex cursor-pointer flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)] transition-colors hover:border-[var(--color-primario)]"
               >
-                <td className="px-4 py-2">{cliente.nombre}</td>
-                <td className="px-4 py-2">{cliente.email ?? '—'}</td>
-                <td className="px-4 py-2">{cliente.telefono ?? '—'}</td>
-                <td className="px-4 py-2">
-                  {cliente.etiqueta ? (
-                    <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
+                <div className="flex items-center gap-3">
+                  <Avatar nombre={cliente.nombre} fotoUrl={cliente.fotoUrl} size={48} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[var(--color-text)]">
+                      {cliente.nombre}
+                    </p>
+                    {cliente.email && (
+                      <p className="truncate text-xs text-[var(--color-text-faint)]">{cliente.email}</p>
+                    )}
+                  </div>
+                  {cliente.estadoMembresia && (
+                    <EstadoMembresiaBadge estado={cliente.estadoMembresia.estado} className="ml-auto" />
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                  {cliente.telefono && <span>{cliente.telefono}</span>}
+                  {cliente.etiqueta && (
+                    <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 font-medium text-[var(--color-text-muted)]">
                       {cliente.etiqueta}
                     </span>
-                  ) : (
-                    '—'
                   )}
-                </td>
-                <td className="px-4 py-2">
-                  {new Date(cliente.creadoEn).toLocaleDateString()}
-                </td>
-              </tr>
+                </div>
+
+                <p className="mt-2 text-xs text-[var(--color-text-faint)]">
+                  Cliente desde {new Date(cliente.creadoEn).toLocaleDateString()}
+                </p>
+              </div>
             ))}
-            {pageItems.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-[var(--color-text-faint)]">
-                  {tableQuery.isLoading ? (
-                    <CargandoPantalla minHeight={80} />
-                  ) : query ? (
-                    'Sin resultados para tu búsqueda'
-                  ) : (
-                    'Sin clientes todavía'
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        <Pagination
-          pagina={pagina}
-          totalPaginas={totalPaginas}
-          onChange={setPagina}
-          total={totalFiltrados}
-        />
+          </div>
+        )}
+        {totalPaginas > 1 && (
+          <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)]">
+            <Pagination pagina={pagina} totalPaginas={totalPaginas} onChange={setPagina} total={totalFiltrados} />
+          </div>
+        )}
       </div>
     </div>
   )

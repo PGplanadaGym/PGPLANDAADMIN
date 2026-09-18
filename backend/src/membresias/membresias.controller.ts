@@ -24,6 +24,12 @@ export class MembresiasController {
     return this.membresiasService.findEstadoPorEmpresa(user.empresaId);
   }
 
+  @CheckPermissions('membresias.leer')
+  @Get('cliente/:clienteId')
+  estadoDeCliente(@CurrentUser() user: RequestUser, @Param('clienteId') clienteId: string) {
+    return this.membresiasService.estadoDeCliente(user.empresaId, clienteId);
+  }
+
   @CheckPermissions('membresias.crear')
   @Post(':clienteId/renovar')
   renovar(

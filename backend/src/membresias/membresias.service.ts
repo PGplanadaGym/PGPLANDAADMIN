@@ -16,6 +16,48 @@ function diasEntre(desde: Date, hasta: Date) {
 export class MembresiasService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private construirFila(
+    cliente: { id: string; nombre: string; email: string | null; fotoUrl: string | null },
+    membresia: { id: string; fechaInicio: Date; fechaVencimiento: Date; plan: { nombre: string; duracionDias: number } } | undefined,
+    hoy: Date,
+  ) {
+    if (!membresia) {
+      return {
+        cliente: {
+          id: cliente.id,
+          nombre: cliente.nombre,
+          email: cliente.email,
+          fotoUrl: cliente.fotoUrl,
+        },
+        membresia: null,
+        diasRestantes: null,
+        estado: 'sin_membresia' satisfies EstadoMembresia,
+      };
+    }
+
+    const diasRestantes = diasEntre(hoy, membresia.fechaVencimiento);
+    const estado: EstadoMembresia =
+      diasRestantes < 0 ? 'vencido' : diasRestantes <= UMBRAL_POR_VENCER_DIAS ? 'por_vencer' : 'activo';
+
+    return {
+      cliente: {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        email: cliente.email,
+        fotoUrl: cliente.fotoUrl,
+      },
+      membresia: {
+        id: membresia.id,
+        plan: membresia.plan.nombre,
+        fechaInicio: membresia.fechaInicio,
+        fechaVencimiento: membresia.fechaVencimiento,
+        duracionDias: membresia.plan.duracionDias,
+      },
+      diasRestantes,
+      estado,
+    };
+  }
+
   async findEstadoPorEmpresa(empresaId: string) {
     const [clientes, membresias] = await Promise.all([
       this.prisma.cliente.findMany({
@@ -40,45 +82,24 @@ export class MembresiasService {
 
     const hoy = new Date();
 
-    return clientes.map((cliente) => {
-      const membresia = ultimaPorCliente.get(cliente.id);
+    return clientes.map((cliente) =>
+      this.construirFila(cliente, ultimaPorCliente.get(cliente.id), hoy),
+    );
+  }
 
-      if (!membresia) {
-        return {
-          cliente: {
-            id: cliente.id,
-            nombre: cliente.nombre,
-            email: cliente.email,
-            fotoUrl: cliente.fotoUrl,
-          },
-          membresia: null,
-          diasRestantes: null,
-          estado: 'sin_membresia' satisfies EstadoMembresia,
-        };
-      }
+  async estadoDeCliente(empresaId: string, clienteId: string) {
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, empresaId } });
+    if (!cliente) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
 
-      const diasRestantes = diasEntre(hoy, membresia.fechaVencimiento);
-      const estado: EstadoMembresia =
-        diasRestantes < 0 ? 'vencido' : diasRestantes <= UMBRAL_POR_VENCER_DIAS ? 'por_vencer' : 'activo';
-
-      return {
-        cliente: {
-          id: cliente.id,
-          nombre: cliente.nombre,
-          email: cliente.email,
-          fotoUrl: cliente.fotoUrl,
-        },
-        membresia: {
-          id: membresia.id,
-          plan: membresia.plan.nombre,
-          fechaInicio: membresia.fechaInicio,
-          fechaVencimiento: membresia.fechaVencimiento,
-          duracionDias: membresia.plan.duracionDias,
-        },
-        diasRestantes,
-        estado,
-      };
+    const membresia = await this.prisma.membresia.findFirst({
+      where: { clienteId, empresaId },
+      orderBy: { fechaVencimiento: 'desc' },
+      include: { plan: true },
     });
+
+    return this.construirFila(cliente, membresia ?? undefined, new Date());
   }
 
   async renovar(empresaId: string, actorId: string, clienteId: string, dto: RenovarMembresiaDto) {
