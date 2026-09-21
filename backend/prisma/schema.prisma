@@ -74,6 +74,7 @@ model Sucursal {
   activos           Activo[]
   movimientosCuenta MovimientoCuenta[]
   movimientosStock  MovimientoStock[]
+  clientes          Cliente[]
 }
 
 model Usuario {
@@ -184,6 +185,10 @@ model Cliente {
   id             String   @id @default(uuid())
   empresaId      String
   empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  // Obligatorio: un gimnasio con varias sucursales tiene socios distintos por local —
+  // cada cliente pertenece a una sola sucursal (nunca sin asignar).
+  sucursalId     String
+  sucursal       Sucursal @relation(fields: [sucursalId], references: [id])
   nombre         String
   email          String?
   telefono       String?

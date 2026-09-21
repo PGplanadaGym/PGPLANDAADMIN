@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CanAccess } from '@refinedev/core'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
+import { useSucursalActiva, type SucursalBasica } from '../../hooks/useSucursalActiva'
+import { normalizarTexto, sinEspacios, soloLetras, soloTelefono } from '../../lib/validacionInputs'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
@@ -16,6 +18,7 @@ interface ClienteDetalle {
   etiqueta: string | null
   fotoUrl: string | null
   sexo: string | null
+  sucursal: SucursalBasica | null
 }
 
 const SUGERENCIAS_ETIQUETA = ['VIP', 'Frecuente', 'Moroso', 'Nuevo']
@@ -31,6 +34,8 @@ export function ClienteFormPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const esNuevo = !id
+  const { puedeVerTodasSucursales: puedeElegirSucursal, sucursales, sucursalIdPorDefecto } =
+    useSucursalActiva()
 
   const [cargando, setCargando] = useState(!esNuevo)
   const [guardando, setGuardando] = useState(false)
@@ -42,9 +47,19 @@ export function ClienteFormPage() {
   const [etiqueta, setEtiqueta] = useState('')
   const [fotoUrl, setFotoUrl] = useState('')
   const [sexo, setSexo] = useState('')
+  const [sucursalId, setSucursalId] = useState('')
 
   const [errorNombre, setErrorNombre] = useState('')
   const [errorEmail, setErrorEmail] = useState('')
+  const [errorSucursal, setErrorSucursal] = useState('')
+
+  // Precarga la sucursal activa (o la propia del usuario) como valor por defecto al crear —
+  // sin pisar una elección manual que ya haya hecho.
+  useEffect(() => {
+    if (esNuevo && !sucursalId && sucursalIdPorDefecto) {
+      setSucursalId(sucursalIdPorDefecto)
+    }
+  }, [esNuevo, sucursalId, sucursalIdPorDefecto])
 
   useEffect(() => {
     if (esNuevo || !id) return
@@ -58,6 +73,7 @@ export function ClienteFormPage() {
         setEtiqueta(data.etiqueta ?? '')
         setFotoUrl(data.fotoUrl ?? '')
         setSexo(data.sexo ?? '')
+        setSucursalId(data.sucursal?.id ?? '')
       })
       .catch(() => toast.error('No se pudo cargar el cliente'))
       .finally(() => setCargando(false))
@@ -77,6 +93,12 @@ export function ClienteFormPage() {
     } else {
       setErrorEmail('')
     }
+    if (esNuevo && puedeElegirSucursal && !sucursalId) {
+      setErrorSucursal('Selecciona una sucursal')
+      valido = false
+    } else {
+      setErrorSucursal('')
+    }
     return valido
   }
 
@@ -85,13 +107,18 @@ export function ClienteFormPage() {
     setGuardando(true)
     try {
       const payload = {
-        nombre,
-        email: email || undefined,
+        nombre: normalizarTexto(nombre).trim(),
+        email: email.trim().toLowerCase() || undefined,
         telefono: telefono || undefined,
         notas: notas || undefined,
         etiqueta: etiqueta || undefined,
         fotoUrl: fotoUrl || undefined,
         sexo: sexo || undefined,
+        // Al crear siempre se manda (obligatorio en el servidor; si el usuario no puede elegir
+        // sucursal, el backend igual la fuerza a la suya). Al editar solo se manda si puede
+        // elegir — si no, no se toca la sucursal del cliente.
+        sucursalId:
+          esNuevo || puedeElegirSucursal ? sucursalId || sucursalIdPorDefecto || undefined : undefined,
       }
       if (esNuevo) {
         await axiosInstance.post('/clientes', payload)
@@ -139,11 +166,55 @@ export function ClienteFormPage() {
           </label>
           <input
             value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            onChange={(e) => setNombre(soloLetras(e.target.value))}
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
           {errorNombre && <p className="mt-1 text-xs text-red-600">{errorNombre}</p>}
         </div>
+
+        {esNuevo && puedeElegirSucursal && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+              Sucursal
+            </label>
+            <select
+              value={sucursalId}
+              onChange={(e) => setSucursalId(e.target.value)}
+              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            >
+              <option value="">Selecciona una sucursal</option>
+              {sucursales.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+            {errorSucursal && <p className="mt-1 text-xs text-red-600">{errorSucursal}</p>}
+          </div>
+        )}
+        {esNuevo && !puedeElegirSucursal && (
+          <p className="text-xs text-[var(--color-text-faint)]">
+            El cliente se creará en tu sucursal.
+          </p>
+        )}
+        {!esNuevo && puedeElegirSucursal && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+              Sucursal
+            </label>
+            <select
+              value={sucursalId}
+              onChange={(e) => setSucursalId(e.target.value)}
+              className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            >
+              {sucursales.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
@@ -152,7 +223,11 @@ export function ClienteFormPage() {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(sinEspacios(e.target.value))}
+            onBlur={() => {
+              if (email && !REGEX_EMAIL.test(email)) setErrorEmail('Email inválido')
+              else setErrorEmail('')
+            }}
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
           {errorEmail && <p className="mt-1 text-xs text-red-600">{errorEmail}</p>}
@@ -163,8 +238,11 @@ export function ClienteFormPage() {
             Teléfono
           </label>
           <input
+            type="tel"
+            inputMode="tel"
             value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
+            onChange={(e) => setTelefono(soloTelefono(e.target.value))}
+            placeholder="099 321 0108"
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
         </div>

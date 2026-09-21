@@ -11,6 +11,8 @@ import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
+import { useSucursalActiva } from '../../hooks/useSucursalActiva'
+import { SucursalActivaSelector } from '../../components/ui/SucursalActivaSelector'
 import { buildAbility } from '../../ability/ability'
 import { mensajeError } from '../../lib/errores'
 import type { Identity } from '../../lib/identity'
@@ -22,7 +24,13 @@ import {
 } from '../../components/ui/EstadoMembresiaBadge'
 
 interface EstadoMembresia {
-  cliente: { id: string; nombre: string; email: string | null; fotoUrl: string | null }
+  cliente: {
+    id: string
+    nombre: string
+    email: string | null
+    fotoUrl: string | null
+    sucursal: { id: string; nombre: string } | null
+  }
   membresia: {
     id: string
     plan: string
@@ -74,6 +82,8 @@ export function MembresiasPage() {
   const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
   const puedeRenovar = ability.can('membresias.crear', 'all')
   const puedeAdministrarPlanes = ability.can('membresias.actualizar', 'all')
+  const { puedeVerTodasSucursales, sucursales, sucursalActivaId, setSucursalActivaId } =
+    useSucursalActiva()
 
   const [estados, setEstados] = useState<EstadoMembresia[]>([])
   const [cargando, setCargando] = useState(true)
@@ -108,15 +118,16 @@ export function MembresiasPage() {
       .finally(() => setCargando(false))
   }, [])
 
-  const estadosOrdenados = useMemo(
-    () =>
-      [...estados].sort((a, b) => {
-        if (a.diasRestantes == null) return 1
-        if (b.diasRestantes == null) return -1
-        return a.diasRestantes - b.diasRestantes
-      }),
-    [estados],
-  )
+  const estadosOrdenados = useMemo(() => {
+    const enSucursal = sucursalActivaId
+      ? estados.filter((e) => e.cliente.sucursal?.id === sucursalActivaId)
+      : estados
+    return [...enSucursal].sort((a, b) => {
+      if (a.diasRestantes == null) return 1
+      if (b.diasRestantes == null) return -1
+      return a.diasRestantes - b.diasRestantes
+    })
+  }, [estados, sucursalActivaId])
 
   const {
     query,
@@ -146,11 +157,24 @@ export function MembresiasPage() {
   )
 
   const crearPlan = async () => {
-    if (!nombrePlan.trim() || !duracionPlan || !precioPlan) return
+    const nombre = nombrePlan.trim()
+    if (!nombre || !duracionPlan || !precioPlan) return
+    if (Number(duracionPlan) < 1 || !Number.isInteger(Number(duracionPlan))) {
+      toast.error('La duración debe ser un número entero de al menos 1 día')
+      return
+    }
+    if (Number(precioPlan) < 0) {
+      toast.error('El precio no puede ser negativo')
+      return
+    }
+    if (planes.some((p) => p.nombre.trim().toLowerCase() === nombre.toLowerCase())) {
+      toast.error(`Ya existe un plan llamado "${nombre}"`)
+      return
+    }
     setCreandoPlan(true)
     try {
       await axiosInstance.post('/planes-membresia', {
-        nombre: nombrePlan,
+        nombre,
         duracionDias: Number(duracionPlan),
         precio: Number(precioPlan),
       })
@@ -263,8 +287,11 @@ export function MembresiasPage() {
                   <label className="mb-1 block text-xs text-[var(--color-text-muted)]">Días</label>
                   <input
                     type="number"
+                    min={1}
+                    step={1}
                     value={duracionPlan}
                     onChange={(e) => setDuracionPlan(e.target.value)}
+                    onKeyDown={(e) => ['-', '+', 'e', '.', ','].includes(e.key) && e.preventDefault()}
                     className="w-24 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                   />
                 </div>
@@ -272,8 +299,11 @@ export function MembresiasPage() {
                   <label className="mb-1 block text-xs text-[var(--color-text-muted)]">Precio</label>
                   <input
                     type="number"
+                    min={0}
+                    step={0.01}
                     value={precioPlan}
                     onChange={(e) => setPrecioPlan(e.target.value)}
+                    onKeyDown={(e) => ['-', '+', 'e'].includes(e.key) && e.preventDefault()}
                     placeholder="30"
                     className="w-24 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                   />
@@ -295,6 +325,13 @@ export function MembresiasPage() {
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar socio o plan…" />
+        {puedeVerTodasSucursales && (
+          <SucursalActivaSelector
+            sucursales={sucursales}
+            value={sucursalActivaId}
+            onChange={setSucursalActivaId}
+          />
+        )}
         <div className="ml-auto">
           <ExportarCSVButton nombreArchivo="membresias.csv" filas={filasCSV} />
         </div>

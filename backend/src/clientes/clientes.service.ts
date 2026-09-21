@@ -1,7 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { MembresiasService } from '../membresias/membresias.service';
+import { filtroSucursalCliente, puedeVerTodasSucursales } from '../common/utils/sucursal-scope';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -24,6 +31,10 @@ const INCLUDE_ASIGNACION_ACTIVO = {
   activo: { select: { id: true, nombre: true } },
 } satisfies Prisma.AsignacionActivoInclude;
 
+const INCLUDE_SUCURSAL = {
+  sucursal: { select: { id: true, nombre: true } },
+} satisfies Prisma.ClienteInclude;
+
 type CitaConDetalle = Prisma.CitaGetPayload<{ include: typeof INCLUDE_CITA }>;
 type OrdenConItems = Prisma.OrdenGetPayload<{ include: typeof INCLUDE_ORDEN }>;
 type MovimientoConCategoria = Prisma.MovimientoCuentaGetPayload<{
@@ -40,14 +51,25 @@ export class ClientesService {
     private readonly membresiasService: MembresiasService,
   ) {}
 
-  async findAll(empresaId: string, permisosVisor: string[]) {
-    const clientes = await this.prisma.cliente.findMany({ where: { empresaId, activo: true } });
+  async findAll(empresaId: string, permisosVisor: string[], sucursalIdVisor: string | null) {
+    const clientes = await this.prisma.cliente.findMany({
+      where: {
+        empresaId,
+        activo: true,
+        ...filtroSucursalCliente(permisosVisor, sucursalIdVisor),
+      },
+      include: INCLUDE_SUCURSAL,
+    });
 
     if (!permisosVisor.includes('membresias.leer')) {
       return clientes.map((cliente) => ({ ...cliente, estadoMembresia: null }));
     }
 
-    const estados = await this.membresiasService.findEstadoPorEmpresa(empresaId);
+    const estados = await this.membresiasService.findEstadoPorEmpresa(
+      empresaId,
+      permisosVisor,
+      sucursalIdVisor,
+    );
     const estadoPorCliente = new Map(estados.map((e) => [e.cliente.id, e]));
 
     return clientes.map((cliente) => {
@@ -61,9 +83,15 @@ export class ClientesService {
     });
   }
 
-  async findOne(empresaId: string, id: string) {
+  async findOne(
+    empresaId: string,
+    id: string,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
     const cliente = await this.prisma.cliente.findFirst({
-      where: { id, empresaId },
+      where: { id, empresaId, ...filtroSucursalCliente(permisosVisor, sucursalIdVisor) },
+      include: INCLUDE_SUCURSAL,
     });
 
     if (!cliente) {
@@ -73,12 +101,73 @@ export class ClientesService {
     return cliente;
   }
 
-  async create(empresaId: string, actorId: string, dto: CreateClienteDto) {
+  private async validarSucursal(empresaId: string, sucursalId: string) {
+    const sucursal = await this.prisma.sucursal.findFirst({ where: { id: sucursalId, empresaId } });
+    if (!sucursal) {
+      throw new BadRequestException('La sucursal indicada no existe');
+    }
+  }
+
+  /**
+   * Un mismo teléfono o email no puede repetirse entre dos clientes de la misma empresa —
+   * a propósito se revisa en TODA la empresa (no solo la sucursal del visor), para atrapar
+   * también el caso de alguien registrado por error en dos sucursales distintas.
+   * `ignorarId` se usa al editar, para no chocar contra el propio registro que se guarda.
+   */
+  private async validarNoDuplicado(
+    empresaId: string,
+    datos: { telefono?: string; email?: string },
+    ignorarId?: string,
+  ) {
+    if (!datos.telefono && !datos.email) return;
+
+    const condiciones: Prisma.ClienteWhereInput[] = [];
+    if (datos.telefono) condiciones.push({ telefono: datos.telefono });
+    if (datos.email) condiciones.push({ email: { equals: datos.email, mode: 'insensitive' } });
+
+    const duplicado = await this.prisma.cliente.findFirst({
+      where: {
+        empresaId,
+        id: ignorarId ? { not: ignorarId } : undefined,
+        OR: condiciones,
+      },
+    });
+
+    if (duplicado) {
+      const campo =
+        datos.telefono && duplicado.telefono === datos.telefono ? 'teléfono' : 'email';
+      throw new ConflictException(
+        `Ya existe un cliente (${duplicado.nombre}) registrado con ese ${campo}`,
+      );
+    }
+  }
+
+  async create(
+    empresaId: string,
+    actorId: string,
+    dto: CreateClienteDto,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    let sucursalId = dto.sucursalId;
+    if (!puedeVerTodasSucursales(permisosVisor)) {
+      if (!sucursalIdVisor) {
+        throw new ForbiddenException(
+          'Tu cuenta no tiene una sucursal asignada — pide a un administrador que te asigne una antes de crear clientes',
+        );
+      }
+      sucursalId = sucursalIdVisor;
+    }
+
+    await this.validarSucursal(empresaId, sucursalId);
+    await this.validarNoDuplicado(empresaId, { telefono: dto.telefono, email: dto.email });
+
     const cliente = await this.prisma.cliente.create({
       data: {
         empresaId,
-        nombre: dto.nombre,
-        email: dto.email,
+        sucursalId,
+        nombre: dto.nombre.trim(),
+        email: dto.email?.toLowerCase(),
         telefono: dto.telefono,
         notas: dto.notas,
         etiqueta: dto.etiqueta,
@@ -86,6 +175,7 @@ export class ClientesService {
         sexo: dto.sexo,
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
+      include: INCLUDE_SUCURSAL,
     });
 
     return cliente;
@@ -98,8 +188,13 @@ export class ClientesService {
    * alguien con solo `clientes.leer` (ej. recepción) vería ventas y movimientos financieros
    * de cualquier cliente sin tener permiso sobre esos módulos.
    */
-  async findPerfil(empresaId: string, id: string, permisosVisor: string[]) {
-    const cliente = await this.findOne(empresaId, id);
+  async findPerfil(
+    empresaId: string,
+    id: string,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    const cliente = await this.findOne(empresaId, id, permisosVisor, sucursalIdVisor);
 
     const puedeVerCitas = permisosVisor.includes('citas.leer');
     const puedeVerVentas = permisosVisor.includes('ventas.leer');
@@ -151,7 +246,7 @@ export class ClientesService {
           })
         : Promise.resolve<AsignacionConActivo[]>([]),
       puedeVerMembresias
-        ? this.membresiasService.estadoDeCliente(empresaId, id)
+        ? this.membresiasService.estadoDeCliente(empresaId, id, permisosVisor, sucursalIdVisor)
         : Promise.resolve(null),
       // Suma de TODAS las ventas completadas (no solo las 10 más recientes que se muestran).
       puedeVerVentas
@@ -188,17 +283,72 @@ export class ClientesService {
     };
   }
 
-  async update(empresaId: string, actorId: string, id: string, dto: UpdateClienteDto) {
-    await this.findOne(empresaId, id);
+  async update(
+    empresaId: string,
+    actorId: string,
+    id: string,
+    dto: UpdateClienteDto,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    // findOne ya aplica el filtro de sucursal: un empleado sin permiso de "ver todas" ni
+    // siquiera encuentra (404) un cliente de otra sucursal para editarlo.
+    await this.findOne(empresaId, id, permisosVisor, sucursalIdVisor);
+
+    if (dto.sucursalId !== undefined) {
+      if (!puedeVerTodasSucursales(permisosVisor)) {
+        throw new ForbiddenException('No tienes permiso para cambiar la sucursal de un cliente');
+      }
+      await this.validarSucursal(empresaId, dto.sucursalId);
+    }
+
+    if (dto.telefono !== undefined || dto.email !== undefined) {
+      await this.validarNoDuplicado(empresaId, { telefono: dto.telefono, email: dto.email }, id);
+    }
 
     const cliente = await this.prisma.cliente.update({
       where: { id },
       data: {
         ...dto,
+        nombre: dto.nombre?.trim(),
+        email: dto.email?.toLowerCase(),
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },
+      include: INCLUDE_SUCURSAL,
     });
 
     return cliente;
+  }
+
+  /**
+   * Borrado real (no archivar) — solo permitido si el cliente no tiene NADA de historial
+   * enganchado (ventas, citas, membresías, mediciones físicas, cuentas, activos asignados).
+   * Pensado para corregir un alta hecha por error, no para "limpiar" clientes reales.
+   */
+  async remove(
+    empresaId: string,
+    id: string,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    await this.findOne(empresaId, id, permisosVisor, sucursalIdVisor);
+
+    const [ordenes, citas, activos, movimientosCuenta, membresias, mediciones] = await Promise.all([
+      this.prisma.orden.count({ where: { clienteId: id } }),
+      this.prisma.cita.count({ where: { clienteId: id } }),
+      this.prisma.asignacionActivo.count({ where: { clienteId: id } }),
+      this.prisma.movimientoCuenta.count({ where: { clienteId: id } }),
+      this.prisma.membresia.count({ where: { clienteId: id } }),
+      this.prisma.medicionCorporal.count({ where: { clienteId: id } }),
+    ]);
+
+    const enUso = ordenes + citas + activos + movimientosCuenta + membresias + mediciones > 0;
+    if (enUso) {
+      throw new ConflictException(
+        'Este cliente ya tiene historial (ventas, citas, membresías, cuentas, mediciones o activos) y no se puede eliminar — archívalo en su lugar.',
+      );
+    }
+
+    await this.prisma.cliente.delete({ where: { id } });
   }
 }

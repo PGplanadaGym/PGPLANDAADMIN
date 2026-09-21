@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -29,25 +30,31 @@ export class ClientesController {
   @CheckPermissions('clientes.leer')
   @Get()
   findAll(@CurrentUser() user: RequestUser) {
-    return this.clientesService.findAll(user.empresaId, user.permisos);
+    return this.clientesService.findAll(user.empresaId, user.permisos, user.sucursalId);
   }
 
   @CheckPermissions('clientes.leer')
   @Get(':id')
   findOne(@CurrentUser() user: RequestUser, @Param('id') id: string) {
-    return this.clientesService.findOne(user.empresaId, id);
+    return this.clientesService.findOne(user.empresaId, id, user.permisos, user.sucursalId);
   }
 
   @CheckPermissions('clientes.leer')
   @Get(':id/perfil')
   findPerfil(@CurrentUser() user: RequestUser, @Param('id') id: string) {
-    return this.clientesService.findPerfil(user.empresaId, id, user.permisos);
+    return this.clientesService.findPerfil(user.empresaId, id, user.permisos, user.sucursalId);
   }
 
   @CheckPermissions('clientes.crear')
   @Post()
   create(@CurrentUser() user: RequestUser, @Body() dto: CreateClienteDto) {
-    return this.clientesService.create(user.empresaId, user.id, dto);
+    return this.clientesService.create(
+      user.empresaId,
+      user.id,
+      dto,
+      user.permisos,
+      user.sucursalId,
+    );
   }
 
   @CheckPermissions('clientes.actualizar')
@@ -57,6 +64,19 @@ export class ClientesController {
     @Param('id') id: string,
     @Body() dto: UpdateClienteDto,
   ) {
-    return this.clientesService.update(user.empresaId, user.id, id, dto);
+    return this.clientesService.update(
+      user.empresaId,
+      user.id,
+      id,
+      dto,
+      user.permisos,
+      user.sucursalId,
+    );
+  }
+
+  @CheckPermissions('clientes.eliminar')
+  @Delete(':id')
+  remove(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.clientesService.remove(user.empresaId, id, user.permisos, user.sucursalId);
   }
 }

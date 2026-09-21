@@ -1,10 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
+import { MENSAJE_TELEFONO_INVALIDO, REGEX_TELEFONO } from '../../common/validators/telefono';
 
 export class UpdateSucursalDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
   nombre?: string;
 
   @ApiProperty({ required: false })
@@ -41,7 +52,7 @@ export class UpdateSucursalDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @Matches(REGEX_TELEFONO, { message: MENSAJE_TELEFONO_INVALIDO })
   telefono?: string;
 
   @ApiProperty({ required: false, description: 'Usuario responsable de la sucursal' })

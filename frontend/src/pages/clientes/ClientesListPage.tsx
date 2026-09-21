@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CanAccess } from '@refinedev/core'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
+import { useSucursalActiva } from '../../hooks/useSucursalActiva'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { PrimaryLinkButton } from '../../components/ui/PrimaryButton'
 import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { Avatar } from '../../components/ui/Avatar'
+import { SucursalActivaSelector } from '../../components/ui/SucursalActivaSelector'
 import {
   EstadoMembresiaBadge,
   ESTADO_MEMBRESIA_LABEL,
@@ -25,11 +27,15 @@ interface Cliente {
   fotoUrl: string | null
   sexo: string | null
   creadoEn: string
+  sucursal: { id: string; nombre: string } | null
   estadoMembresia: { estado: EstadoMembresia; diasRestantes: number | null; plan: string | null } | null
 }
 
 export function ClientesListPage() {
   const navigate = useNavigate()
+  const { puedeVerTodasSucursales, sucursales, sucursalActivaId, setSucursalActivaId } =
+    useSucursalActiva()
+
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [cargando, setCargando] = useState(true)
 
@@ -42,6 +48,11 @@ export function ClientesListPage() {
       .finally(() => setCargando(false))
   }, [])
 
+  const clientesEnSucursal = useMemo(() => {
+    if (!sucursalActivaId) return clientes
+    return clientes.filter((c) => c.sucursal?.id === sucursalActivaId)
+  }, [clientes, sucursalActivaId])
+
   const {
     query,
     setQuery,
@@ -51,7 +62,7 @@ export function ClientesListPage() {
     setPagina,
     totalPaginas,
     totalFiltrados,
-  } = useBusquedaPaginada(clientes, (c) => `${c.nombre} ${c.email ?? ''} ${c.etiqueta ?? ''}`)
+  } = useBusquedaPaginada(clientesEnSucursal, (c) => `${c.nombre} ${c.email ?? ''} ${c.etiqueta ?? ''}`)
 
   const filasCSV = filtrados.map((c) => ({
     nombre: c.nombre,
@@ -78,8 +89,15 @@ export function ClientesListPage() {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar por nombre, email o etiqueta…" />
+        {puedeVerTodasSucursales && (
+          <SucursalActivaSelector
+            sucursales={sucursales}
+            value={sucursalActivaId}
+            onChange={setSucursalActivaId}
+          />
+        )}
       </div>
 
       <div className="mt-3">
@@ -115,6 +133,11 @@ export function ClientesListPage() {
                   {cliente.etiqueta && (
                     <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 font-medium text-[var(--color-text-muted)]">
                       {cliente.etiqueta}
+                    </span>
+                  )}
+                  {puedeVerTodasSucursales && cliente.sucursal && (
+                    <span className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-text-faint)]">
+                      {cliente.sucursal.nombre}
                     </span>
                   )}
                 </div>

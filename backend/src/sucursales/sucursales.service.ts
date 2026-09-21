@@ -30,11 +30,28 @@ export class SucursalesService {
     }
   }
 
+  /** Nombre único por empresa, sin importar mayúsculas ni espacios de más — evita crear
+   * "Sucursal Norte" dos veces por distraído. `ignorarId` se usa al editar, para no chocar
+   * contra el propio registro que se está guardando. */
+  private async validarNombreUnico(empresaId: string, nombre: string, ignorarId?: string) {
+    const duplicada = await this.prisma.sucursal.findFirst({
+      where: {
+        empresaId,
+        id: ignorarId ? { not: ignorarId } : undefined,
+        nombre: { equals: nombre.trim(), mode: 'insensitive' },
+      },
+    });
+    if (duplicada) {
+      throw new ConflictException(`Ya existe una sucursal llamada "${nombre.trim()}"`);
+    }
+  }
+
   async create(empresaId: string, dto: CreateSucursalDto) {
     await this.validarEncargado(empresaId, dto.encargadoId);
+    await this.validarNombreUnico(empresaId, dto.nombre);
 
     return this.prisma.sucursal.create({
-      data: { empresaId, ...dto, encargadoId: dto.encargadoId || undefined },
+      data: { empresaId, ...dto, nombre: dto.nombre.trim(), encargadoId: dto.encargadoId || undefined },
       include: INCLUDE_SUCURSAL,
     });
   }
@@ -48,10 +65,17 @@ export class SucursalesService {
     }
 
     await this.validarEncargado(empresaId, dto.encargadoId);
+    if (dto.nombre) {
+      await this.validarNombreUnico(empresaId, dto.nombre, id);
+    }
 
     return this.prisma.sucursal.update({
       where: { id },
-      data: { ...dto, encargadoId: dto.encargadoId === '' ? null : dto.encargadoId },
+      data: {
+        ...dto,
+        nombre: dto.nombre?.trim(),
+        encargadoId: dto.encargadoId === '' ? null : dto.encargadoId,
+      },
       include: INCLUDE_SUCURSAL,
     });
   }

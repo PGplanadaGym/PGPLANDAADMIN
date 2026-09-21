@@ -1,10 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsIn, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
+import { MENSAJE_TELEFONO_INVALIDO, REGEX_TELEFONO } from '../../common/validators/telefono';
+import { MENSAJE_NOMBRE_INVALIDO, REGEX_NOMBRE_PERSONA } from '../../common/validators/nombre-persona';
 
 export class CreateClienteDto {
   @ApiProperty()
   @IsString()
+  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+  @Matches(REGEX_NOMBRE_PERSONA, { message: MENSAJE_NOMBRE_INVALIDO })
   nombre!: string;
+
+  @ApiProperty({
+    description:
+      'Sucursal a la que pertenece el cliente. Si quien crea no puede ver todas las sucursales, se ignora y se usa la suya.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  sucursalId!: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -13,7 +34,7 @@ export class CreateClienteDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @Matches(REGEX_TELEFONO, { message: MENSAJE_TELEFONO_INVALIDO })
   telefono?: string;
 
   @ApiProperty({ required: false })

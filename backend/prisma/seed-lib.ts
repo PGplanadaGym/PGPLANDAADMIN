@@ -15,6 +15,8 @@ export const CATALOGO_PERMISOS = [
   { clave: 'clientes.leer', etiqueta: 'Ver clientes' },
   { clave: 'clientes.crear', etiqueta: 'Crear clientes' },
   { clave: 'clientes.actualizar', etiqueta: 'Editar y archivar clientes' },
+  { clave: 'clientes.eliminar', etiqueta: 'Eliminar clientes sin historial (creados por error)' },
+  { clave: 'clientes.ver-todas-sucursales', etiqueta: 'Ver clientes de todas las sucursales (no solo la propia)' },
   { clave: 'recursos.leer', etiqueta: 'Ver recursos agendables' },
   { clave: 'recursos.crear', etiqueta: 'Crear recursos agendables' },
   { clave: 'recursos.actualizar', etiqueta: 'Editar recursos agendables y su horario' },

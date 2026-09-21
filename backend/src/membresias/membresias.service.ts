@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { filtroSucursalCliente, puedeVerTodasSucursales } from '../common/utils/sucursal-scope';
 import { RenovarMembresiaDto } from './dto/renovar-membresia.dto';
 import { EditarVencimientoMembresiaDto } from './dto/editar-vencimiento-membresia.dto';
 
@@ -17,7 +18,13 @@ export class MembresiasService {
   constructor(private readonly prisma: PrismaService) {}
 
   private construirFila(
-    cliente: { id: string; nombre: string; email: string | null; fotoUrl: string | null },
+    cliente: {
+      id: string;
+      nombre: string;
+      email: string | null;
+      fotoUrl: string | null;
+      sucursal?: { id: string; nombre: string } | null;
+    },
     membresia: { id: string; fechaInicio: Date; fechaVencimiento: Date; plan: { nombre: string; duracionDias: number } } | undefined,
     hoy: Date,
   ) {
@@ -28,6 +35,7 @@ export class MembresiasService {
           nombre: cliente.nombre,
           email: cliente.email,
           fotoUrl: cliente.fotoUrl,
+          sucursal: cliente.sucursal ?? null,
         },
         membresia: null,
         diasRestantes: null,
@@ -45,6 +53,7 @@ export class MembresiasService {
         nombre: cliente.nombre,
         email: cliente.email,
         fotoUrl: cliente.fotoUrl,
+        sucursal: cliente.sucursal ?? null,
       },
       membresia: {
         id: membresia.id,
@@ -58,10 +67,15 @@ export class MembresiasService {
     };
   }
 
-  async findEstadoPorEmpresa(empresaId: string) {
+  async findEstadoPorEmpresa(
+    empresaId: string,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
     const [clientes, membresias] = await Promise.all([
       this.prisma.cliente.findMany({
-        where: { empresaId, activo: true },
+        where: { empresaId, activo: true, ...filtroSucursalCliente(permisosVisor, sucursalIdVisor) },
+        include: { sucursal: { select: { id: true, nombre: true } } },
         orderBy: { nombre: 'asc' },
       }),
       this.prisma.membresia.findMany({
@@ -87,8 +101,20 @@ export class MembresiasService {
     );
   }
 
-  async estadoDeCliente(empresaId: string, clienteId: string) {
-    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, empresaId } });
+  async estadoDeCliente(
+    empresaId: string,
+    clienteId: string,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId,
+        ...filtroSucursalCliente(permisosVisor, sucursalIdVisor),
+      },
+      include: { sucursal: { select: { id: true, nombre: true } } },
+    });
     if (!cliente) {
       throw new NotFoundException('Cliente no encontrado');
     }
@@ -102,8 +128,17 @@ export class MembresiasService {
     return this.construirFila(cliente, membresia ?? undefined, new Date());
   }
 
-  async renovar(empresaId: string, actorId: string, clienteId: string, dto: RenovarMembresiaDto) {
-    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, empresaId } });
+  async renovar(
+    empresaId: string,
+    actorId: string,
+    clienteId: string,
+    dto: RenovarMembresiaDto,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
+  ) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id: clienteId, empresaId, ...filtroSucursalCliente(permisosVisor, sucursalIdVisor) },
+    });
     if (!cliente) {
       throw new NotFoundException('Cliente no encontrado');
     }
@@ -165,12 +200,17 @@ export class MembresiasService {
     actorId: string,
     membresiaId: string,
     dto: EditarVencimientoMembresiaDto,
+    permisosVisor: string[],
+    sucursalIdVisor: string | null,
   ) {
     const membresia = await this.prisma.membresia.findFirst({
       where: { id: membresiaId, empresaId },
-      include: { cliente: { select: { nombre: true } } },
+      include: { cliente: { select: { nombre: true, sucursalId: true } } },
     });
-    if (!membresia) {
+    if (
+      !membresia ||
+      (!puedeVerTodasSucursales(permisosVisor) && membresia.cliente.sucursalId !== sucursalIdVisor)
+    ) {
       throw new NotFoundException('Membresía no encontrada');
     }
 

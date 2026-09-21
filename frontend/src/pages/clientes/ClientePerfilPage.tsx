@@ -11,6 +11,7 @@ import {
   ArchiveRestore,
   Archive,
   MapPin,
+  Trash2,
 } from 'lucide-react'
 import { CanAccess } from '@refinedev/core'
 import { axiosInstance } from '../../lib/axios'
@@ -37,6 +38,7 @@ interface Cliente {
   activo: boolean
   sexo: string | null
   fotoUrl: string | null
+  sucursal: { id: string; nombre: string } | null
 }
 
 function mensajeError(error: unknown, fallback: string) {
@@ -134,6 +136,7 @@ export function ClientePerfilPage() {
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [cargando, setCargando] = useState(true)
   const [cambiandoActivo, setCambiandoActivo] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
 
   const [modalUbicacion, setModalUbicacion] = useState(false)
   const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<{
@@ -174,6 +177,27 @@ export function ClientePerfilPage() {
       toast.error(mensajeError(error, 'No se pudo actualizar el cliente'))
     } finally {
       setCambiandoActivo(false)
+    }
+  }
+
+  const eliminarCliente = async () => {
+    if (!perfil) return
+    const { cliente } = perfil
+    const confirmado = await confirmar(
+      `Eliminar a «${cliente.nombre}»`,
+      'Se borra por completo, no se puede deshacer. Solo funciona si el cliente no tiene historial (ventas, citas, membresías, cuentas, mediciones o activos asignados) — si tiene, archívalo en su lugar.',
+      'Eliminar',
+    )
+    if (!confirmado) return
+    setEliminando(true)
+    try {
+      await axiosInstance.delete(`/clientes/${cliente.id}`)
+      toast.success('Cliente eliminado')
+      navigate('/clientes')
+    } catch (error) {
+      toast.error(mensajeError(error, 'No se pudo eliminar el cliente'))
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -248,6 +272,7 @@ export function ClientePerfilPage() {
             </div>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               {cliente.email ?? 'Sin email'} · {cliente.telefono ?? 'Sin teléfono'}
+              {cliente.sucursal && <> · {cliente.sucursal.nombre}</>}
             </p>
             {cliente.notas && (
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">{cliente.notas}</p>
@@ -280,6 +305,18 @@ export function ClientePerfilPage() {
                 <ArchiveRestore size={16} />
               )}
               {cambiandoActivo ? 'Actualizando…' : cliente.activo ? 'Archivar' : 'Reactivar'}
+            </button>
+          </CanAccess>
+          <CanAccess resource="clientes" action="delete">
+            <button
+              type="button"
+              onClick={eliminarCliente}
+              disabled={eliminando}
+              title="Eliminar por completo (solo si no tiene historial)"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              {eliminando ? <Spinner size={14} /> : <Trash2 size={16} />}
+              {eliminando ? 'Eliminando…' : 'Eliminar'}
             </button>
           </CanAccess>
         </div>

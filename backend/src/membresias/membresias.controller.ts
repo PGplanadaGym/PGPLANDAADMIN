@@ -21,13 +21,18 @@ export class MembresiasController {
   @CheckPermissions('membresias.leer')
   @Get()
   findEstado(@CurrentUser() user: RequestUser) {
-    return this.membresiasService.findEstadoPorEmpresa(user.empresaId);
+    return this.membresiasService.findEstadoPorEmpresa(user.empresaId, user.permisos, user.sucursalId);
   }
 
   @CheckPermissions('membresias.leer')
   @Get('cliente/:clienteId')
   estadoDeCliente(@CurrentUser() user: RequestUser, @Param('clienteId') clienteId: string) {
-    return this.membresiasService.estadoDeCliente(user.empresaId, clienteId);
+    return this.membresiasService.estadoDeCliente(
+      user.empresaId,
+      clienteId,
+      user.permisos,
+      user.sucursalId,
+    );
   }
 
   @CheckPermissions('membresias.crear')
@@ -37,7 +42,14 @@ export class MembresiasController {
     @Param('clienteId') clienteId: string,
     @Body() dto: RenovarMembresiaDto,
   ) {
-    return this.membresiasService.renovar(user.empresaId, user.id, clienteId, dto);
+    return this.membresiasService.renovar(
+      user.empresaId,
+      user.id,
+      clienteId,
+      dto,
+      user.permisos,
+      user.sucursalId,
+    );
   }
 
   @CheckPermissions('membresias.actualizar')
@@ -47,6 +59,13 @@ export class MembresiasController {
     @Param('id') id: string,
     @Body() dto: EditarVencimientoMembresiaDto,
   ) {
-    return this.membresiasService.editarVencimiento(user.empresaId, user.id, id, dto);
+    return this.membresiasService.editarVencimiento(
+      user.empresaId,
+      user.id,
+      id,
+      dto,
+      user.permisos,
+      user.sucursalId,
+    );
   }
 }

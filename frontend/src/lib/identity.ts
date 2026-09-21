@@ -17,6 +17,7 @@ export interface Identity {
   email: string
   fotoUrl: string | null
   permisos: string[]
+  sucursalId: string | null
   empresa: EmpresaBranding
 }
 

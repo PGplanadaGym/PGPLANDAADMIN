@@ -102,11 +102,40 @@ function calcularGrasaPreview(
   return Math.round(valor * 10) / 10
 }
 
-function claseClasificacion(clasificacion: string) {
-  if (clasificacion === 'Normal') return 'bg-emerald-100 text-emerald-700'
-  if (clasificacion === 'Bajo peso') return 'bg-sky-100 text-sky-700'
-  if (clasificacion === 'Sobrepeso') return 'bg-amber-100 text-amber-700'
-  return 'bg-red-100 text-red-700'
+/**
+ * Compara la primera medición contra la más reciente y resume en qué mejoró — solo indicadores
+ * donde la dirección buena es clara sin importar el objetivo (bajar de peso o ganar músculo):
+ * menos grasa, más músculo, menos cintura. El peso y el IMC no entran acá porque "subir" puede
+ * ser justo la meta (ganar músculo), así que no se puede asumir que bajar siempre es mejora.
+ */
+function calcularMejoras(primera: Medicion, ultima: Medicion): string[] {
+  const mejoras: string[] = []
+
+  const grasaInicial = primera.calculos.porcentajeGrasa
+  const grasaFinal = ultima.calculos.porcentajeGrasa
+  if (grasaInicial != null && grasaFinal != null && grasaFinal < grasaInicial) {
+    mejoras.push(
+      `Bajaste ${(grasaInicial - grasaFinal).toFixed(1)} puntos de grasa corporal (${grasaInicial}% → ${grasaFinal}%)`,
+    )
+  }
+
+  const muscInicial = primera.masaMuscular != null ? Number(primera.masaMuscular) : null
+  const muscFinal = ultima.masaMuscular != null ? Number(ultima.masaMuscular) : null
+  if (muscInicial != null && muscFinal != null && muscFinal > muscInicial) {
+    mejoras.push(
+      `Ganaste ${(muscFinal - muscInicial).toFixed(1)} puntos de masa muscular (${muscInicial}% → ${muscFinal}%)`,
+    )
+  }
+
+  const cinturaInicial = primera.perimetroCintura != null ? Number(primera.perimetroCintura) : null
+  const cinturaFinal = ultima.perimetroCintura != null ? Number(ultima.perimetroCintura) : null
+  if (cinturaInicial != null && cinturaFinal != null && cinturaFinal < cinturaInicial) {
+    mejoras.push(
+      `Tu cintura bajó ${(cinturaInicial - cinturaFinal).toFixed(1)} cm (${cinturaInicial} → ${cinturaFinal} cm)`,
+    )
+  }
+
+  return mejoras
 }
 
 export function SeguimientoFisico({
@@ -214,6 +243,7 @@ export function SeguimientoFisico({
   const ultima = mediciones[mediciones.length - 1] ?? null
   const primera = mediciones[0] ?? null
   const diferenciaKg = ultima && primera ? Number(ultima.peso) - Number(primera.peso) : null
+  const mejoras = ultima && primera && ultima !== primera ? calcularMejoras(primera, ultima) : []
 
   const datosGrafica = mediciones.map((m) => ({
     fecha: new Date(m.fecha).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' }),
@@ -255,6 +285,19 @@ export function SeguimientoFisico({
         </p>
       ) : (
         <>
+          {mejoras.length > 0 && (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950">
+              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                Mejoraste en estos aspectos desde la primera medición
+              </p>
+              <ul className="mt-1 flex flex-col gap-0.5 text-xs text-emerald-700 dark:text-emerald-300">
+                {mejoras.map((texto) => (
+                  <li key={texto}>• {texto}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">Peso actual</p>
@@ -273,11 +316,6 @@ export function SeguimientoFisico({
             <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">IMC</p>
               <p className="text-lg font-bold text-[var(--color-text)]">{ultima!.calculos.imc}</p>
-              <span
-                className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium ${claseClasificacion(ultima!.calculos.clasificacionImc)}`}
-              >
-                {ultima!.calculos.clasificacionImc}
-              </span>
             </div>
             <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
               <p className="text-xs text-[var(--color-text-muted)]">Peso ideal</p>
@@ -399,9 +437,7 @@ export function SeguimientoFisico({
                     <td className="py-1.5 pr-3 font-medium text-[var(--color-text)]">
                       {Number(m.peso).toFixed(1)} kg
                     </td>
-                    <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">
-                      {m.calculos.imc} · {m.calculos.clasificacionImc}
-                    </td>
+                    <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">{m.calculos.imc}</td>
                     <td className="py-1.5 pr-3 text-[var(--color-text-muted)]">
                       {m.calculos.porcentajeGrasa != null ? `${m.calculos.porcentajeGrasa}%` : '—'}
                     </td>

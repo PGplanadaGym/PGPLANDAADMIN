@@ -12,10 +12,22 @@ import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { Avatar } from '../../components/ui/Avatar'
 import { ImageUploadField } from '../../components/ui/ImageUploadField'
+import { soloDigitos, soloTelefono } from '../../lib/validacionInputs'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
-function formatearHorario(dias: Set<string>, horaInicio: string, horaFin: string) {
+interface HorarioBloque {
+  id: string
+  dias: Set<string>
+  horaInicio: string
+  horaFin: string
+}
+
+function nuevoBloqueHorario(): HorarioBloque {
+  return { id: crypto.randomUUID(), dias: new Set(), horaInicio: '09:00', horaFin: '18:00' }
+}
+
+function formatearBloque(dias: Set<string>, horaInicio: string, horaFin: string) {
   if (dias.size === 0) return ''
   const grupos: string[][] = []
   for (const dia of DIAS) {
@@ -31,68 +43,93 @@ function formatearHorario(dias: Set<string>, horaInicio: string, horaFin: string
   return `${textoDias} ${horaInicio}-${horaFin}`
 }
 
-interface HorarioComposerProps {
-  dias: Set<string>
-  onCambiarDias: (dias: Set<string>) => void
-  horaInicio: string
-  onCambiarHoraInicio: (valor: string) => void
-  horaFin: string
-  onCambiarHoraFin: (valor: string) => void
+// Cada bloque puede tener sus propios días y horario — así una sucursal puede tener,
+// por ejemplo, Lun-Vie 10:00-18:00 y un bloque aparte para Sáb 13:00-18:00.
+function formatearHorario(bloques: HorarioBloque[]) {
+  return bloques
+    .map((b) => formatearBloque(b.dias, b.horaInicio, b.horaFin))
+    .filter(Boolean)
+    .join(' · ')
 }
 
-function HorarioComposer({
-  dias,
-  onCambiarDias,
-  horaInicio,
-  onCambiarHoraInicio,
-  horaFin,
-  onCambiarHoraFin,
-}: HorarioComposerProps) {
-  const alternarDia = (dia: string) => {
-    const nuevo = new Set(dias)
+interface HorarioComposerProps {
+  bloques: HorarioBloque[]
+  onCambiarBloques: (bloques: HorarioBloque[]) => void
+}
+
+function HorarioComposer({ bloques, onCambiarBloques }: HorarioComposerProps) {
+  const actualizarBloque = (id: string, cambios: Partial<HorarioBloque>) => {
+    onCambiarBloques(bloques.map((b) => (b.id === id ? { ...b, ...cambios } : b)))
+  }
+
+  const alternarDia = (bloque: HorarioBloque, dia: string) => {
+    const nuevo = new Set(bloque.dias)
     if (nuevo.has(dia)) nuevo.delete(dia)
     else nuevo.add(dia)
-    onCambiarDias(nuevo)
+    actualizarBloque(bloque.id, { dias: nuevo })
   }
+
+  const agregarBloque = () => onCambiarBloques([...bloques, nuevoBloqueHorario()])
+  const quitarBloque = (id: string) => onCambiarBloques(bloques.filter((b) => b.id !== id))
 
   return (
     <div>
       <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
         Horario de atención
       </label>
-      <div className="flex flex-wrap gap-1">
-        {DIAS.map((dia) => (
-          <button
-            key={dia}
-            type="button"
-            onClick={() => alternarDia(dia)}
-            className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-              dias.has(dia)
-                ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-white'
-                : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
-            }`}
-          >
-            {dia}
-          </button>
+      <div className="space-y-2">
+        {bloques.map((bloque) => (
+          <div key={bloque.id} className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-1">
+              {DIAS.map((dia) => (
+                <button
+                  key={dia}
+                  type="button"
+                  onClick={() => alternarDia(bloque, dia)}
+                  className={`rounded-lg border px-2 py-1 text-xs font-medium ${
+                    bloque.dias.has(dia)
+                      ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-white'
+                      : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
+                  }`}
+                >
+                  {dia}
+                </button>
+              ))}
+            </div>
+            <input
+              type="time"
+              value={bloque.horaInicio}
+              onChange={(e) => actualizarBloque(bloque.id, { horaInicio: e.target.value })}
+              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            />
+            <span className="text-sm text-[var(--color-text-muted)]">a</span>
+            <input
+              type="time"
+              value={bloque.horaFin}
+              onChange={(e) => actualizarBloque(bloque.id, { horaFin: e.target.value })}
+              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+            />
+            {bloques.length > 1 && (
+              <button
+                type="button"
+                onClick={() => quitarBloque(bloque.id)}
+                className="text-xs text-[var(--color-text-faint)] hover:text-red-600"
+              >
+                Quitar
+              </button>
+            )}
+          </div>
         ))}
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <input
-          type="time"
-          value={horaInicio}
-          onChange={(e) => onCambiarHoraInicio(e.target.value)}
-          className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-        />
-        <span className="text-sm text-[var(--color-text-muted)]">a</span>
-        <input
-          type="time"
-          value={horaFin}
-          onChange={(e) => onCambiarHoraFin(e.target.value)}
-          className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-        />
-      </div>
-      <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-        {dias.size > 0 ? formatearHorario(dias, horaInicio, horaFin) : 'Sin horario definido'}
+      <button
+        type="button"
+        onClick={agregarBloque}
+        className="mt-2 text-xs font-medium text-[var(--color-primario)] hover:underline"
+      >
+        + Agregar horario distinto (ej: sábados)
+      </button>
+      <p className="mt-2 text-xs text-[var(--color-text-faint)]">
+        {formatearHorario(bloques) || 'Sin horario definido'}
       </p>
     </div>
   )
@@ -137,9 +174,7 @@ export function SucursalesPage() {
   const [codigoEstablecimiento, setCodigoEstablecimiento] = useState('')
   const [telefono, setTelefono] = useState('')
   const [encargadoId, setEncargadoId] = useState('')
-  const [horarioDias, setHorarioDias] = useState<Set<string>>(new Set())
-  const [horarioInicio, setHorarioInicio] = useState('09:00')
-  const [horarioFin, setHorarioFin] = useState('18:00')
+  const [horarioBloques, setHorarioBloques] = useState<HorarioBloque[]>([nuevoBloqueHorario()])
   const [creando, setCreando] = useState(false)
   const [eliminandoId, setEliminandoId] = useState<string | null>(null)
 
@@ -149,9 +184,7 @@ export function SucursalesPage() {
   const [codigoEstablecimientoEdit, setCodigoEstablecimientoEdit] = useState('')
   const [telefonoEdit, setTelefonoEdit] = useState('')
   const [encargadoIdEdit, setEncargadoIdEdit] = useState('')
-  const [horarioDiasEdit, setHorarioDiasEdit] = useState<Set<string>>(new Set())
-  const [horarioInicioEdit, setHorarioInicioEdit] = useState('09:00')
-  const [horarioFinEdit, setHorarioFinEdit] = useState('18:00')
+  const [horarioBloquesEdit, setHorarioBloquesEdit] = useState<HorarioBloque[]>([nuevoBloqueHorario()])
   const [imagenUrlEdit, setImagenUrlEdit] = useState('')
   const [guardandoEdit, setGuardandoEdit] = useState(false)
 
@@ -189,21 +222,19 @@ export function SucursalesPage() {
     setCreando(true)
     try {
       await axiosInstance.post('/sucursales', {
-        nombre,
+        nombre: nombre.trim(),
         direccion: direccion || undefined,
         codigoEstablecimiento: codigoEstablecimiento || undefined,
         telefono: telefono || undefined,
         encargadoId: encargadoId || undefined,
-        horarioAtencion: formatearHorario(horarioDias, horarioInicio, horarioFin) || undefined,
+        horarioAtencion: formatearHorario(horarioBloques) || undefined,
       })
       setNombre('')
       setDireccion('')
       setCodigoEstablecimiento('')
       setTelefono('')
       setEncargadoId('')
-      setHorarioDias(new Set())
-      setHorarioInicio('09:00')
-      setHorarioFin('18:00')
+      setHorarioBloques([nuevoBloqueHorario()])
       toast.success('Sucursal creada')
       cargar(mostrarInactivas)
     } catch (error) {
@@ -229,9 +260,7 @@ export function SucursalesPage() {
     setCodigoEstablecimientoEdit(sucursal.codigoEstablecimiento ?? '')
     setTelefonoEdit(sucursal.telefono ?? '')
     setEncargadoIdEdit(sucursal.encargado?.id ?? '')
-    setHorarioDiasEdit(new Set())
-    setHorarioInicioEdit('09:00')
-    setHorarioFinEdit('18:00')
+    setHorarioBloquesEdit([nuevoBloqueHorario()])
     setImagenUrlEdit(sucursal.imagenUrl ?? '')
   }
 
@@ -239,15 +268,16 @@ export function SucursalesPage() {
     if (!sucursalEdit || !nombreEdit.trim()) return
     setGuardandoEdit(true)
     try {
-      const horarioCompuesto = formatearHorario(horarioDiasEdit, horarioInicioEdit, horarioFinEdit)
+      const horarioTocado = horarioBloquesEdit.some((b) => b.dias.size > 0)
+      const horarioCompuesto = formatearHorario(horarioBloquesEdit)
       await axiosInstance.patch(`/sucursales/${sucursalEdit.id}`, {
-        nombre: nombreEdit,
+        nombre: nombreEdit.trim(),
         direccion: direccionEdit || null,
         codigoEstablecimiento: codigoEstablecimientoEdit || null,
         telefono: telefonoEdit || null,
         encargadoId: encargadoIdEdit || '',
         // Si no tocaste los días del horario, se conserva el que ya tenía guardado.
-        horarioAtencion: horarioDiasEdit.size > 0 ? horarioCompuesto : sucursalEdit.horarioAtencion,
+        horarioAtencion: horarioTocado ? horarioCompuesto : sucursalEdit.horarioAtencion,
         imagenUrl: imagenUrlEdit || null,
       })
       toast.success('Sucursal actualizada')
@@ -349,8 +379,9 @@ export function SucursalesPage() {
               </label>
               <input
                 value={codigoEstablecimiento}
-                onChange={(e) => setCodigoEstablecimiento(e.target.value)}
+                onChange={(e) => setCodigoEstablecimiento(soloDigitos(e.target.value))}
                 placeholder="001"
+                inputMode="numeric"
                 maxLength={3}
                 className="w-24 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
               />
@@ -360,8 +391,11 @@ export function SucursalesPage() {
                 Teléfono
               </label>
               <input
+                type="tel"
+                inputMode="tel"
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                onChange={(e) => setTelefono(soloTelefono(e.target.value))}
+                placeholder="02 234 5678"
                 className="w-36 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
               />
             </div>
@@ -387,14 +421,7 @@ export function SucursalesPage() {
           </div>
 
           <div className="mt-3">
-            <HorarioComposer
-              dias={horarioDias}
-              onCambiarDias={setHorarioDias}
-              horaInicio={horarioInicio}
-              onCambiarHoraInicio={setHorarioInicio}
-              horaFin={horarioFin}
-              onCambiarHoraFin={setHorarioFin}
-            />
+            <HorarioComposer bloques={horarioBloques} onCambiarBloques={setHorarioBloques} />
           </div>
 
           <PrimaryButton
@@ -600,8 +627,9 @@ export function SucursalesPage() {
                   </label>
                   <input
                     value={codigoEstablecimientoEdit}
-                    onChange={(e) => setCodigoEstablecimientoEdit(e.target.value)}
+                    onChange={(e) => setCodigoEstablecimientoEdit(soloDigitos(e.target.value))}
                     placeholder="001"
+                    inputMode="numeric"
                     maxLength={3}
                     className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                   />
@@ -611,8 +639,10 @@ export function SucursalesPage() {
                     Teléfono
                   </label>
                   <input
+                    type="tel"
+                    inputMode="tel"
                     value={telefonoEdit}
-                    onChange={(e) => setTelefonoEdit(e.target.value)}
+                    onChange={(e) => setTelefonoEdit(soloTelefono(e.target.value))}
                     className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                   />
                 </div>
@@ -642,14 +672,7 @@ export function SucursalesPage() {
                     Actual: {sucursalEdit.horarioAtencion} — marca los días abajo para reemplazarlo.
                   </p>
                 )}
-                <HorarioComposer
-                  dias={horarioDiasEdit}
-                  onCambiarDias={setHorarioDiasEdit}
-                  horaInicio={horarioInicioEdit}
-                  onCambiarHoraInicio={setHorarioInicioEdit}
-                  horaFin={horarioFinEdit}
-                  onCambiarHoraFin={setHorarioFinEdit}
-                />
+                <HorarioComposer bloques={horarioBloquesEdit} onCambiarBloques={setHorarioBloquesEdit} />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
