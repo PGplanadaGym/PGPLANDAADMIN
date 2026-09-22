@@ -6,11 +6,20 @@ import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { PasswordInput } from '../../components/ui/PasswordInput'
+import { PasswordStrengthMeter } from '../../components/ui/PasswordStrengthMeter'
 
-const usuarioSchema = z.object({
-  nombre: z.string().min(2, 'Mínimo 2 caracteres'),
-  email: z.string().email('Email inválido'),
-})
+const usuarioSchema = z
+  .object({
+    nombre: z.string().min(2, 'Mínimo 2 caracteres'),
+    email: z.string().email('Email inválido'),
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
+    confirmarPassword: z.string().min(8, 'Mínimo 8 caracteres'),
+  })
+  .refine((values) => values.password === values.confirmarPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmarPassword'],
+  })
 
 type UsuarioValues = z.infer<typeof usuarioSchema>
 
@@ -46,6 +55,7 @@ export function UsuariosCreatePage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
     refineCore: { onFinish },
   } = useForm<UsuarioValues, HttpError, UsuarioValues>({
@@ -55,7 +65,7 @@ export function UsuariosCreatePage() {
       action: 'create',
       successNotification: () => ({
         type: 'success',
-        message: 'Invitación enviada por email',
+        message: 'Usuario creado',
       }),
       errorNotification: (error) => ({
         type: 'error',
@@ -68,13 +78,15 @@ export function UsuariosCreatePage() {
     <div className="max-w-md">
       <h1 className="text-xl font-bold text-[var(--color-text)]">Nuevo usuario</h1>
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-        Le enviaremos un email para que configure su propia contraseña.
+        Define la contraseña con la que este empleado va a ingresar.
       </p>
 
       <form
         onSubmit={handleSubmit(async (values) => {
+          const { confirmarPassword, ...datos } = values
+          void confirmarPassword
           try {
-            await onFinish({ ...values, rolIds: [...rolIds] } as UsuarioValues)
+            await onFinish({ ...datos, rolIds: [...rolIds] } as unknown as UsuarioValues)
             navigate('/usuarios')
           } catch {
             // el error ya se muestra vía notificationProvider
@@ -109,6 +121,30 @@ export function UsuariosCreatePage() {
           )}
         </div>
 
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+            Contraseña
+          </label>
+          <PasswordInput {...register('password')} />
+          <PasswordStrengthMeter password={watch('password') ?? ''} />
+          {errors.password && (
+            <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+          )}
+          {!errors.password && (
+            <p className="mt-1 text-xs text-[var(--color-text-faint)]">Mínimo 8 caracteres</p>
+          )}
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+            Confirmar contraseña
+          </label>
+          <PasswordInput {...register('confirmarPassword')} />
+          {errors.confirmarPassword && (
+            <p className="mt-1 text-xs text-red-600">{errors.confirmarPassword.message}</p>
+          )}
+        </div>
+
         {roles.length > 0 && (
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
@@ -133,7 +169,7 @@ export function UsuariosCreatePage() {
         )}
 
         <PrimaryButton type="submit" disabled={isSubmitting} className="mt-2">
-          {isSubmitting ? 'Enviando invitación…' : 'Invitar usuario'}
+          {isSubmitting ? 'Creando usuario…' : 'Crear usuario'}
         </PrimaryButton>
       </form>
     </div>

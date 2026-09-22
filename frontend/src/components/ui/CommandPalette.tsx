@@ -147,7 +147,7 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
         <Command.Group heading="Acciones rápidas">
           {tienePermiso('usuarios.crear') && (
             <Command.Item onSelect={() => ir('/usuarios/nuevo')}>
-              Invitar usuario
+              Crear usuario
             </Command.Item>
           )}
           {tienePermiso('clientes.crear') && (

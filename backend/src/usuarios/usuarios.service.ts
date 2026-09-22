@@ -1,19 +1,36 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../auth/email.service';
-import { generarTokenPlano, hashToken } from '../common/token.util';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdatePerfilDto } from './dto/update-perfil.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { AsignarRolesDto } from './dto/asignar-roles.dto';
 import { UpdateUsuarioAdminDto } from './dto/update-usuario-admin.dto';
 
-const INVITACION_TTL_MS = 60 * 60 * 1000; // 1 hora
+// Relaciones que cuentan como "este usuario ya tiene algo asignado" (ventas, asistencia,
+// activos a su cargo, etc.) — no incluye roles/sesiones/notificaciones, que no son "actividad"
+// sino solo metadatos de la cuenta y se limpian solos al eliminarla.
+const ACTIVIDAD_COUNT_SELECT = {
+  activosAsignados: true,
+  asignacionesRealizadas: true,
+  movimientosStock: true,
+  marcaciones: true,
+  movimientosCuenta: true,
+  ordenes: true,
+  ordenesCompra: true,
+  pagosNomina: true,
+  pagosNominaRegistrados: true,
+  recursosVinculados: true,
+  mantenimientosActivo: true,
+  sucursalesEncargado: true,
+  medicionesCorporales: true,
+} as const;
 
 const USUARIO_SELECT = {
   id: true,
@@ -28,6 +45,7 @@ const USUARIO_SELECT = {
   creadoEn: true,
   sucursal: { select: { id: true, nombre: true } },
   roles: { select: { rol: { select: { id: true, nombre: true } } } },
+  _count: { select: ACTIVIDAD_COUNT_SELECT },
 } as const;
 
 @Injectable()
@@ -57,7 +75,7 @@ export class UsuariosService {
     return usuario;
   }
 
-  /** Crea el usuario sin contraseña utilizable y le envía una invitación por email para que configure la suya. */
+  /** El administrador define la contraseña del empleado directamente al crearlo. */
   async create(empresaId: string, actorId: string, dto: CreateUsuarioDto) {
     if (dto.rolIds?.length) {
       const rolesValidos = await this.prisma.rol.count({
@@ -73,7 +91,7 @@ export class UsuariosService {
       }
     }
 
-    const passwordHash = await bcrypt.hash(generarTokenPlano(24), 10);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const usuario = await this.prisma.usuario.create({
       data: {
@@ -81,7 +99,7 @@ export class UsuariosService {
         nombre: dto.nombre,
         email: dto.email,
         passwordHash,
-        passwordConfigurada: false,
+        passwordConfigurada: true,
       },
     });
 
@@ -91,55 +109,7 @@ export class UsuariosService {
       });
     }
 
-    await this.enviarInvitacion(usuario.id, usuario.nombre, usuario.email);
-
     return this.findOne(empresaId, usuario.id);
-  }
-
-  private async enviarInvitacion(
-    usuarioId: string,
-    nombre: string,
-    email: string,
-  ) {
-    const tokenPlano = generarTokenPlano(32);
-    await this.prisma.passwordResetToken.create({
-      data: {
-        usuarioId,
-        tokenHash: hashToken(tokenPlano),
-        expiraEn: new Date(Date.now() + INVITACION_TTL_MS),
-      },
-    });
-
-    const activarUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/reset-password?token=${tokenPlano}`;
-    await this.emailService.enviarInvitacion(email, nombre, activarUrl);
-    return activarUrl;
-  }
-
-  /** Solo tiene sentido si el usuario todavía no configuró su propia contraseña. */
-  async reenviarInvitacion(
-    empresaId: string,
-    actorId: string,
-    usuarioId: string,
-  ) {
-    const usuario = await this.prisma.usuario.findFirst({
-      where: { id: usuarioId, empresaId },
-    });
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-    if (usuario.passwordConfigurada) {
-      throw new BadRequestException('Este usuario ya configuró su contraseña');
-    }
-
-    const activarUrl = await this.enviarInvitacion(
-      usuario.id,
-      usuario.nombre,
-      usuario.email,
-    );
-
-    // Se devuelve el link también para que el admin pueda copiarlo y compartirlo a mano
-    // (ej. por WhatsApp) si el correo no llega o queda en spam.
-    return { success: true, activarUrl };
   }
 
   /** Activa o desactiva el acceso de un usuario. Desactivar revoca de inmediato sus
@@ -368,5 +338,35 @@ export class UsuariosService {
     );
 
     return { success: true };
+  }
+
+  /** Solo se puede eliminar un usuario que nunca registró actividad (ventas, asistencia,
+   * activos a su cargo, etc.) — si ya tiene algo asignado, la vía correcta es desactivarlo. */
+  async remove(empresaId: string, actorId: string, id: string) {
+    if (id === actorId) {
+      throw new BadRequestException('No puedes eliminar tu propia cuenta');
+    }
+
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id, empresaId },
+      include: { _count: { select: ACTIVIDAD_COUNT_SELECT } },
+    });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const enUso = Object.values(usuario._count).some((cantidad) => cantidad > 0);
+    if (enUso) {
+      throw new ConflictException(
+        'Este usuario ya tiene actividad registrada (ventas, asistencia, activos asignados, etc.) y no se puede eliminar. Desactívalo en su lugar.',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.usuarioRol.deleteMany({ where: { usuarioId: id } }),
+      this.prisma.refreshToken.deleteMany({ where: { usuarioId: id } }),
+      this.prisma.passwordResetToken.deleteMany({ where: { usuarioId: id } }),
+      this.prisma.usuario.delete({ where: { id } }),
+    ]);
   }
 }

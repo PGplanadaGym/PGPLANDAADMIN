@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CanAccess, useTable } from '@refinedev/core'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { X } from 'lucide-react'
+import { X, Trash2 } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { mensajeError } from '../../lib/errores'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
@@ -31,17 +31,34 @@ interface Usuario {
   email: string
   fotoUrl: string | null
   activo: boolean
-  passwordConfigurada: boolean
   creadoEn: string
   roles: { rol: Rol }[]
   sucursal: Sucursal | null
+  _count: {
+    activosAsignados: number
+    asignacionesRealizadas: number
+    movimientosStock: number
+    marcaciones: number
+    movimientosCuenta: number
+    ordenes: number
+    ordenesCompra: number
+    pagosNomina: number
+    pagosNominaRegistrados: number
+    recursosVinculados: number
+    mantenimientosActivo: number
+    sucursalesEncargado: number
+    medicionesCorporales: number
+  }
+}
+
+function tieneActividad(usuario: Usuario) {
+  return Object.values(usuario._count).some((cantidad) => cantidad > 0)
 }
 
 const ESTADOS = [
   { value: '', label: 'Todos los estados' },
   { value: 'activos', label: 'Activos' },
   { value: 'inactivos', label: 'Inactivos' },
-  { value: 'pendientes', label: 'Invitación pendiente' },
 ] as const
 
 export function UsuariosListPage() {
@@ -53,9 +70,9 @@ export function UsuariosListPage() {
   const [modalUsuario, setModalUsuario] = useState<Usuario | null>(null)
   const [rolesMarcados, setRolesMarcados] = useState<Set<string>>(new Set())
   const [guardando, setGuardando] = useState(false)
-  const [reenviandoId, setReenviandoId] = useState<string | null>(null)
   const [cambiandoSucursalId, setCambiandoSucursalId] = useState<string | null>(null)
   const [cambiandoActivoId, setCambiandoActivoId] = useState<string | null>(null)
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null)
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<(typeof ESTADOS)[number]['value']>('')
   const { confirmar, dialog } = useConfirm()
@@ -115,15 +132,22 @@ export function UsuariosListPage() {
     }
   }
 
-  const reenviarInvitacion = async (usuario: Usuario) => {
-    setReenviandoId(usuario.id)
+  const eliminar = async (usuario: Usuario) => {
+    const confirmado = await confirmar(
+      'Eliminar usuario',
+      `¿Eliminar a «${usuario.nombre}»? Esta acción no se puede deshacer.`,
+      'Eliminar',
+    )
+    if (!confirmado) return
+    setEliminandoId(usuario.id)
     try {
-      await axiosInstance.post(`/usuarios/${usuario.id}/reenviar-invitacion`)
-      toast.success(`Invitación reenviada a ${usuario.email}`)
+      await axiosInstance.delete(`/usuarios/${usuario.id}`)
+      toast.success('Usuario eliminado')
+      await tableQuery.refetch()
     } catch (error) {
-      toast.error(mensajeError(error, 'No se pudo reenviar la invitación'))
+      toast.error(mensajeError(error, 'No se pudo eliminar el usuario'))
     } finally {
-      setReenviandoId(null)
+      setEliminandoId(null)
     }
   }
 
@@ -131,7 +155,6 @@ export function UsuariosListPage() {
     if (filtroRol && !u.roles.some((r) => r.rol.id === filtroRol)) return false
     if (filtroEstado === 'activos' && !u.activo) return false
     if (filtroEstado === 'inactivos' && u.activo) return false
-    if (filtroEstado === 'pendientes' && u.passwordConfigurada) return false
     return true
   })
 
@@ -270,7 +293,7 @@ export function UsuariosListPage() {
         <div className="flex flex-wrap items-center gap-2">
           <ExportarExcelButton nombreArchivo="usuarios.csv" filas={filtrados} />
           <CanAccess resource="usuarios" action="create">
-            <PrimaryLinkButton to="/usuarios/nuevo">Invitar usuario</PrimaryLinkButton>
+            <PrimaryLinkButton to="/usuarios/nuevo">Crear usuario</PrimaryLinkButton>
           </CanAccess>
         </div>
       </div>
@@ -448,11 +471,6 @@ export function UsuariosListPage() {
                     >
                       {usuario.activo ? 'Activo' : 'Inactivo'}
                     </span>
-                    {!usuario.passwordConfigurada && (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                        Pendiente
-                      </span>
-                    )}
                   </div>
                 </td>
                 <td className="px-4 py-2">
@@ -468,16 +486,6 @@ export function UsuariosListPage() {
                       >
                         Cambiar rol
                       </button>
-                      {!usuario.passwordConfigurada && (
-                        <button
-                          type="button"
-                          onClick={() => reenviarInvitacion(usuario)}
-                          disabled={reenviandoId === usuario.id}
-                          className="text-xs text-[var(--color-primario-legible)] hover:underline disabled:opacity-50"
-                        >
-                          {reenviandoId === usuario.id ? 'Enviando…' : 'Reenviar invitación'}
-                        </button>
-                      )}
                       <button
                         type="button"
                         onClick={() => cambiarActivo(usuario)}
@@ -493,6 +501,24 @@ export function UsuariosListPage() {
                             ? 'Desactivar'
                             : 'Activar'}
                       </button>
+                      {tieneActividad(usuario) ? (
+                        <span
+                          title="Ya tiene actividad registrada (ventas, asistencia, activos asignados, etc.) — desactívalo en su lugar"
+                          className="text-[var(--color-text-faint)] opacity-40"
+                        >
+                          <Trash2 size={14} />
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => eliminar(usuario)}
+                          disabled={eliminandoId === usuario.id}
+                          title="Eliminar (sin actividad registrada)"
+                          className="text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {eliminandoId === usuario.id ? <Spinner size={14} /> : <Trash2 size={14} />}
+                        </button>
+                      )}
                     </div>
                   </CanAccess>
                 </td>

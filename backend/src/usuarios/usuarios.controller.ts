@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -129,11 +130,8 @@ export class UsuariosController {
   }
 
   @CheckPermissions('usuarios.actualizar')
-  @Post(':id/reenviar-invitacion')
-  reenviarInvitacion(
-    @CurrentUser() user: RequestUser,
-    @Param('id') id: string,
-  ) {
-    return this.usuariosService.reenviarInvitacion(user.empresaId, user.id, id);
+  @Delete(':id')
+  remove(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.usuariosService.remove(user.empresaId, user.id, id);
   }
 }

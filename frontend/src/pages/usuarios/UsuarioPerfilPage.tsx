@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CanAccess } from '@refinedev/core'
-import { ArrowLeft, Clock, Pencil, Copy, Send } from 'lucide-react'
+import { ArrowLeft, Clock, Pencil } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { mensajeError } from '../../lib/errores'
 import { tiempoRelativo } from '../../lib/fechas'
@@ -30,7 +30,6 @@ interface Usuario {
   cargo: string | null
   bio: string | null
   activo: boolean
-  passwordConfigurada: boolean
   creadoEn: string
   sucursal: Sucursal | null
   roles: { rol: Rol }[]
@@ -52,8 +51,6 @@ export function UsuarioPerfilPage() {
 
   const [editando, setEditando] = useState(false)
   const [guardando, setGuardando] = useState(false)
-  const [reenviando, setReenviando] = useState(false)
-  const [linkInvitacion, setLinkInvitacion] = useState<string | null>(null)
 
   const [formNombre, setFormNombre] = useState('')
   const [formCargo, setFormCargo] = useState('')
@@ -144,32 +141,6 @@ export function UsuarioPerfilPage() {
     }
   }
 
-  const reenviarInvitacion = async () => {
-    if (!id) return
-    setReenviando(true)
-    try {
-      const { data } = await axiosInstance.post<{ activarUrl: string }>(
-        `/usuarios/${id}/reenviar-invitacion`,
-      )
-      setLinkInvitacion(data.activarUrl)
-      toast.success('Invitación reenviada por correo')
-    } catch (error) {
-      toast.error(mensajeError(error, 'No se pudo reenviar la invitación'))
-    } finally {
-      setReenviando(false)
-    }
-  }
-
-  const copiarLink = async () => {
-    if (!linkInvitacion) return
-    try {
-      await navigator.clipboard.writeText(linkInvitacion)
-      toast.success('Link copiado')
-    } catch {
-      toast.error('No se pudo copiar el link')
-    }
-  }
-
   if (cargando) {
     return <CargandoPantalla minHeight={300} />
   }
@@ -205,11 +176,6 @@ export function UsuarioPerfilPage() {
               >
                 {usuario.activo ? 'Activo' : 'Inactivo'}
               </span>
-              {!usuario.passwordConfigurada && (
-                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                  Invitación pendiente
-                </span>
-              )}
             </div>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               {usuario.cargo ? `${usuario.cargo} · ` : ''}
@@ -236,17 +202,6 @@ export function UsuarioPerfilPage() {
 
         <CanAccess resource="usuarios" action="edit">
           <div className="flex shrink-0 flex-wrap gap-2">
-            {!usuario.passwordConfigurada && (
-              <button
-                type="button"
-                onClick={reenviarInvitacion}
-                disabled={reenviando}
-                className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
-              >
-                {reenviando ? <Spinner size={14} /> : <Send size={14} />}
-                Reenviar invitación
-              </button>
-            )}
             {!editando && (
               <button
                 type="button"
@@ -260,20 +215,6 @@ export function UsuarioPerfilPage() {
           </div>
         </CanAccess>
       </div>
-
-      {linkInvitacion && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <span className="min-w-0 flex-1 truncate">{linkInvitacion}</span>
-          <button
-            type="button"
-            onClick={copiarLink}
-            className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-100 px-2 py-1 text-xs font-medium hover:bg-amber-200"
-          >
-            <Copy size={12} />
-            Copiar
-          </button>
-        </div>
-      )}
 
       {editando && (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">

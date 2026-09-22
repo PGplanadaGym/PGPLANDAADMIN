@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUsuarioDto {
   @ApiProperty()
@@ -9,6 +9,11 @@ export class CreateUsuarioDto {
   @ApiProperty()
   @IsEmail()
   email!: string;
+
+  @ApiProperty({ description: 'El administrador define la contraseña con la que el empleado va a ingresar' })
+  @IsString()
+  @MinLength(8)
+  password!: string;
 
   @ApiProperty({ required: false, type: [String] })
   @IsOptional()
