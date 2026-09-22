@@ -4,9 +4,7 @@ import { toast } from 'sonner'
 import {
   ArrowLeft,
   CalendarDays,
-  ShoppingBag,
   Wallet,
-  Boxes,
   Pencil,
   ArchiveRestore,
   Archive,
@@ -55,18 +53,6 @@ interface Cita {
   recurso: { nombre: string }
 }
 
-interface OrdenItem {
-  cantidad: number
-  producto: { nombre: string }
-}
-
-interface Orden {
-  id: string
-  total: string
-  creadoEn: string
-  items: OrdenItem[]
-}
-
 interface MovimientoCuenta {
   id: string
   tipo: string
@@ -74,12 +60,6 @@ interface MovimientoCuenta {
   fecha: string
   descripcion: string | null
   categoria: { nombre: string }
-}
-
-interface ActivoAsignado {
-  id: string
-  fechaAsignacion: string
-  activo: { id: string; nombre: string }
 }
 
 interface EstadoMembresiaCliente {
@@ -91,11 +71,9 @@ interface EstadoMembresiaCliente {
 interface Perfil {
   cliente: Cliente
   citas: Cita[]
-  ordenes: Orden[]
   movimientosCuenta: MovimientoCuenta[]
-  activosAsignados: ActivoAsignado[]
   estadoMembresia: EstadoMembresiaCliente | null
-  resumen: { totalCitas: number; totalGastado: number; activosEnPosesion: number }
+  resumen: { totalCitas: number }
 }
 
 function Seccion({
@@ -238,8 +216,7 @@ export function ClientePerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Cliente no encontrado</p>
   }
 
-  const { cliente, citas, ordenes, movimientosCuenta, activosAsignados, estadoMembresia, resumen } =
-    perfil
+  const { cliente, citas, movimientosCuenta, estadoMembresia, resumen } = perfil
 
   return (
     <div>
@@ -358,20 +335,10 @@ export function ClientePerfilPage() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-          <p className="text-xs text-[var(--color-text-muted)]">Total gastado</p>
-          <p className="text-lg font-bold text-[var(--color-text)]">
-            ${resumen.totalGastado.toFixed(2)}
-          </p>
-        </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
           <p className="text-xs text-[var(--color-text-muted)]">Citas totales</p>
           <p className="text-lg font-bold text-[var(--color-text)]">{resumen.totalCitas}</p>
-        </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-          <p className="text-xs text-[var(--color-text-muted)]">Activos en su poder</p>
-          <p className="text-lg font-bold text-[var(--color-text)]">{resumen.activosEnPosesion}</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
           <p className="text-xs text-[var(--color-text-muted)]">Membresía</p>
@@ -416,22 +383,6 @@ export function ClientePerfilPage() {
                   </Seccion>
                 )}
 
-                {ordenes.length > 0 && (
-                  <Seccion icono={ShoppingBag} titulo="Ventas recientes">
-                    {ordenes.map((orden) => (
-                      <div key={orden.id} className="text-sm">
-                        <span className="font-medium text-[var(--color-text)]">
-                          ${Number(orden.total).toFixed(2)}
-                        </span>{' '}
-                        <span className="text-[var(--color-text-muted)]">
-                          · {new Date(orden.creadoEn).toLocaleDateString()} ·{' '}
-                          {orden.items.map((i) => `${i.cantidad}× ${i.producto.nombre}`).join(', ')}
-                        </span>
-                      </div>
-                    ))}
-                  </Seccion>
-                )}
-
                 {movimientosCuenta.length > 0 && (
                   <Seccion icono={Wallet} titulo="Movimientos en Cuentas">
                     {movimientosCuenta.map((mov) => (
@@ -449,28 +400,13 @@ export function ClientePerfilPage() {
                   </Seccion>
                 )}
 
-                {activosAsignados.length > 0 && (
-                  <Seccion icono={Boxes} titulo="Activos en su poder">
-                    {activosAsignados.map((asignacion) => (
-                      <div key={asignacion.id} className="text-sm">
-                        <span className="text-[var(--color-text)]">{asignacion.activo.nombre}</span>{' '}
-                        <span className="text-[var(--color-text-muted)]">
-                          · desde {new Date(asignacion.fechaAsignacion).toLocaleDateString()}
-                        </span>
-                      </div>
-                    ))}
-                  </Seccion>
-                )}
               </div>
 
-              {citas.length === 0 &&
-                ordenes.length === 0 &&
-                movimientosCuenta.length === 0 &&
-                activosAsignados.length === 0 && (
-                  <p className="mt-2 text-sm text-[var(--color-text-faint)]">
-                    Este cliente todavía no tiene actividad registrada.
-                  </p>
-                )}
+              {citas.length === 0 && movimientosCuenta.length === 0 && (
+                <p className="mt-2 text-sm text-[var(--color-text-faint)]">
+                  Este cliente todavía no tiene actividad registrada.
+                </p>
+              )}
             </>
           )}
 

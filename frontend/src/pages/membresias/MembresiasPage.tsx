@@ -9,7 +9,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
 import { useSucursalActiva } from '../../hooks/useSucursalActiva'
 import { SucursalActivaSelector } from '../../components/ui/SucursalActivaSelector'
@@ -333,7 +333,7 @@ export function MembresiasPage() {
           />
         )}
         <div className="ml-auto">
-          <ExportarCSVButton nombreArchivo="membresias.csv" filas={filasCSV} />
+          <ExportarExcelButton nombreArchivo="membresias.csv" filas={filasCSV} />
         </div>
       </div>
 
@@ -441,7 +441,7 @@ export function MembresiasPage() {
               Renovar membresía — {modalRenovar.cliente.nombre}
             </h2>
             <p className="mt-1 text-xs text-[var(--color-text-faint)]">
-              El pago se registra automáticamente en Cuentas y Reportes por el valor del plan.
+              El pago se registra automáticamente en Cuentas por el valor del plan.
             </p>
 
             <div className="mt-3 flex flex-col gap-3">

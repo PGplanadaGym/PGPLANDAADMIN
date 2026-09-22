@@ -6,7 +6,6 @@ import { Avatar } from '../../components/ui/Avatar'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { PerfilInfoForm, type PerfilValues } from './PerfilInfoForm'
 import { PerfilSeguridadForm } from './PerfilSeguridadForm'
-import { SesionesActivas } from './SesionesActivas'
 
 interface PerfilCompleto extends PerfilValues {
   email: string
@@ -101,10 +100,7 @@ export function PerfilPage() {
               onGuardado={cargarPerfil}
             />
           ) : (
-            <>
-              <PerfilSeguridadForm />
-              <SesionesActivas />
-            </>
+            <PerfilSeguridadForm />
           )}
         </div>
       </div>

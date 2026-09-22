@@ -1,27 +1,15 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CanAccess, useGetIdentity } from '@refinedev/core'
-import {
-  ArrowLeft,
-  Boxes,
-  Fingerprint,
-  Wallet2,
-  Clock,
-  Pencil,
-  Copy,
-  Send,
-} from 'lucide-react'
+import { CanAccess } from '@refinedev/core'
+import { ArrowLeft, Clock, Pencil, Copy, Send } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { mensajeError } from '../../lib/errores'
 import { tiempoRelativo } from '../../lib/fechas'
-import { buildAbility } from '../../ability/ability'
-import type { Identity } from '../../lib/identity'
 import { Avatar } from '../../components/ui/Avatar'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
-import { useConfirm } from '../../components/ui/ConfirmDialog'
 
 interface Rol {
   id: string
@@ -48,76 +36,16 @@ interface Usuario {
   roles: { rol: Rol }[]
 }
 
-interface ActivoAsignado {
-  id: string
-  fechaAsignacion: string
-  activo: { id: string; nombre: string }
-}
-
-interface Marcacion {
-  id: string
-  tipo: string
-  creadoEn: string
-}
-
-interface PagoNomina {
-  id: string
-  periodo: string
-  totalPagado: string
-  fechaPago: string
-}
-
 interface PerfilUsuario {
   usuario: Usuario
-  activosAsignados: ActivoAsignado[]
-  marcaciones: Marcacion[]
-  pagosNomina: PagoNomina[]
   ultimoInicioSesion: string | null
-}
-
-const ETIQUETA_MARCACION: Record<string, string> = {
-  entrada: 'Entrada',
-  salida: 'Salida',
-  inicio_comida: 'Inicio de comida',
-  fin_comida: 'Fin de comida',
-}
-
-function Seccion({
-  icono: Icono,
-  titulo,
-  accion,
-  children,
-}: {
-  icono: typeof Boxes
-  titulo: string
-  accion?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
-          <Icono size={16} />
-          {titulo}
-        </h2>
-        {accion}
-      </div>
-      <div className="mt-3 flex flex-col gap-2">{children}</div>
-    </div>
-  )
 }
 
 export function UsuarioPerfilPage() {
   const { id } = useParams<{ id: string }>()
-  const { data: identity } = useGetIdentity<Identity>()
-  const ability = useMemo(() => buildAbility(identity?.permisos ?? []), [identity?.permisos])
-  const puedeAsignarActivos = ability.can('activos.asignar', 'all')
-
-  const { confirmar, dialog } = useConfirm()
 
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(null)
   const [cargando, setCargando] = useState(true)
-  const [devolviendoActivos, setDevolviendoActivos] = useState(false)
 
   const [roles, setRoles] = useState<Rol[]>([])
   const [sucursales, setSucursales] = useState<Sucursal[]>([])
@@ -138,28 +66,6 @@ export function UsuarioPerfilPage() {
     axiosInstance
       .get<PerfilUsuario>(`/usuarios/${id}/perfil`)
       .then(({ data }) => setPerfil(data))
-
-  const devolverTodosLosActivos = async () => {
-    if (!id) return
-    const confirmado = await confirmar(
-      'Devolver todos los activos',
-      '¿Devolver todos los activos asignados a este usuario? Quedarán disponibles en el inventario.',
-      'Devolver todos',
-    )
-    if (!confirmado) return
-    setDevolviendoActivos(true)
-    try {
-      const { data } = await axiosInstance.post<{ cantidad: number }>('/activos/devolver-todos', {
-        usuarioId: id,
-      })
-      toast.success(`${data.cantidad} activo${data.cantidad > 1 ? 's' : ''} devuelto${data.cantidad > 1 ? 's' : ''}`)
-      await cargarPerfil()
-    } catch (error) {
-      toast.error(mensajeError(error, 'No se pudieron devolver los activos'))
-    } finally {
-      setDevolviendoActivos(false)
-    }
-  }
 
   useEffect(() => {
     if (!id) return
@@ -272,7 +178,7 @@ export function UsuarioPerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Usuario no encontrado</p>
   }
 
-  const { usuario, activosAsignados, marcaciones, pagosNomina, ultimoInicioSesion } = perfil
+  const { usuario, ultimoInicioSesion } = perfil
 
   return (
     <div>
@@ -481,77 +387,6 @@ export function UsuarioPerfilPage() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {activosAsignados.length > 0 && (
-          <Seccion
-            icono={Boxes}
-            titulo="Activos asignados"
-            accion={
-              puedeAsignarActivos && (
-                <button
-                  type="button"
-                  onClick={devolverTodosLosActivos}
-                  disabled={devolviendoActivos}
-                  className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--color-primario-legible)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-50"
-                >
-                  {devolviendoActivos && <Spinner size={12} />}
-                  Devolver todos
-                </button>
-              )
-            }
-          >
-            {activosAsignados.map((asignacion) => (
-              <div key={asignacion.id} className="text-sm">
-                <span className="text-[var(--color-text)]">{asignacion.activo.nombre}</span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · desde {new Date(asignacion.fechaAsignacion).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-        {marcaciones.length > 0 && (
-          <Seccion icono={Fingerprint} titulo="Asistencia reciente">
-            {marcaciones.map((marcacion) => (
-              <div key={marcacion.id} className="text-sm">
-                <span className="text-[var(--color-text)]">
-                  {ETIQUETA_MARCACION[marcacion.tipo] ?? marcacion.tipo}
-                </span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {new Date(marcacion.creadoEn).toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-        {pagosNomina.length > 0 && (
-          <Seccion icono={Wallet2} titulo="Nómina reciente">
-            {pagosNomina.map((pago) => (
-              <div key={pago.id} className="text-sm">
-                <span className="font-medium text-[var(--color-text)]">
-                  ${Number(pago.totalPagado).toFixed(2)}
-                </span>{' '}
-                <span className="text-[var(--color-text-muted)]">
-                  · {pago.periodo} · {new Date(pago.fechaPago).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </Seccion>
-        )}
-
-      </div>
-
-      {activosAsignados.length === 0 &&
-        marcaciones.length === 0 &&
-        pagosNomina.length === 0 && (
-          <p className="mt-6 text-sm text-[var(--color-text-faint)]">
-            Este usuario todavía no tiene actividad registrada.
-          </p>
-        )}
-
-      {dialog}
     </div>
   )
 }

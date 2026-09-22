@@ -7,17 +7,9 @@ import {
   CalendarDays,
   Component,
   Tag,
-  Boxes,
-  Package,
   Wallet,
-  Fingerprint,
-  ClipboardList,
   Building2,
-  ShoppingCart,
-  Truck,
   Store,
-  Wallet2,
-  BarChart3,
   BadgeCheck,
 } from 'lucide-react'
 
@@ -52,9 +44,18 @@ export function aplanarNav(items: NavEntry[]): NavLeaf[] {
 
 export const NAV_ITEMS: NavEntry[] = [
   { to: '/', label: 'Dashboard', resource: 'dashboard', icon: LayoutDashboard, sinPermiso: true },
+  { to: '/clientes', label: 'Clientes', resource: 'clientes', icon: Contact },
+  {
+    to: '/sucursales',
+    label: 'Sucursales',
+    resource: 'sucursales',
+    icon: Store,
+  },
+  { to: '/membresias', label: 'Membresías', resource: 'membresias', icon: BadgeCheck },
+  { to: '/cuentas', label: 'Cuentas', resource: 'cuentas', icon: Wallet },
+  { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
   { to: '/usuarios', label: 'Usuarios', resource: 'usuarios', icon: Users },
   { to: '/roles', label: 'Roles y permisos', resource: 'roles', icon: ShieldCheck },
-  { to: '/clientes', label: 'Clientes', resource: 'clientes', icon: Contact },
   {
     label: 'Citas',
     icon: CalendarDays,
@@ -64,60 +65,4 @@ export const NAV_ITEMS: NavEntry[] = [
       { to: '/tipos-cita', label: 'Tipos de cita', resource: 'tipos-cita', icon: Tag },
     ],
   },
-  {
-    label: 'Inventario',
-    icon: Boxes,
-    children: [
-      { to: '/activos', label: 'Activos', resource: 'activos', icon: Boxes },
-      { to: '/productos', label: 'Productos', resource: 'productos', icon: Package },
-    ],
-  },
-  { to: '/ventas', label: 'Ventas', resource: 'ventas', icon: ShoppingCart },
-  {
-    to: '/proveedores',
-    label: 'Proveedores y compras',
-    resource: 'proveedores',
-    icon: Truck,
-  },
-  {
-    to: '/sucursales',
-    label: 'Sucursales',
-    resource: 'sucursales',
-    icon: Store,
-  },
-  {
-    to: '/nomina',
-    label: 'Nómina',
-    resource: 'nomina',
-    icon: Wallet2,
-  },
-  { to: '/membresias', label: 'Membresías', resource: 'membresias', icon: BadgeCheck },
-  {
-    label: 'Cuentas',
-    icon: Wallet,
-    children: [
-      { to: '/cuentas', label: 'Movimientos', resource: 'cuentas', icon: Wallet },
-      { to: '/reportes', label: 'Reportes', resource: 'cuentas', icon: BarChart3 },
-    ],
-  },
-  {
-    label: 'Asistencia',
-    icon: Fingerprint,
-    children: [
-      {
-        to: '/asistencia',
-        label: 'Mi asistencia',
-        resource: 'asistencia-propia',
-        icon: Fingerprint,
-        sinPermiso: true,
-      },
-      {
-        to: '/asistencia/reporte',
-        label: 'Reporte de asistencia',
-        resource: 'asistencia',
-        icon: ClipboardList,
-      },
-    ],
-  },
-  { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
 ]

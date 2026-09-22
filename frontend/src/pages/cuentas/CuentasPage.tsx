@@ -17,7 +17,7 @@ import type { Identity } from '../../lib/identity'
 import { inicioDiaLocalISO, finDiaLocalISO } from '../../lib/fechas'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { ComprobanteUploadField } from '../../components/ui/ComprobanteUploadField'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
@@ -519,7 +519,7 @@ export function CuentasPage() {
 
       <div className="mt-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-[var(--color-text)]">Movimientos</h2>
-        <ExportarCSVButton nombreArchivo="cuentas.csv" filas={filasCSV} />
+        <ExportarExcelButton nombreArchivo="cuentas.csv" filas={filasCSV} />
       </div>
 
       <div className="mt-2 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)]">

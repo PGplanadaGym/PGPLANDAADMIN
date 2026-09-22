@@ -10,7 +10,7 @@ import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { PrimaryButton, PrimaryLinkButton } from '../../components/ui/PrimaryButton'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { Avatar } from '../../components/ui/Avatar'
@@ -268,7 +268,7 @@ export function UsuariosListPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Usuarios</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <ExportarCSVButton nombreArchivo="usuarios.csv" filas={filtrados} />
+          <ExportarExcelButton nombreArchivo="usuarios.csv" filas={filtrados} />
           <CanAccess resource="usuarios" action="create">
             <PrimaryLinkButton to="/usuarios/nuevo">Invitar usuario</PrimaryLinkButton>
           </CanAccess>

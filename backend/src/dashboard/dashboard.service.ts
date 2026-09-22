@@ -3,6 +3,8 @@ import { endOfDay, endOfMonth, startOfDay, startOfMonth } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { PrismaService } from '../prisma/prisma.service';
 
+const DIAS_ALERTA_MEMBRESIA = 2;
+
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
@@ -98,6 +100,32 @@ export class DashboardService {
     metricas.ingresosMes = Number(ingresos._sum.monto ?? 0);
     metricas.egresosMes = Number(egresos._sum.monto ?? 0);
 
-    return { metricas, proximasCitas };
+    const limiteMembresia = new Date(hoyInicio);
+    limiteMembresia.setDate(limiteMembresia.getDate() + DIAS_ALERTA_MEMBRESIA);
+    limiteMembresia.setHours(23, 59, 59, 999);
+
+    const membresias = await this.prisma.membresia.findMany({
+      where: { empresaId },
+      orderBy: { fechaVencimiento: 'desc' },
+      include: { cliente: { select: { id: true, nombre: true } } },
+    });
+    // solo la membresía vigente/más reciente de cada cliente cuenta — una vieja que
+    // ya fue renovada no debe disparar una alerta falsa aunque su fecha caiga en rango.
+    const ultimaPorCliente = new Map<string, (typeof membresias)[number]>();
+    for (const membresia of membresias) {
+      if (!ultimaPorCliente.has(membresia.clienteId)) {
+        ultimaPorCliente.set(membresia.clienteId, membresia);
+      }
+    }
+    const membresiasPorVencer = [...ultimaPorCliente.values()]
+      .filter((m) => m.fechaVencimiento >= hoyInicio && m.fechaVencimiento <= limiteMembresia)
+      .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime())
+      .map((m) => ({
+        clienteId: m.cliente.id,
+        clienteNombre: m.cliente.nombre,
+        fechaVencimiento: m.fechaVencimiento,
+      }));
+
+    return { metricas, proximasCitas, membresiasPorVencer };
   }
 }

@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useGetIdentity } from '@refinedev/core'
 import { Link } from 'react-router-dom'
-import {
-  CalendarClock,
-  ShoppingCart,
-  PackageX,
-  Fingerprint,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react'
+import { CalendarClock, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { buildAbility } from '../../ability/ability'
 import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
@@ -29,9 +22,23 @@ interface ProximaCita {
   tipoCita: { nombre: string }
 }
 
+interface MembresiaPorVencer {
+  clienteId: string
+  clienteNombre: string
+  fechaVencimiento: string
+}
+
 interface Metricas {
   metricas: Record<string, number>
   proximasCitas: ProximaCita[]
+  membresiasPorVencer: MembresiaPorVencer[]
+}
+
+function diasRestantes(fechaVencimiento: string) {
+  const inicioDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  return Math.round(
+    (inicioDia(new Date(fechaVencimiento)).getTime() - inicioDia(new Date()).getTime()) / 86_400_000,
+  )
 }
 
 function TarjetaMetrica({
@@ -110,30 +117,6 @@ export function DashboardPage() {
               to="/citas"
             />
           )}
-          {puedeVer('ventas') && (
-            <TarjetaMetrica
-              icono={ShoppingCart}
-              etiqueta="Ventas este mes"
-              valor={`$${(m.ventasMesTotal ?? 0).toFixed(2)} (${m.ventasMesCantidad ?? 0})`}
-              to="/ventas"
-            />
-          )}
-          {puedeVer('productos') && (
-            <TarjetaMetrica
-              icono={PackageX}
-              etiqueta="Productos con stock bajo"
-              valor={String(m.productosStockBajo ?? 0)}
-              to="/productos"
-            />
-          )}
-          {puedeVer('asistencia') && (
-            <TarjetaMetrica
-              icono={Fingerprint}
-              etiqueta="Asistencia de hoy"
-              valor={String(m.asistenciaHoy ?? 0)}
-              to="/asistencia/reporte"
-            />
-          )}
           {puedeVer('cuentas') && (
             <TarjetaMetrica
               icono={TrendingUp}
@@ -150,6 +133,33 @@ export function DashboardPage() {
               to="/cuentas"
             />
           )}
+        </div>
+      )}
+
+      {!cargandoDatos && datos && datos.membresiasPorVencer.length > 0 && puedeVer('membresias') && (
+        <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <AlertTriangle size={16} />
+            Membresías por vencer pronto
+          </h2>
+          <div className="mt-2 flex flex-col gap-2">
+            {datos.membresiasPorVencer.map((m) => {
+              const dias = diasRestantes(m.fechaVencimiento)
+              return (
+                <Link
+                  key={m.clienteId}
+                  to={`/clientes/${m.clienteId}`}
+                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-amber-100 dark:hover:bg-amber-900"
+                >
+                  <span className="text-amber-900 dark:text-amber-200">{m.clienteNombre}</span>
+                  <span className="text-amber-700 dark:text-amber-400">
+                    {dias <= 0 ? 'Vence hoy' : dias === 1 ? 'Vence mañana' : `Vence en ${dias} días`} ·{' '}
+                    {new Date(m.fechaVencimiento).toLocaleDateString()}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { inicioDiaLocalISO, finDiaLocalISO } from '../../lib/fechas'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { MapaMarcaciones } from '../../components/ui/MapaMarcaciones'
 
@@ -98,7 +98,7 @@ export function AsistenciaReportePage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Reporte de asistencia</h1>
-        <ExportarCSVButton nombreArchivo="asistencia.csv" filas={filasCSV} />
+        <ExportarExcelButton nombreArchivo="asistencia.csv" filas={filasCSV} />
       </div>
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
         Entrada, salida y hora de comida de todos los colaboradores, con la ubicación desde donde

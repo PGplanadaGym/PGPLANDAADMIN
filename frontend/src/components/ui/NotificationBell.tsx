@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, CalendarClock, PackageX } from 'lucide-react'
+import { Bell, CalendarClock, PackageX, AlertTriangle } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { tiempoRelativo } from '../../lib/fechas'
 import { CargandoPantalla } from './CargandoPantalla'
@@ -23,6 +23,7 @@ const ESTILO_POR_TIPO: Record<string, { icon: typeof Bell; className: string }> 
     icon: CalendarClock,
     className: 'bg-[var(--color-primario-suave)] text-[var(--color-primario-legible)]',
   },
+  membresia_por_vencer: { icon: AlertTriangle, className: 'bg-amber-100 text-amber-600' },
 }
 const ESTILO_DEFECTO = {
   icon: Bell,

@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { SearchInput } from '../../components/ui/SearchInput'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { ComprobanteUploadField } from '../../components/ui/ComprobanteUploadField'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 
@@ -555,7 +555,7 @@ export function NominaPage() {
           >
             Ver todos
           </button>
-          <ExportarCSVButton nombreArchivo="nomina.csv" filas={filasExportar} />
+          <ExportarExcelButton nombreArchivo="nomina.csv" filas={filasExportar} />
         </div>
       </div>
 

@@ -24,21 +24,12 @@ import { PerfilPage } from './pages/perfil/PerfilPage'
 import { CitasPage } from './pages/citas/CitasPage'
 import { RecursosPage } from './pages/recursos/RecursosPage'
 import { TiposCitaPage } from './pages/tipos-cita/TiposCitaPage'
-import { ActivosPage } from './pages/activos/ActivosPage'
-import { ProductosPage } from './pages/productos/ProductosPage'
-import { AsistenciaPage } from './pages/asistencia/AsistenciaPage'
-import { AsistenciaReportePage } from './pages/asistencia/AsistenciaReportePage'
 import { RolesPermisosPage } from './pages/roles/RolesPermisosPage'
 import { CuentasPage } from './pages/cuentas/CuentasPage'
-import { VentasPage } from './pages/ventas/VentasPage'
-import { ProveedoresPage } from './pages/proveedores/ProveedoresPage'
-import { ProveedorPerfilPage } from './pages/proveedores/ProveedorPerfilPage'
 import { ClientePerfilPage } from './pages/clientes/ClientePerfilPage'
 import { SucursalesPage } from './pages/sucursales/SucursalesPage'
 import { SucursalPerfilPage } from './pages/sucursales/SucursalPerfilPage'
-import { NominaPage } from './pages/nomina/NominaPage'
 import { MembresiasPage } from './pages/membresias/MembresiasPage'
-import { ReportesPage } from './pages/reportes/ReportesPage'
 
 function App() {
   return (
@@ -99,54 +90,14 @@ function App() {
           meta: { label: 'Tipos de cita' },
         },
         {
-          name: 'activos',
-          list: '/activos',
-          meta: { label: 'Activos' },
-        },
-        {
-          name: 'productos',
-          list: '/productos',
-          meta: { label: 'Productos' },
-        },
-        {
-          name: 'asistencia-propia',
-          list: '/asistencia',
-          meta: { label: 'Mi asistencia' },
-        },
-        {
-          name: 'asistencia',
-          list: '/asistencia/reporte',
-          meta: { label: 'Reporte de asistencia' },
-        },
-        {
-          name: 'ventas',
-          list: '/ventas',
-          meta: { label: 'Ventas' },
-        },
-        {
-          name: 'proveedores',
-          list: '/proveedores',
-          meta: { label: 'Proveedores y compras' },
-        },
-        {
           name: 'sucursales',
           list: '/sucursales',
           meta: { label: 'Sucursales' },
         },
         {
-          name: 'nomina',
-          list: '/nomina',
-          meta: { label: 'Nómina' },
-        },
-        {
           name: 'membresias',
           list: '/membresias',
           meta: { label: 'Membresías' },
-        },
-        {
-          name: 'reportes',
-          list: '/reportes',
-          meta: { label: 'Reportes' },
         },
       ]}
       options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
@@ -176,19 +127,10 @@ function App() {
           <Route path="/citas" element={<CitasPage />} />
           <Route path="/recursos" element={<RecursosPage />} />
           <Route path="/tipos-cita" element={<TiposCitaPage />} />
-          <Route path="/activos" element={<ActivosPage />} />
-          <Route path="/productos" element={<ProductosPage />} />
-          <Route path="/ventas" element={<VentasPage />} />
-          <Route path="/proveedores" element={<ProveedoresPage />} />
-          <Route path="/proveedores/:id" element={<ProveedorPerfilPage />} />
           <Route path="/clientes/:id" element={<ClientePerfilPage />} />
           <Route path="/sucursales" element={<SucursalesPage />} />
           <Route path="/sucursales/:id" element={<SucursalPerfilPage />} />
-          <Route path="/nomina" element={<NominaPage />} />
           <Route path="/membresias" element={<MembresiasPage />} />
-          <Route path="/reportes" element={<ReportesPage />} />
-          <Route path="/asistencia" element={<AsistenciaPage />} />
-          <Route path="/asistencia/reporte" element={<AsistenciaReportePage />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
 

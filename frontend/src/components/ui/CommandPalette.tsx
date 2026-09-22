@@ -17,12 +17,6 @@ interface ClienteResultado {
   email: string | null
 }
 
-interface ProductoResultado {
-  id: string
-  nombre: string
-  sku: string | null
-}
-
 interface UsuarioResultado {
   id: string
   nombre: string
@@ -42,7 +36,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
 
   const [busqueda, setBusqueda] = useState('')
   const [clientes, setClientes] = useState<ClienteResultado[] | null>(null)
-  const [productos, setProductos] = useState<ProductoResultado[] | null>(null)
   const [usuarios, setUsuarios] = useState<UsuarioResultado[] | null>(null)
 
   useEffect(() => {
@@ -59,8 +52,8 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
 
   const tienePermiso = (permiso: string) => identity?.permisos.includes(permiso) ?? false
 
-  // Trae clientes/productos/usuarios una sola vez, la primera vez que se abre la paleta —
-  // para poder buscarlos por nombre/email/sku sin pedirlos de nuevo en cada tecla.
+  // Trae clientes/usuarios una sola vez, la primera vez que se abre la paleta —
+  // para poder buscarlos por nombre/email sin pedirlos de nuevo en cada tecla.
   useEffect(() => {
     if (!abierto) return
 
@@ -69,12 +62,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
         .get<ClienteResultado[]>('/clientes')
         .then(({ data }) => setClientes(data))
         .catch(() => setClientes([]))
-    }
-    if (productos === null && tienePermiso('productos.leer')) {
-      axiosInstance
-        .get<ProductoResultado[]>('/productos')
-        .then(({ data }) => setProductos(data))
-        .catch(() => setProductos([]))
     }
     if (usuarios === null && tienePermiso('usuarios.leer')) {
       axiosInstance
@@ -96,11 +83,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
   const clientesFiltrados = buscandoDatos
     ? (clientes ?? [])
         .filter((c) => coincide(c.nombre, busquedaNormalizada) || coincide(c.email, busquedaNormalizada))
-        .slice(0, MAX_RESULTADOS)
-    : []
-  const productosFiltrados = buscandoDatos
-    ? (productos ?? [])
-        .filter((p) => coincide(p.nombre, busquedaNormalizada) || coincide(p.sku, busquedaNormalizada))
         .slice(0, MAX_RESULTADOS)
     : []
   const usuariosFiltrados = buscandoDatos
@@ -130,23 +112,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
                 {cliente.nombre}
                 {cliente.email && (
                   <span className="ml-1 text-[var(--color-text-faint)]">· {cliente.email}</span>
-                )}
-              </Command.Item>
-            ))}
-          </Command.Group>
-        )}
-
-        {productosFiltrados.length > 0 && (
-          <Command.Group heading="Productos">
-            {productosFiltrados.map((producto) => (
-              <Command.Item
-                key={producto.id}
-                value={`producto ${producto.nombre} ${producto.sku ?? ''}`}
-                onSelect={() => ir('/productos')}
-              >
-                {producto.nombre}
-                {producto.sku && (
-                  <span className="ml-1 text-[var(--color-text-faint)]">· {producto.sku}</span>
                 )}
               </Command.Item>
             ))}
@@ -190,29 +155,9 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
               Nuevo cliente
             </Command.Item>
           )}
-          {tienePermiso('productos.crear') && (
-            <Command.Item onSelect={() => ir('/productos')}>
-              Nuevo producto
-            </Command.Item>
-          )}
-          {tienePermiso('activos.crear') && (
-            <Command.Item onSelect={() => ir('/activos')}>
-              Nuevo activo
-            </Command.Item>
-          )}
           {tienePermiso('citas.crear') && (
             <Command.Item onSelect={() => ir('/citas')}>
               Nueva cita
-            </Command.Item>
-          )}
-          {tienePermiso('ventas.crear') && (
-            <Command.Item onSelect={() => ir('/ventas')}>
-              Nueva venta
-            </Command.Item>
-          )}
-          {tienePermiso('proveedores.crear') && (
-            <Command.Item onSelect={() => ir('/proveedores')}>
-              Nuevo proveedor
             </Command.Item>
           )}
           <Command.Item onSelect={() => ir('/perfil')}>Mi perfil</Command.Item>

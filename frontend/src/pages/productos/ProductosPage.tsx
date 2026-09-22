@@ -10,7 +10,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { SearchInput } from '../../components/ui/SearchInput'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 import { ImageUploadField } from '../../components/ui/ImageUploadField'
 
@@ -668,7 +668,7 @@ export function ProductosPage() {
           />
           Mostrar archivados
         </label>
-        <ExportarCSVButton nombreArchivo="productos.csv" filas={filasExportar} />
+        <ExportarExcelButton nombreArchivo="productos.csv" filas={filasExportar} />
       </div>
 
       <div className="relative mt-2 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)]">

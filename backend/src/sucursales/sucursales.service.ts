@@ -5,7 +5,7 @@ import { UpdateSucursalDto } from './dto/update-sucursal.dto';
 
 const INCLUDE_SUCURSAL = {
   encargado: { select: { id: true, nombre: true } },
-  _count: { select: { usuarios: true, recursos: true, activos: true } },
+  _count: { select: { usuarios: true, recursos: true, activos: true, clientes: true } },
 } as const;
 
 @Injectable()
@@ -119,11 +119,19 @@ export class SucursalesService {
       throw new NotFoundException('Sucursal no encontrada');
     }
 
-    // Solo se puede eliminar una sucursal que nunca se usó — si tiene empleados, recursos o
-    // activos asignados, la vía correcta es desactivarla, no perder esa asociación.
-    if (sucursal._count.usuarios > 0 || sucursal._count.recursos > 0 || sucursal._count.activos > 0) {
+    // Solo se puede eliminar una sucursal que nunca se usó — si tiene empleados, recursos,
+    // activos o clientes asignados, la vía correcta es desactivarla, no perder esa asociación.
+    // Nota: a diferencia de usuarios/recursos/activos (que se desvinculan solos al eliminar la
+    // sucursal), un cliente SIEMPRE debe pertenecer a una sucursal, así que este chequeo es
+    // obligatorio: sin él, Postgres rechaza el DELETE con un error crudo de FK.
+    if (
+      sucursal._count.usuarios > 0 ||
+      sucursal._count.recursos > 0 ||
+      sucursal._count.activos > 0 ||
+      sucursal._count.clientes > 0
+    ) {
       throw new ConflictException(
-        'Esta sucursal tiene empleados, recursos o activos asignados y no se puede eliminar. Desactívala en su lugar.',
+        'Esta sucursal tiene empleados, recursos, activos o clientes asignados y no se puede eliminar. Desactívala en su lugar.',
       );
     }
 

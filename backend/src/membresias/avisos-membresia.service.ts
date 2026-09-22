@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../auth/email.service';
+import { NotificacionesService } from '../notificaciones/notificaciones.service';
 
 const DIAS_ANTES_DE_AVISAR = 3;
 
@@ -12,6 +13,7 @@ export class AvisosMembresiaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly notificacionesService: NotificacionesService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
@@ -23,23 +25,32 @@ export class AvisosMembresiaService {
     limite.setDate(limite.getDate() + DIAS_ANTES_DE_AVISAR);
     limite.setHours(23, 59, 59, 999);
 
+    // No se exige que el cliente tenga correo: aunque no se le pueda avisar a él,
+    // el staff igual debe ver la alerta en el dashboard/notificaciones.
     const membresias = await this.prisma.membresia.findMany({
       where: {
         fechaVencimiento: { gte: hoy, lte: limite },
         avisoEnviado: false,
-        cliente: { email: { not: null } },
       },
       include: { cliente: true },
     });
 
     for (const membresia of membresias) {
-      if (!membresia.cliente.email) continue;
+      if (membresia.cliente.email) {
+        await this.emailService.enviarAvisoMembresiaPorVencer(
+          membresia.cliente.email,
+          membresia.cliente.nombre,
+          membresia.fechaVencimiento,
+        );
+      }
 
-      await this.emailService.enviarAvisoMembresiaPorVencer(
-        membresia.cliente.email,
-        membresia.cliente.nombre,
-        membresia.fechaVencimiento,
-      );
+      await this.notificacionesService.crear({
+        empresaId: membresia.empresaId,
+        tipo: 'membresia_por_vencer',
+        titulo: 'Membresía por vencer',
+        mensaje: `La membresía de ${membresia.cliente.nombre} vence el ${membresia.fechaVencimiento.toLocaleDateString('es-EC')}`,
+        enlace: `/clientes/${membresia.clienteId}`,
+      });
 
       await this.prisma.membresia.update({
         where: { id: membresia.id },

@@ -8,7 +8,7 @@ import { useSucursalActiva } from '../../hooks/useSucursalActiva'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { Pagination } from '../../components/ui/Pagination'
 import { PrimaryLinkButton } from '../../components/ui/PrimaryButton'
-import { ExportarCSVButton } from '../../components/ui/ExportarCSVButton'
+import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { Avatar } from '../../components/ui/Avatar'
 import { SucursalActivaSelector } from '../../components/ui/SucursalActivaSelector'
@@ -82,7 +82,7 @@ export function ClientesListPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Clientes</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <ExportarCSVButton nombreArchivo="clientes.csv" filas={filasCSV} />
+          <ExportarExcelButton nombreArchivo="clientes.csv" filas={filasCSV} />
           <CanAccess resource="clientes" action="create">
             <PrimaryLinkButton to="/clientes/nuevo">Nuevo cliente</PrimaryLinkButton>
           </CanAccess>
