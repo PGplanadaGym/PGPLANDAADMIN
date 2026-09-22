@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CanAccess } from '@refinedev/core'
-import { Pencil, Trash2, MapPin } from 'lucide-react'
+import { Pencil, Trash2, MapPin, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { axiosInstance } from '../../lib/axios'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -135,11 +135,6 @@ function HorarioComposer({ bloques, onCambiarBloques }: HorarioComposerProps) {
   )
 }
 
-interface UsuarioBasico {
-  id: string
-  nombre: string
-}
-
 interface Sucursal {
   id: string
   nombre: string
@@ -148,7 +143,6 @@ interface Sucursal {
   longitud: number | null
   codigoEstablecimiento: string | null
   telefono: string | null
-  encargado: UsuarioBasico | null
   horarioAtencion: string | null
   imagenUrl: string | null
   activa: boolean
@@ -165,7 +159,6 @@ export function SucursalesPage() {
   const { confirmar, dialog } = useConfirm()
 
   const [sucursales, setSucursales] = useState<Sucursal[]>([])
-  const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([])
   const [cargando, setCargando] = useState(true)
   const [mostrarInactivas, setMostrarInactivas] = useState(false)
 
@@ -173,7 +166,6 @@ export function SucursalesPage() {
   const [direccion, setDireccion] = useState('')
   const [codigoEstablecimiento, setCodigoEstablecimiento] = useState('')
   const [telefono, setTelefono] = useState('')
-  const [encargadoId, setEncargadoId] = useState('')
   const [horarioBloques, setHorarioBloques] = useState<HorarioBloque[]>([nuevoBloqueHorario()])
   const [creando, setCreando] = useState(false)
   const [eliminandoId, setEliminandoId] = useState<string | null>(null)
@@ -183,7 +175,6 @@ export function SucursalesPage() {
   const [direccionEdit, setDireccionEdit] = useState('')
   const [codigoEstablecimientoEdit, setCodigoEstablecimientoEdit] = useState('')
   const [telefonoEdit, setTelefonoEdit] = useState('')
-  const [encargadoIdEdit, setEncargadoIdEdit] = useState('')
   const [horarioBloquesEdit, setHorarioBloquesEdit] = useState<HorarioBloque[]>([nuevoBloqueHorario()])
   const [imagenUrlEdit, setImagenUrlEdit] = useState('')
   const [guardandoEdit, setGuardandoEdit] = useState(false)
@@ -208,15 +199,6 @@ export function SucursalesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostrarInactivas])
 
-  useEffect(() => {
-    axiosInstance
-      .get<UsuarioBasico[]>('/usuarios')
-      .then(({ data }) => setUsuarios(data))
-      .catch(() => {
-        /* si no tiene permiso para ver usuarios, simplemente no se puede elegir encargado */
-      })
-  }, [])
-
   const crear = async () => {
     if (!nombre.trim()) return
     setCreando(true)
@@ -226,14 +208,12 @@ export function SucursalesPage() {
         direccion: direccion || undefined,
         codigoEstablecimiento: codigoEstablecimiento || undefined,
         telefono: telefono || undefined,
-        encargadoId: encargadoId || undefined,
         horarioAtencion: formatearHorario(horarioBloques) || undefined,
       })
       setNombre('')
       setDireccion('')
       setCodigoEstablecimiento('')
       setTelefono('')
-      setEncargadoId('')
       setHorarioBloques([nuevoBloqueHorario()])
       toast.success('Sucursal creada')
       cargar(mostrarInactivas)
@@ -259,7 +239,6 @@ export function SucursalesPage() {
     setDireccionEdit(sucursal.direccion ?? '')
     setCodigoEstablecimientoEdit(sucursal.codigoEstablecimiento ?? '')
     setTelefonoEdit(sucursal.telefono ?? '')
-    setEncargadoIdEdit(sucursal.encargado?.id ?? '')
     setHorarioBloquesEdit([nuevoBloqueHorario()])
     setImagenUrlEdit(sucursal.imagenUrl ?? '')
   }
@@ -275,7 +254,6 @@ export function SucursalesPage() {
         direccion: direccionEdit || null,
         codigoEstablecimiento: codigoEstablecimientoEdit || null,
         telefono: telefonoEdit || null,
-        encargadoId: encargadoIdEdit || '',
         // Si no tocaste los días del horario, se conserva el que ya tenía guardado.
         horarioAtencion: horarioTocado ? horarioCompuesto : sucursalEdit.horarioAtencion,
         imagenUrl: imagenUrlEdit || null,
@@ -399,25 +377,6 @@ export function SucursalesPage() {
                 className="w-36 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
               />
             </div>
-            {usuarios.length > 0 && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                  Encargado
-                </label>
-                <select
-                  value={encargadoId}
-                  onChange={(e) => setEncargadoId(e.target.value)}
-                  className="w-44 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-                >
-                  <option value="">Sin asignar</option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           <div className="mt-3">
@@ -430,7 +389,7 @@ export function SucursalesPage() {
             disabled={creando || !nombre.trim()}
             className="mt-3 flex items-center gap-2"
           >
-            {creando && <Spinner size={14} />}
+            {creando ? <Spinner size={14} /> : <Plus size={16} />}
             Agregar sucursal
           </PrimaryButton>
         </div>
@@ -459,7 +418,6 @@ export function SucursalesPage() {
             <tr>
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Dirección</th>
-              <th className="px-4 py-2">Encargado</th>
               <th className="px-4 py-2">Asignado</th>
               <th className="px-4 py-2">Estado</th>
               <th className="px-4 py-2" />
@@ -486,9 +444,6 @@ export function SucursalesPage() {
                   </td>
                   <td className="px-4 py-2 text-[var(--color-text-muted)]">
                     {sucursal.direccion ?? '—'}
-                  </td>
-                  <td className="px-4 py-2 text-[var(--color-text-muted)]">
-                    {sucursal.encargado?.nombre ?? '—'}
                   </td>
                   <td className="px-4 py-2 text-[var(--color-text-muted)]">
                     {enUso ? (
@@ -647,25 +602,6 @@ export function SucursalesPage() {
                   />
                 </div>
               </div>
-              {usuarios.length > 0 && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                    Encargado
-                  </label>
-                  <select
-                    value={encargadoIdEdit}
-                    onChange={(e) => setEncargadoIdEdit(e.target.value)}
-                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-                  >
-                    <option value="">Sin asignar</option>
-                    {usuarios.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div>
                 {sucursalEdit.horarioAtencion && (
                   <p className="mb-1 text-xs text-[var(--color-text-faint)]">

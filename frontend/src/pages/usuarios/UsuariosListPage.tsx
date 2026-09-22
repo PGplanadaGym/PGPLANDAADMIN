@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CanAccess, useTable } from '@refinedev/core'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { X, Trash2 } from 'lucide-react'
+import { X, Trash2, Plus } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { mensajeError } from '../../lib/errores'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
@@ -293,7 +293,10 @@ export function UsuariosListPage() {
         <div className="flex flex-wrap items-center gap-2">
           <ExportarExcelButton nombreArchivo="usuarios.csv" filas={filtrados} />
           <CanAccess resource="usuarios" action="create">
-            <PrimaryLinkButton to="/usuarios/nuevo">Crear usuario</PrimaryLinkButton>
+            <PrimaryLinkButton to="/usuarios/nuevo" className="flex items-center gap-2">
+              <Plus size={16} />
+              Crear usuario
+            </PrimaryLinkButton>
           </CanAccess>
         </div>
       </div>

@@ -155,11 +155,6 @@ export function CommandPalette({ abierto, onCambiar }: Props) {
               Nuevo cliente
             </Command.Item>
           )}
-          {tienePermiso('citas.crear') && (
-            <Command.Item onSelect={() => ir('/citas')}>
-              Nueva cita
-            </Command.Item>
-          )}
           <Command.Item onSelect={() => ir('/perfil')}>Mi perfil</Command.Item>
           <Command.Item
             onSelect={() => {

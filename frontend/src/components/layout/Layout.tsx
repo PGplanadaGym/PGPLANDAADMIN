@@ -185,8 +185,6 @@ export function Layout() {
               >
                 <Menu className="h-5 w-5" />
               </button>
-
-              <UserMenu />
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
@@ -211,6 +209,7 @@ export function Layout() {
               </button>
               <NotificationBell />
               <ThemeToggle />
+              <UserMenu />
             </div>
           </header>
 

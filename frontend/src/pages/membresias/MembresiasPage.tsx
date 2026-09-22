@@ -17,6 +17,7 @@ import { buildAbility } from '../../ability/ability'
 import { mensajeError } from '../../lib/errores'
 import type { Identity } from '../../lib/identity'
 import { Avatar } from '../../components/ui/Avatar'
+import { MontoInput } from '../../components/ui/MontoInput'
 import {
   EstadoMembresiaBadge,
   ESTADO_MEMBRESIA_LABEL as ESTADO_LABEL,
@@ -64,6 +65,16 @@ function colorBarra(fila: EstadoMembresia) {
   return 'bg-emerald-500'
 }
 
+/** Resalta la tarjeta al pasar el mouse con el mismo color que su estado real — verde si
+ * está activa, ámbar si está por vencer, rojo solo si está vencida o con pocos días. */
+function colorBordeHover(fila: EstadoMembresia) {
+  const porcentaje = porcentajeRestante(fila)
+  if (!fila.membresia) return 'hover:border-[var(--color-primario)]'
+  if (fila.estado === 'vencido' || porcentaje < 20) return 'hover:border-red-500'
+  if (porcentaje < 50) return 'hover:border-amber-500'
+  return 'hover:border-emerald-500'
+}
+
 function textoDiasRestantes(fila: EstadoMembresia) {
   if (!fila.membresia || fila.diasRestantes == null) return 'Sin membresía'
   if (fila.diasRestantes < 0) return `Vencido hace ${Math.abs(fila.diasRestantes)} días`
@@ -92,7 +103,7 @@ export function MembresiasPage() {
   const [mostrarPlanes, setMostrarPlanes] = useState(false)
   const [nombrePlan, setNombrePlan] = useState('')
   const [duracionPlan, setDuracionPlan] = useState('30')
-  const [precioPlan, setPrecioPlan] = useState('')
+  const [precioPlan, setPrecioPlan] = useState(0)
   const [creandoPlan, setCreandoPlan] = useState(false)
 
   const [modalRenovar, setModalRenovar] = useState<EstadoMembresia | null>(null)
@@ -158,13 +169,9 @@ export function MembresiasPage() {
 
   const crearPlan = async () => {
     const nombre = nombrePlan.trim()
-    if (!nombre || !duracionPlan || !precioPlan) return
+    if (!nombre || !duracionPlan || precioPlan <= 0) return
     if (Number(duracionPlan) < 1 || !Number.isInteger(Number(duracionPlan))) {
       toast.error('La duración debe ser un número entero de al menos 1 día')
-      return
-    }
-    if (Number(precioPlan) < 0) {
-      toast.error('El precio no puede ser negativo')
       return
     }
     if (planes.some((p) => p.nombre.trim().toLowerCase() === nombre.toLowerCase())) {
@@ -176,11 +183,11 @@ export function MembresiasPage() {
       await axiosInstance.post('/planes-membresia', {
         nombre,
         duracionDias: Number(duracionPlan),
-        precio: Number(precioPlan),
+        precio: precioPlan,
       })
       setNombrePlan('')
       setDuracionPlan('30')
-      setPrecioPlan('')
+      setPrecioPlan(0)
       toast.success('Plan creado')
       await cargarPlanes()
     } catch (error) {
@@ -295,18 +302,9 @@ export function MembresiasPage() {
                     className="w-24 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
                   />
                 </div>
-                <div>
+                <div className="w-28">
                   <label className="mb-1 block text-xs text-[var(--color-text-muted)]">Precio</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={precioPlan}
-                    onChange={(e) => setPrecioPlan(e.target.value)}
-                    onKeyDown={(e) => ['-', '+', 'e'].includes(e.key) && e.preventDefault()}
-                    placeholder="30"
-                    className="w-24 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-                  />
+                  <MontoInput value={precioPlan} onChange={setPrecioPlan} placeholder="30.00" />
                 </div>
                 <button
                   type="button"
@@ -350,7 +348,7 @@ export function MembresiasPage() {
                 <div
                   key={fila.cliente.id}
                   onClick={() => navigate(`/clientes/${fila.cliente.id}`)}
-                  className="flex cursor-pointer flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)] transition-colors hover:border-[var(--color-primario)]"
+                  className={`flex cursor-pointer flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)] transition-colors ${colorBordeHover(fila)}`}
                 >
                   <div className="flex items-center gap-3">
                     <Avatar nombre={fila.cliente.nombre} fotoUrl={fila.cliente.fotoUrl} size={48} />

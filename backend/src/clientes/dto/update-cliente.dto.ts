@@ -13,16 +13,23 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { MENSAJE_TELEFONO_INVALIDO, REGEX_TELEFONO } from '../../common/validators/telefono';
+import { MENSAJE_CELULAR_INVALIDO, REGEX_CELULAR } from '../../common/validators/celular';
 import { MENSAJE_NOMBRE_INVALIDO, REGEX_NOMBRE_PERSONA } from '../../common/validators/nombre-persona';
 
 export class UpdateClienteDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+  @MinLength(2, { message: 'Los nombres deben tener al menos 2 caracteres' })
   @Matches(REGEX_NOMBRE_PERSONA, { message: MENSAJE_NOMBRE_INVALIDO })
-  nombre?: string;
+  nombres?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2, { message: 'Los apellidos deben tener al menos 2 caracteres' })
+  @Matches(REGEX_NOMBRE_PERSONA, { message: MENSAJE_NOMBRE_INVALIDO })
+  apellidos?: string;
 
   @ApiProperty({
     required: false,
@@ -40,7 +47,7 @@ export class UpdateClienteDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @Matches(REGEX_TELEFONO, { message: MENSAJE_TELEFONO_INVALIDO })
+  @Matches(REGEX_CELULAR, { message: MENSAJE_CELULAR_INVALIDO })
   telefono?: string;
 
   @ApiProperty({ required: false })

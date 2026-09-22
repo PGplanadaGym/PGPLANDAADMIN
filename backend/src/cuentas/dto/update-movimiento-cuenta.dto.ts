@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsISO8601, IsNumber, IsOptional, IsPositive, IsString, IsUrl } from 'class-validator';
+import {
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUrl,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateMovimientoCuentaDto {
   @ApiProperty({ required: false })
@@ -35,6 +43,7 @@ export class UpdateMovimientoCuentaDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @ValidateIf((o) => !!o.comprobanteUrl)
   @IsUrl()
   comprobanteUrl?: string;
 

@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
-  CalendarDays,
   Wallet,
   Pencil,
   ArchiveRestore,
@@ -45,14 +44,6 @@ function mensajeError(error: unknown, fallback: string) {
   )
 }
 
-interface Cita {
-  id: string
-  fechaInicio: string
-  estado: string
-  tipoCita: { nombre: string }
-  recurso: { nombre: string }
-}
-
 interface MovimientoCuenta {
   id: string
   tipo: string
@@ -70,10 +61,8 @@ interface EstadoMembresiaCliente {
 
 interface Perfil {
   cliente: Cliente
-  citas: Cita[]
   movimientosCuenta: MovimientoCuenta[]
   estadoMembresia: EstadoMembresiaCliente | null
-  resumen: { totalCitas: number }
 }
 
 function Seccion({
@@ -81,7 +70,7 @@ function Seccion({
   titulo,
   children,
 }: {
-  icono: typeof CalendarDays
+  icono: typeof Wallet
   titulo: string
   children: ReactNode
 }) {
@@ -216,7 +205,7 @@ export function ClientePerfilPage() {
     return <p className="text-sm text-[var(--color-text-muted)]">Cliente no encontrado</p>
   }
 
-  const { cliente, citas, movimientosCuenta, estadoMembresia, resumen } = perfil
+  const { cliente, movimientosCuenta, estadoMembresia } = perfil
 
   return (
     <div>
@@ -335,11 +324,7 @@ export function ClientePerfilPage() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-          <p className="text-xs text-[var(--color-text-muted)]">Citas totales</p>
-          <p className="text-lg font-bold text-[var(--color-text)]">{resumen.totalCitas}</p>
-        </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:max-w-xs">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
           <p className="text-xs text-[var(--color-text-muted)]">Membresía</p>
           {estadoMembresia ? (
@@ -370,19 +355,6 @@ export function ClientePerfilPage() {
           {tabActiva === 'actividad' && (
             <>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {citas.length > 0 && (
-                  <Seccion icono={CalendarDays} titulo="Citas recientes">
-                    {citas.map((cita) => (
-                      <div key={cita.id} className="text-sm">
-                        <span className="text-[var(--color-text)]">{cita.tipoCita.nombre}</span>{' '}
-                        <span className="text-[var(--color-text-muted)]">
-                          · {new Date(cita.fechaInicio).toLocaleString()} · {cita.estado}
-                        </span>
-                      </div>
-                    ))}
-                  </Seccion>
-                )}
-
                 {movimientosCuenta.length > 0 && (
                   <Seccion icono={Wallet} titulo="Movimientos en Cuentas">
                     {movimientosCuenta.map((mov) => (
@@ -402,7 +374,7 @@ export function ClientePerfilPage() {
 
               </div>
 
-              {citas.length === 0 && movimientosCuenta.length === 0 && (
+              {movimientosCuenta.length === 0 && (
                 <p className="mt-2 text-sm text-[var(--color-text-faint)]">
                   Este cliente todavía no tiene actividad registrada.
                 </p>

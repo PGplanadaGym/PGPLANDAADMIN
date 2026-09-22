@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Plus } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { buildAbility } from '../../ability/ability'
 import type { Identity } from '../../lib/identity'
@@ -19,6 +20,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { ExportarExcelButton } from '../../components/ui/ExportarExcelButton'
 import { ComprobanteUploadField } from '../../components/ui/ComprobanteUploadField'
+import { MontoInput } from '../../components/ui/MontoInput'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { useConfirm } from '../../components/ui/ConfirmDialog'
 
@@ -122,7 +124,6 @@ export function CuentasPage() {
   const [resumen, setResumen] = useState<Resumen | null>(null)
   const [movimientos, setMovimientos] = useState<Movimiento[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [clientes, setClientes] = useState<ClienteBasico[]>([])
   const [cargando, setCargando] = useState(true)
 
   const [filtroTipo, setFiltroTipo] = useState('')
@@ -178,12 +179,6 @@ export function CuentasPage() {
 
   useEffect(() => {
     cargarCategorias()
-    axiosInstance
-      .get<ClienteBasico[]>('/clientes')
-      .then(({ data }) => setClientes(data))
-      .catch(() => {
-        /* el vínculo a cliente es opcional */
-      })
   }, [cargarCategorias])
 
   useEffect(() => {
@@ -207,7 +202,7 @@ export function CuentasPage() {
       tipo: 'ingreso',
       categoriaId: primeraCategoria?.id ?? '',
       monto: 0,
-      fecha: aInputFecha(new Date().toISOString()),
+      fecha: aInputFechaLocal(new Date()),
       descripcion: '',
       metodoPago: METODOS_PAGO[0],
       numeroComprobante: '',
@@ -325,7 +320,8 @@ export function CuentasPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-[var(--color-text)]">Cuentas</h1>
         <CanAccess resource="cuentas" action="create">
-          <PrimaryButton type="button" onClick={abrirCreacion}>
+          <PrimaryButton type="button" onClick={abrirCreacion} className="flex items-center gap-2">
+            <Plus size={16} />
             Registrar movimiento
           </PrimaryButton>
         </CanAccess>
@@ -671,13 +667,9 @@ export function CuentasPage() {
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Monto</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.1}
+                  <MontoInput
                     value={form.monto}
-                    onChange={(e) => setForm((prev) => (prev ? { ...prev, monto: Number(e.target.value) } : prev))}
-                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+                    onChange={(monto) => setForm((prev) => (prev ? { ...prev, monto } : prev))}
                   />
                 </div>
                 <div className="flex-1">
@@ -737,26 +729,6 @@ export function CuentasPage() {
                 value={form.comprobanteUrl}
                 onChange={(url) => setForm((prev) => (prev ? { ...prev, comprobanteUrl: url } : prev))}
               />
-
-              {clientes.length > 0 && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                    Cliente (opcional)
-                  </label>
-                  <select
-                    value={form.clienteId}
-                    onChange={(e) => setForm((prev) => (prev ? { ...prev, clienteId: e.target.value } : prev))}
-                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
-                  >
-                    <option value="">Sin cliente asociado</option>
-                    {clientes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
 
             <div className="mt-5 flex items-center justify-between gap-2">

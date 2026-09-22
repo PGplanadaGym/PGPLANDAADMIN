@@ -4,14 +4,15 @@ import { CanAccess } from '@refinedev/core'
 import { toast } from 'sonner'
 import { axiosInstance } from '../../lib/axios'
 import { useSucursalActiva, type SucursalBasica } from '../../hooks/useSucursalActiva'
-import { normalizarTexto, sinEspacios, soloLetras, soloTelefono } from '../../lib/validacionInputs'
+import { normalizarTexto, sinEspacios, soloLetras, soloDigitos } from '../../lib/validacionInputs'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { CargandoPantalla } from '../../components/ui/CargandoPantalla'
 import { ImageUploadField } from '../../components/ui/ImageUploadField'
 
 interface ClienteDetalle {
-  nombre: string
+  nombres: string
+  apellidos: string
   email: string | null
   telefono: string | null
   notas: string | null
@@ -21,7 +22,7 @@ interface ClienteDetalle {
   sucursal: SucursalBasica | null
 }
 
-const SUGERENCIAS_ETIQUETA = ['VIP', 'Frecuente', 'Moroso', 'Nuevo']
+const SUGERENCIAS_ETIQUETA = ['VIP', 'Frecuente', 'Nuevo']
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function mensajeError(error: unknown, fallback: string) {
@@ -40,7 +41,8 @@ export function ClienteFormPage() {
   const [cargando, setCargando] = useState(!esNuevo)
   const [guardando, setGuardando] = useState(false)
 
-  const [nombre, setNombre] = useState('')
+  const [nombres, setNombres] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
   const [notas, setNotas] = useState('')
@@ -49,7 +51,8 @@ export function ClienteFormPage() {
   const [sexo, setSexo] = useState('')
   const [sucursalId, setSucursalId] = useState('')
 
-  const [errorNombre, setErrorNombre] = useState('')
+  const [errorNombres, setErrorNombres] = useState('')
+  const [errorApellidos, setErrorApellidos] = useState('')
   const [errorEmail, setErrorEmail] = useState('')
   const [errorSucursal, setErrorSucursal] = useState('')
 
@@ -66,7 +69,8 @@ export function ClienteFormPage() {
     axiosInstance
       .get<ClienteDetalle>(`/clientes/${id}`)
       .then(({ data }) => {
-        setNombre(data.nombre)
+        setNombres(data.nombres)
+        setApellidos(data.apellidos)
         setEmail(data.email ?? '')
         setTelefono(data.telefono ?? '')
         setNotas(data.notas ?? '')
@@ -81,11 +85,17 @@ export function ClienteFormPage() {
 
   const validar = () => {
     let valido = true
-    if (nombre.trim().length < 2) {
-      setErrorNombre('Mínimo 2 caracteres')
+    if (nombres.trim().length < 2) {
+      setErrorNombres('Mínimo 2 caracteres')
       valido = false
     } else {
-      setErrorNombre('')
+      setErrorNombres('')
+    }
+    if (apellidos.trim().length < 2) {
+      setErrorApellidos('Mínimo 2 caracteres')
+      valido = false
+    } else {
+      setErrorApellidos('')
     }
     if (email && !REGEX_EMAIL.test(email)) {
       setErrorEmail('Email inválido')
@@ -107,7 +117,8 @@ export function ClienteFormPage() {
     setGuardando(true)
     try {
       const payload = {
-        nombre: normalizarTexto(nombre).trim(),
+        nombres: normalizarTexto(nombres).trim(),
+        apellidos: normalizarTexto(apellidos).trim(),
         email: email.trim().toLowerCase() || undefined,
         telefono: telefono || undefined,
         notas: notas || undefined,
@@ -158,18 +169,36 @@ export function ClienteFormPage() {
         }}
         className="mt-4 flex flex-col gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--sombra-sm)] p-6"
       >
-        <ImageUploadField label="Foto (opcional)" value={fotoUrl} onChange={setFotoUrl} rounded />
+        <ImageUploadField
+          label="Foto (opcional)"
+          value={fotoUrl}
+          onChange={setFotoUrl}
+          rounded
+          permitirCamara
+        />
 
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-            Nombre
+            Nombres
           </label>
           <input
-            value={nombre}
-            onChange={(e) => setNombre(soloLetras(e.target.value))}
+            value={nombres}
+            onChange={(e) => setNombres(soloLetras(e.target.value))}
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
-          {errorNombre && <p className="mt-1 text-xs text-red-600">{errorNombre}</p>}
+          {errorNombres && <p className="mt-1 text-xs text-red-600">{errorNombres}</p>}
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+            Apellidos
+          </label>
+          <input
+            value={apellidos}
+            onChange={(e) => setApellidos(soloLetras(e.target.value))}
+            className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
+          />
+          {errorApellidos && <p className="mt-1 text-xs text-red-600">{errorApellidos}</p>}
         </div>
 
         {esNuevo && puedeElegirSucursal && (
@@ -235,14 +264,15 @@ export function ClienteFormPage() {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-            Teléfono
+            Celular
           </label>
           <input
             type="tel"
-            inputMode="tel"
+            inputMode="numeric"
             value={telefono}
-            onChange={(e) => setTelefono(soloTelefono(e.target.value))}
-            placeholder="099 321 0108"
+            onChange={(e) => setTelefono(soloDigitos(e.target.value).slice(0, 10))}
+            maxLength={10}
+            placeholder="0993210108"
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:border-[var(--color-primario)] focus:outline-none"
           />
         </div>

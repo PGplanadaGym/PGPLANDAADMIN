@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CanAccess } from '@refinedev/core'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Plus } from 'lucide-react'
 import { axiosInstance } from '../../lib/axios'
 import { useBusquedaPaginada } from '../../hooks/useBusquedaPaginada'
 import { useSucursalActiva } from '../../hooks/useSucursalActiva'
@@ -84,7 +85,10 @@ export function ClientesListPage() {
         <div className="flex flex-wrap items-center gap-2">
           <ExportarExcelButton nombreArchivo="clientes.csv" filas={filasCSV} />
           <CanAccess resource="clientes" action="create">
-            <PrimaryLinkButton to="/clientes/nuevo">Nuevo cliente</PrimaryLinkButton>
+            <PrimaryLinkButton to="/clientes/nuevo" className="flex items-center gap-2">
+              <Plus size={16} />
+              Nuevo cliente
+            </PrimaryLinkButton>
           </CanAccess>
         </div>
       </div>

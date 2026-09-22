@@ -12,7 +12,6 @@ interface Sucursal {
   direccion: string | null
   codigoEstablecimiento: string | null
   telefono: string | null
-  encargado: { id: string; nombre: string } | null
   horarioAtencion: string | null
   imagenUrl: string | null
   activa: boolean
@@ -120,7 +119,6 @@ export function SucursalPerfilPage() {
           {sucursal.direccion && <span>{sucursal.direccion}</span>}
           {sucursal.codigoEstablecimiento && <span>Cod. SRI: {sucursal.codigoEstablecimiento}</span>}
           {sucursal.telefono && <span>Tel: {sucursal.telefono}</span>}
-          {sucursal.encargado && <span>Encargado: {sucursal.encargado.nombre}</span>}
           {sucursal.horarioAtencion && <span>Horario: {sucursal.horarioAtencion}</span>}
         </div>
       </div>

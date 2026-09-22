@@ -189,7 +189,11 @@ model Cliente {
   // cada cliente pertenece a una sola sucursal (nunca sin asignar).
   sucursalId     String
   sucursal       Sucursal @relation(fields: [sucursalId], references: [id])
+  // "nombre" se guarda calculado a partir de nombres+apellidos (se mantiene por
+  // compatibilidad: es lo que ya lee el resto de la app — listados, búsqueda, exportar, etc.).
   nombre         String
+  nombres        String
+  apellidos      String
   email          String?
   telefono       String?
   notas          String?

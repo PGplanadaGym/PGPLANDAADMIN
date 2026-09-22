@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGetIdentity, useLogout } from '@refinedev/core'
 import { Link } from 'react-router-dom'
-import { LogOut, UserRound } from 'lucide-react'
+import { Power, UserRound } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { Avatar } from './Avatar'
 
@@ -40,7 +40,7 @@ export function UserMenu() {
       {abierto && (
         <div
           role="menu"
-          className="absolute left-0 z-50 mt-2 w-56 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1 shadow-[var(--sombra-lg)]"
+          className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1 shadow-[var(--sombra-lg)]"
         >
           <div className="px-3 py-2">
             <p className="truncate text-sm font-medium text-[var(--color-text)]">
@@ -69,7 +69,7 @@ export function UserMenu() {
             onClick={() => logout()}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
           >
-            <LogOut className="h-4 w-4" />
+            <Power className="h-4 w-4" />
             Cerrar sesión
           </button>
         </div>

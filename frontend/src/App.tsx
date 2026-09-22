@@ -19,12 +19,7 @@ import { UsuariosCreatePage } from './pages/usuarios/UsuariosCreatePage'
 import { UsuarioPerfilPage } from './pages/usuarios/UsuarioPerfilPage'
 import { ClientesListPage } from './pages/clientes/ClientesListPage'
 import { ClienteFormPage } from './pages/clientes/ClienteFormPage'
-import { EmpresaPage } from './pages/empresa/EmpresaPage'
 import { PerfilPage } from './pages/perfil/PerfilPage'
-import { CitasPage } from './pages/citas/CitasPage'
-import { RecursosPage } from './pages/recursos/RecursosPage'
-import { TiposCitaPage } from './pages/tipos-cita/TiposCitaPage'
-import { RolesPermisosPage } from './pages/roles/RolesPermisosPage'
 import { CuentasPage } from './pages/cuentas/CuentasPage'
 import { ClientePerfilPage } from './pages/clientes/ClientePerfilPage'
 import { SucursalesPage } from './pages/sucursales/SucursalesPage'
@@ -43,7 +38,7 @@ function App() {
         {
           name: 'dashboard',
           list: '/',
-          meta: { label: 'Dashboard' },
+          meta: { label: 'Inicio' },
         },
         {
           name: 'usuarios',
@@ -51,11 +46,6 @@ function App() {
           create: '/usuarios/nuevo',
           edit: '/usuarios',
           meta: { label: 'Usuarios' },
-        },
-        {
-          name: 'roles',
-          list: '/roles',
-          meta: { label: 'Roles y permisos' },
         },
         {
           name: 'cuentas',
@@ -68,26 +58,6 @@ function App() {
           create: '/clientes/nuevo',
           edit: '/clientes/:id/editar',
           meta: { label: 'Clientes' },
-        },
-        {
-          name: 'empresas',
-          list: '/empresa',
-          meta: { label: 'Mi empresa' },
-        },
-        {
-          name: 'citas',
-          list: '/citas',
-          meta: { label: 'Citas' },
-        },
-        {
-          name: 'recursos',
-          list: '/recursos',
-          meta: { label: 'Recursos' },
-        },
-        {
-          name: 'tipos-cita',
-          list: '/tipos-cita',
-          meta: { label: 'Tipos de cita' },
         },
         {
           name: 'sucursales',
@@ -118,15 +88,10 @@ function App() {
           <Route path="/usuarios" element={<UsuariosListPage />} />
           <Route path="/usuarios/nuevo" element={<UsuariosCreatePage />} />
           <Route path="/usuarios/:id" element={<UsuarioPerfilPage />} />
-          <Route path="/roles" element={<RolesPermisosPage />} />
           <Route path="/cuentas" element={<CuentasPage />} />
           <Route path="/clientes" element={<ClientesListPage />} />
           <Route path="/clientes/nuevo" element={<ClienteFormPage />} />
           <Route path="/clientes/:id/editar" element={<ClienteFormPage />} />
-          <Route path="/empresa" element={<EmpresaPage />} />
-          <Route path="/citas" element={<CitasPage />} />
-          <Route path="/recursos" element={<RecursosPage />} />
-          <Route path="/tipos-cita" element={<TiposCitaPage />} />
           <Route path="/clientes/:id" element={<ClientePerfilPage />} />
           <Route path="/sucursales" element={<SucursalesPage />} />
           <Route path="/sucursales/:id" element={<SucursalPerfilPage />} />

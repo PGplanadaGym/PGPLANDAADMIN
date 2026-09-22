@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useGetIdentity } from '@refinedev/core'
 import { Link } from 'react-router-dom'
-import { CalendarClock, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import type { Identity } from '../../lib/identity'
 import { buildAbility } from '../../ability/ability'
 import { NAV_ITEMS, aplanarNav } from '../../lib/navigation'
@@ -15,13 +15,6 @@ function saludo() {
   return 'Buenas noches'
 }
 
-interface ProximaCita {
-  id: string
-  fechaInicio: string
-  cliente: { id: string; nombre: string } | null
-  tipoCita: { nombre: string }
-}
-
 interface MembresiaPorVencer {
   clienteId: string
   clienteNombre: string
@@ -30,7 +23,6 @@ interface MembresiaPorVencer {
 
 interface Metricas {
   metricas: Record<string, number>
-  proximasCitas: ProximaCita[]
   membresiasPorVencer: MembresiaPorVencer[]
 }
 
@@ -47,7 +39,7 @@ function TarjetaMetrica({
   valor,
   to,
 }: {
-  icono: typeof CalendarClock
+  icono: typeof TrendingUp
   etiqueta: string
   valor: string
   to: string
@@ -109,14 +101,6 @@ export function DashboardPage() {
 
       {!cargandoDatos && datos && (
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {puedeVer('citas') && (
-            <TarjetaMetrica
-              icono={CalendarClock}
-              etiqueta="Citas de hoy"
-              valor={String(m.citasHoy ?? 0)}
-              to="/citas"
-            />
-          )}
           {puedeVer('cuentas') && (
             <TarjetaMetrica
               icono={TrendingUp}
@@ -159,29 +143,6 @@ export function DashboardPage() {
                 </Link>
               )
             })}
-          </div>
-        </div>
-      )}
-
-      {!cargandoDatos && datos && datos.proximasCitas.length > 0 && puedeVer('citas') && (
-        <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-[var(--sombra-sm)]">
-          <h2 className="text-sm font-semibold text-[var(--color-text)]">Próximas citas</h2>
-          <div className="mt-2 flex flex-col gap-2">
-            {datos.proximasCitas.map((cita) => (
-              <Link
-                key={cita.id}
-                to="/citas"
-                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-[var(--color-bg-hover)]"
-              >
-                <span className="text-[var(--color-text)]">
-                  {cita.tipoCita.nombre}
-                  {cita.cliente ? ` · ${cita.cliente.nombre}` : ''}
-                </span>
-                <span className="text-[var(--color-text-muted)]">
-                  {new Date(cita.fechaInicio).toLocaleString()}
-                </span>
-              </Link>
-            ))}
           </div>
         </div>
       )}

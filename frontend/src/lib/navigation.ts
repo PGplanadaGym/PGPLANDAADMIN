@@ -2,13 +2,8 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard,
   Users,
-  ShieldCheck,
   Contact,
-  CalendarDays,
-  Component,
-  Tag,
   Wallet,
-  Building2,
   Store,
   BadgeCheck,
 } from 'lucide-react'
@@ -43,7 +38,7 @@ export function aplanarNav(items: NavEntry[]): NavLeaf[] {
 }
 
 export const NAV_ITEMS: NavEntry[] = [
-  { to: '/', label: 'Dashboard', resource: 'dashboard', icon: LayoutDashboard, sinPermiso: true },
+  { to: '/', label: 'Inicio', resource: 'dashboard', icon: LayoutDashboard, sinPermiso: true },
   { to: '/clientes', label: 'Clientes', resource: 'clientes', icon: Contact },
   {
     to: '/sucursales',
@@ -53,16 +48,5 @@ export const NAV_ITEMS: NavEntry[] = [
   },
   { to: '/membresias', label: 'Membresías', resource: 'membresias', icon: BadgeCheck },
   { to: '/cuentas', label: 'Cuentas', resource: 'cuentas', icon: Wallet },
-  { to: '/empresa', label: 'Mi empresa', resource: 'empresas', icon: Building2 },
   { to: '/usuarios', label: 'Usuarios', resource: 'usuarios', icon: Users },
-  { to: '/roles', label: 'Roles y permisos', resource: 'roles', icon: ShieldCheck },
-  {
-    label: 'Citas',
-    icon: CalendarDays,
-    children: [
-      { to: '/citas', label: 'Citas', resource: 'citas', icon: CalendarDays },
-      { to: '/recursos', label: 'Recursos', resource: 'recursos', icon: Component },
-      { to: '/tipos-cita', label: 'Tipos de cita', resource: 'tipos-cita', icon: Tag },
-    ],
-  },
 ]

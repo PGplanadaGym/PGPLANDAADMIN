@@ -162,11 +162,16 @@ export class ClientesService {
     await this.validarSucursal(empresaId, sucursalId);
     await this.validarNoDuplicado(empresaId, { telefono: dto.telefono, email: dto.email });
 
+    const nombres = dto.nombres.trim();
+    const apellidos = dto.apellidos.trim();
+
     const cliente = await this.prisma.cliente.create({
       data: {
         empresaId,
         sucursalId,
-        nombre: dto.nombre.trim(),
+        nombres,
+        apellidos,
+        nombre: `${nombres} ${apellidos}`.trim(),
         email: dto.email?.toLowerCase(),
         telefono: dto.telefono,
         notas: dto.notas,
@@ -293,7 +298,7 @@ export class ClientesService {
   ) {
     // findOne ya aplica el filtro de sucursal: un empleado sin permiso de "ver todas" ni
     // siquiera encuentra (404) un cliente de otra sucursal para editarlo.
-    await this.findOne(empresaId, id, permisosVisor, sucursalIdVisor);
+    const actual = await this.findOne(empresaId, id, permisosVisor, sucursalIdVisor);
 
     if (dto.sucursalId !== undefined) {
       if (!puedeVerTodasSucursales(permisosVisor)) {
@@ -306,11 +311,19 @@ export class ClientesService {
       await this.validarNoDuplicado(empresaId, { telefono: dto.telefono, email: dto.email }, id);
     }
 
+    // "nombre" (usado en el resto de la app) se recalcula si cambia cualquiera de los dos,
+    // completando con el valor ya guardado para el que no vino en este PATCH.
+    const nombres = dto.nombres?.trim() ?? actual.nombres;
+    const apellidos = dto.apellidos?.trim() ?? actual.apellidos;
+    const nombreCambio = dto.nombres !== undefined || dto.apellidos !== undefined;
+
     const cliente = await this.prisma.cliente.update({
       where: { id },
       data: {
         ...dto,
-        nombre: dto.nombre?.trim(),
+        nombres,
+        apellidos,
+        nombre: nombreCambio ? `${nombres} ${apellidos}`.trim() : undefined,
         email: dto.email?.toLowerCase(),
         atributosExtra: dto.atributosExtra as Prisma.InputJsonValue | undefined,
       },

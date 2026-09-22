@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsISO8601, IsNumber, IsOptional, IsPositive, IsString, IsUrl } from 'class-validator';
+import {
+  IsIn,
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUrl,
+  ValidateIf,
+} from 'class-validator';
 import { TIPOS_MOVIMIENTO_CUENTA } from './create-categoria-movimiento.dto';
 
 export class CreateMovimientoCuentaDto {
@@ -37,6 +46,7 @@ export class CreateMovimientoCuentaDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @ValidateIf((o) => !!o.comprobanteUrl)
   @IsUrl()
   comprobanteUrl?: string;
 
